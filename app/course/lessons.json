@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "units": [
+    {
+      "id": 1,
+      "title": "יחידה 1",
+      "description": "יחידה ראשונית — מבוא וקונספטים בסיסיים",
+      "order": 1,
+      "lessons": [
+        {
+          "id": 1,
+          "title": "שיעור 1 – מבוא",
+          "slug": "lesson-1-intro",
+          "embedUrl": "https://videos.spotlightr.com/watch/xxxx",
+          "duration": "12:34",
+          "durationSeconds": 754,
+          "locked": false,
+          "order": 1,
+          "description": "הקדמה לקורס ולעקרונות AWS",
+          "resources": []
+        },
+        {
+          "id": 2,
+          "title": "שיעור 2 – המשך",
+          "slug": "lesson-2",
+          "embedUrl": "https://videos.spotlightr.com/watch/yyyy",
+          "duration": "18:05",
+          "durationSeconds": 1085,
+          "locked": true,
+          "order": 2,
+          "description": "שיעור המשך בנושא שירותים",
+          "resources": [
+            { "label": "מצגת", "url": "/resources/lesson2-slides.pdf" }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "שיעור 3 – שירותים נפוצים",
+          "slug": "lesson-3-services",
+          "embedUrl": "https://videos.spotlightr.com/watch/zzzz",
+          "duration": "22:10",
+          "durationSeconds": 1330,
+          "locked": true,
+          "order": 3,
+          "description": "סקירה מעשית של שירותים נפוצים ב‑AWS",
+          "resources": []
+        },
+        {
+          "id": 4,
+          "title": "שיעור 4 – סיכום ומבחן",
+          "slug": "lesson-4-summary",
+          "embedUrl": "https://videos.spotlightr.com/watch/aaaa",
+          "duration": "15:40",
+          "durationSeconds": 940,
+          "locked": true,
+          "order": 4,
+          "description": "סיכום הקורס והנחיות לבחינה",
+          "resources": []
+        }
+      ]
+    },
+  {
+      "id": 2,
+      "title": "יחידה 1",
+      "description": "יחידה ראשונית — מבוא וקונספטים בסיסיים",
+      "order": 2,
+      "lessons": [
+        {
+          "id": 5,
+          "title": "שיעור 1 – מבוא",
+          "slug": "lesson-1-intro",
+          "embedUrl": "https://videos.spotlightr.com/watch/xxxx",
+          "duration": "12:34",
+          "durationSeconds": 754,
+          "locked": false,
+          "order": 1,
+          "description": "הקדמה לקורס ולעקרונות AWS",
+          "resources": []
+        },
+        {
+          "id": 6,
+          "title": "שיעור 2 – המשך",
+          "slug": "lesson-2",
+          "embedUrl": "https://videos.spotlightr.com/watch/yyyy",
+          "duration": "18:05",
+          "durationSeconds": 1085,
+          "locked": true,
+          "order": 2,
+          "description": "שיעור המשך בנושא שירותים",
+          "resources": [
+            { "label": "מצגת", "url": "/resources/lesson2-slides.pdf" }
+          ]
+        },
+        {
+          "id": 7,
+          "title": "שיעור 3 – שירותים נפוצים",
+          "slug": "lesson-3-services",
+          "embedUrl": "https://videos.spotlightr.com/watch/zzzz",
+          "duration": "22:10",
+          "durationSeconds": 1330,
+          "locked": true,
+          "order": 3,
+          "description": "סקירה מעשית של שירותים נפוצים ב‑AWS",
+          "resources": []
+        },
+        {
+          "id": 8,
+          "title": "שיעור 4 – סיכום ומבחן",
+          "slug": "lesson-4-summary",
+          "embedUrl": "https://videos.spotlightr.com/watch/aaaa",
+          "duration": "15:40",
+          "durationSeconds": 940,
+          "locked": true,
+          "order": 4,
+          "description": "סיכום הקורס והנחיות לבחינה",
+          "resources": []
+        }
+      ]
+    }
+]
+}
