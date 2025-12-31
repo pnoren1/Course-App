@@ -12,7 +12,7 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full bg-white shadow-lg rounded-xl p-8" dir="rtl">
+      <div className="max-w-md w-full card" dir="rtl">
         <h2 className="text-2xl font-semibold text-gray-900 mb-6">כניסה לקורס</h2>
 
         <GoogleSignIn onError={(msg) => setError(msg)} />
@@ -65,7 +65,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full ${loading ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"} text-white font-medium py-2 px-4 rounded-md`}
+            className={`w-full ${loading ? "bg-primary-300 cursor-not-allowed" : "btn-primary"}`}
           >
             {loading ? "מתחבר..." : "כניסה"}
           </button>

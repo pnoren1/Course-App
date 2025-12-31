@@ -21,10 +21,10 @@ export default function CourseHeader({ onSignOut }: Props) {
   }, [])
   
   return (
-    <header className="flex items-start justify-between gap-6 mb-8">
+    <header className="flex items-start justify-between gap-6 mb-8 border-r-4 border-primary-600 pr-4">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-gray-100">קורס AWS</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">שיעורים מוקלטים — צפייה בסדר קבוע</p>
+        <h1 className="text-2xl sm:text-3xl font-semibold text-primary-600 dark:text-primary-400">קורס AWS</h1>
+        <p className="mt-1 text-sm text-primary-500 dark:text-primary-300">שיעורים מוקלטים — צפייה בסדר קבוע</p>
       </div>
 
       <div className="flex items-center gap-3">

@@ -17,11 +17,11 @@ export default function UnitSection({ unit, unitOpen, onToggleUnit, openLesson, 
   return (
     <section
       key={unit.id}
-      className="rounded-lg shadow-sm overflow-hidden ring-1 ring-gray-100 dark:ring-slate-700 bg-white dark:bg-slate-800"
+      className="card overflow-hidden border-l-4 border-primary-600 dark:border-primary-400"
       aria-labelledby={`unit-${unit.id}-title`}
     >
       <div
-        className="flex items-center justify-between p-5 bg-gray-50 dark:bg-slate-900/40 border-b border-gray-100 dark:border-slate-700 cursor-pointer"
+        className="flex items-center justify-between p-5 bg-gradient-to-r from-primary-50 to-white dark:from-primary-900/10 border-b border-gray-100 dark:border-slate-700 cursor-pointer"
         role="button"
         tabIndex={0}
         onClick={() => {
@@ -31,13 +31,13 @@ export default function UnitSection({ unit, unitOpen, onToggleUnit, openLesson, 
       >
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-slate-100 dark:bg-slate-700 text-sm font-medium text-slate-700 dark:text-slate-100 border border-slate-200">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-primary-50 text-sm font-medium text-primary-700 dark:bg-primary-700/20 dark:text-primary-300 border border-primary-100">
               <span className="sr-only">יחידה</span>
               <span className="font-semibold">יחידה {unit.id}</span>
             </span>
 
             <div>
-              <h2 id={`unit-${unit.id}-title`} className="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100">
+              <h2 id={`unit-${unit.id}-title`} className="text-sm sm:text-base font-semibold text-primary-600 dark:text-primary-300">
                 {unit.title}
               </h2>
               {unit.description && <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{unit.description}</p>}
