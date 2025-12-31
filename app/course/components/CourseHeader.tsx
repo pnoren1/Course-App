@@ -33,7 +33,11 @@ export default function CourseHeader({ onSignOut }: Props) {
           onClick={onSignOut}
           className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-md shadow-sm active:shadow-md transform transition duration-150 ease-in-out active:scale-95 active:translate-y-0.5 cursor-pointer active:cursor-grabbing select-none focus:outline-none focus:ring-2 focus:ring-red-500"
         >
-          יציאה
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M10 14l5-5-5-5v10z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span>יציאה</span>
         </button>
       </div>
     </header>
