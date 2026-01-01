@@ -11,11 +11,41 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   return (
-    <main className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full card" dir="rtl">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-6">כניסה לקורס</h2>
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-sm w-full" dir="rtl">
+        {/* Header Section */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-50 rounded-2xl mb-6">
+            <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-semibold text-slate-900 mb-2">כניסה לקורס</h1>
+          <p className="text-sm text-slate-600 leading-relaxed">התחבר כדי להמשיך את הלמידה שלך</p>
+        </div>
 
-        <GoogleSignIn onError={(msg) => setError(msg)} />
+        {/* Login Card */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
+          <GoogleSignIn onError={(msg) => setError(msg)} />
+
+          {error && (
+            <div role="alert" className="mt-6 rounded-xl bg-red-50 border border-red-100 p-4">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+                <p className="text-sm text-red-700 leading-relaxed">{error}</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="text-center mt-8">
+          <p className="text-xs text-slate-500">
+            בהתחברות אתה מסכים לתנאי השימוש ומדיניות הפרטיות
+          </p>
+        </div>
 
         {/* <hr className="my-6 border-gray-200" />
 

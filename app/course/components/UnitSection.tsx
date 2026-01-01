@@ -14,14 +14,51 @@ type Props = {
 };
 
 export default function UnitSection({ unit, unitOpen, onToggleUnit, openLesson, setOpenLesson, setOpenUnit }: Props) {
+  // Calculate total duration for the unit
+  const calculateTotalDuration = (lessons: Unit['lessons']) => {
+    let totalSeconds = 0;
+    
+    lessons.forEach(lesson => {
+      if (lesson.duration && lesson.duration !== "—") {
+        // Parse duration string in hh:mm:ss format
+        const duration = lesson.duration.trim();
+        const parts = duration.split(':');
+        
+        if (parts.length === 3) {
+          const hours = parseInt(parts[0]) || 0;
+          const minutes = parseInt(parts[1]) || 0;
+          const seconds = parseInt(parts[2]) || 0;
+          
+          totalSeconds += (hours * 3600) + (minutes * 60) + seconds;
+        }
+      }
+    });
+    
+    if (totalSeconds === 0) return "—";
+    
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    
+    if (hours > 0) {
+      return minutes > 0 ? `${hours}:${minutes.toString().padStart(2, '0')} שעות` : `${hours} שעות`;
+    }
+    return `${minutes} דקות`;
+  };
+
+  const totalDuration = calculateTotalDuration(unit.lessons);
+
   return (
     <section
       key={unit.id}
-      className="card overflow-hidden border-l-4 border-primary-600 dark:border-primary-400"
+      className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden"
       aria-labelledby={`unit-${unit.id}-title`}
     >
       <div
-        className="flex items-center justify-between p-5 bg-gradient-to-r from-primary-50 to-white dark:from-primary-900/10 border-b border-gray-100 dark:border-slate-700 cursor-pointer"
+        className={`flex items-center justify-between p-6 cursor-pointer transition-all duration-200 ${
+          unitOpen 
+            ? "bg-gradient-to-r from-emerald-50 to-emerald-25 border-b border-emerald-100" 
+            : "hover:bg-slate-25"
+        }`}
         role="button"
         tabIndex={0}
         onClick={() => {
@@ -30,23 +67,46 @@ export default function UnitSection({ unit, unitOpen, onToggleUnit, openLesson, 
         }}
       >
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-primary-50 text-sm font-medium text-primary-700 dark:bg-primary-700/20 dark:text-primary-300 border border-primary-100">
-              <span className="sr-only">יחידה</span>
-              <span className="font-semibold">יחידה {unit.order}</span>
-            </span>
+          <div className={`flex items-center justify-center w-12 h-12 rounded-xl font-semibold text-sm transition-all duration-200 ${
+            unitOpen 
+              ? "bg-emerald-100 text-emerald-700" 
+              : "bg-slate-100 text-slate-600"
+          }`}>
+            {unit.order}
+          </div>
 
-            <div>
-              <h2 id={`unit-${unit.id}-title`} className="text-sm sm:text-base font-semibold text-primary-600 dark:text-primary-300">
-                {unit.title}
-              </h2>
-              {unit.description && <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{unit.description}</p>}
+          <div>
+            <h2 id={`unit-${unit.id}-title`} className="text-lg font-semibold text-slate-900 mb-1">
+              {unit.title}
+            </h2>
+            {unit.description && (
+              <p className="text-sm text-slate-600 leading-relaxed max-w-2xl">
+                {unit.description}
+              </p>
+            )}
+            <div className="flex items-center gap-4 mt-2">
+              <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                {unit.lessons.length} שיעורים
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {totalDuration}
+              </span>
             </div>
           </div>
         </div>
 
         <button
-          className={`inline-flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-700 focus:outline-none ${unitOpen ? "rotate-90 transform" : ""}`}
+          className={`inline-flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 ${
+            unitOpen 
+              ? "bg-emerald-100 text-emerald-600 rotate-90" 
+              : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+          }`}
           aria-expanded={unitOpen}
           aria-controls={`unit-${unit.id}-panel`}
           onClick={(e) => {
@@ -62,27 +122,29 @@ export default function UnitSection({ unit, unitOpen, onToggleUnit, openLesson, 
         </button>
       </div>
 
-      <div id={`unit-${unit.id}-panel`} className={`overflow-hidden transition-all duration-300 ease-in-out ${unitOpen ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"}`}>
-        <ol className="divide-y divide-gray-100 dark:divide-slate-700">
-          {unit.lessons.map((lesson) => {
-            const isLocked = lesson.locked ?? lesson.id !== 1;
-            const duration = lesson.duration ?? "—";
-            const isOpen = openLesson === lesson.id;
+      <div id={`unit-${unit.id}-panel`} className={`overflow-hidden transition-all duration-300 ease-in-out ${unitOpen ? "max-h-none opacity-100" : "max-h-0 opacity-0"}`}>
+        <div className="bg-slate-25">
+          <ol className="divide-y divide-slate-100">
+            {unit.lessons.map((lesson) => {
+              const isLocked = lesson.locked ?? true;
+              const duration = lesson.duration ?? "—";
+              const isOpen = openLesson === lesson.id;
 
-            return (
-              <LessonItem
-                key={lesson.id}
-                lesson={lesson}
-                unitId={unit.id}
-                isOpen={isOpen}
-                isLocked={isLocked}
-                duration={duration}
-                onToggleLesson={(next) => setOpenLesson(next)}
-                onSetOpenUnit={(id) => setOpenUnit(id)}
-              />
-            );
-          })}
-        </ol>
+              return (
+                <LessonItem
+                  key={lesson.id}
+                  lesson={lesson}
+                  unitId={unit.id}
+                  isOpen={isOpen}
+                  isLocked={isLocked}
+                  duration={duration}
+                  onToggleLesson={(next) => setOpenLesson(next)}
+                  onSetOpenUnit={(id) => setOpenUnit(id)}
+                />
+              );
+            })}
+          </ol>
+        </div>
       </div>
     </section>
   );

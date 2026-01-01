@@ -24,6 +24,9 @@ export type Lesson = {
   duration?: string;
   locked?: boolean;
   embedUrl: string;
+  notes?: string;
+  description?: string;
+  is_lab?: boolean;
 };
 
 export type Unit = {
