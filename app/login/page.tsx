@@ -20,8 +20,8 @@ export default function LoginPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
           </div>
-          <h1 className="text-2xl font-semibold text-slate-900 mb-2">כניסה לקורס</h1>
-          <p className="text-sm text-slate-600 leading-relaxed">התחבר כדי להמשיך את הלמידה שלך</p>
+          <h1 className="text-2xl font-semibold text-slate-900 mb-2">כניסה למערכת הקורסים</h1>
+          <p className="text-sm text-slate-600 leading-relaxed">יש להתחבר כדי להמשיך את הלמידה שלך</p>
         </div>
 
         {/* Login Card */}
@@ -43,7 +43,7 @@ export default function LoginPage() {
         {/* Footer */}
         <div className="text-center mt-8">
           <p className="text-xs text-slate-500">
-            בהתחברות אתה מסכים לתנאי השימוש ומדיניות הפרטיות
+            בהתחברות אתה מסכים/ה לתנאי השימוש ומדיניות הפרטיות
           </p>
         </div>
 
