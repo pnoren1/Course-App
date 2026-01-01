@@ -17,7 +17,7 @@ export default function LoginPage() {
 
         <GoogleSignIn onError={(msg) => setError(msg)} />
 
-        <hr className="my-6 border-gray-200" />
+        {/* <hr className="my-6 border-gray-200" />
 
         <form
           onSubmit={async (e) => {
@@ -75,7 +75,7 @@ export default function LoginPage() {
               {error}
             </div>
           )}
-        </form>
+        </form> */}
       </div>
     </main>
   );
