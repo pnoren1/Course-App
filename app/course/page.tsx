@@ -65,7 +65,7 @@ export default function CoursePage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-zinc-25 to-stone-50">
+      <div className="min-h-screen bg-slate-50">
         <main className="max-w-4xl mx-auto px-4 py-8">
           <CourseHeader onSignOut={handleSignOut} />
 
@@ -82,7 +82,7 @@ export default function CoursePage() {
           )}
 
           {error && (
-            <div className="mb-8 rounded-xl bg-red-50 border border-red-100 p-6">
+            <div className="mb-8 rounded-xl bg-red-50 border border-red-100 p-6 shadow-sm">
               <div className="flex items-start gap-3">
                 <svg className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />

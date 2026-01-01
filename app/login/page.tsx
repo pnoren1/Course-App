@@ -11,7 +11,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-slate-50 flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-sm w-full" dir="rtl">
         {/* Header Section */}
         <div className="text-center mb-10">

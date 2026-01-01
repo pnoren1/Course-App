@@ -45,16 +45,16 @@ export default function LessonPanel({ lesson, isOpen }: Props) {
   
 
   return (
-    <div className={`mt-6 p-6 rounded-2xl border backdrop-blur-sm ${
+    <div className={`mt-6 p-6 rounded-2xl border shadow-sm ${
       isLab 
-        ? "bg-gradient-to-br from-blue-50/90 to-slate-50/80 border-blue-200/60" 
-        : "bg-gradient-to-br from-slate-50/90 to-zinc-50/80 border-slate-200/60"
+        ? "bg-gradient-to-br from-blue-50 to-slate-50 border-blue-200" 
+        : "bg-gradient-to-br from-slate-50 to-zinc-50 border-slate-200"
     }`}>
       {/* LAB Header */}
       {isLab && (
-        <div className="mb-6 pb-4 border-b border-blue-200/60">
+        <div className="mb-6 pb-4 border-b border-blue-200">
           <div className="flex items-center gap-3">
-            <div className="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-50 border border-blue-200/60 rounded-xl">
+            <div className="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-50 border border-blue-200 rounded-xl">
               <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.78 0-2.678-2.153-1.415-3.414l5-5A2 2 0 009 9.586V5L8 4z" />
               </svg>
@@ -72,7 +72,7 @@ export default function LessonPanel({ lesson, isOpen }: Props) {
         {/* Video Content */}
         {hasVideo && (
           <div>
-            <div className="w-full aspect-video rounded-xl overflow-hidden shadow-lg bg-black border border-slate-200/60">
+            <div className="w-full aspect-video rounded-xl overflow-hidden shadow-lg bg-black border border-slate-200">
               <iframe
                 src={lesson.embedUrl}
                 className="w-full h-full"
@@ -97,7 +97,7 @@ export default function LessonPanel({ lesson, isOpen }: Props) {
 
         {/* Files Section */}
         {files.length > 0 && (
-          <div className="bg-white/90 backdrop-blur-sm rounded-xl border border-slate-200/60 p-6">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
             <h4 className={`text-base font-semibold mb-4 flex items-center gap-2 ${
               isLab ? "text-blue-900" : "text-slate-900"
             }`}>
@@ -118,9 +118,9 @@ export default function LessonPanel({ lesson, isOpen }: Props) {
             ) : (
               <div className="space-y-3">
                 {files.map((file) => (
-                  <div key={file.id} className="flex items-center justify-between p-3 bg-slate-50/80 border border-slate-200/60 rounded-lg hover:bg-slate-100/80 transition-colors duration-200">
+                  <div key={file.id} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors duration-200">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className="inline-flex items-center justify-center w-8 h-8 bg-gradient-to-br from-slate-100 to-slate-50 border border-slate-200/60 rounded-lg">
+                      <div className="inline-flex items-center justify-center w-8 h-8 bg-gradient-to-br from-slate-100 to-slate-50 border border-slate-200 rounded-lg">
                         <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
@@ -138,7 +138,7 @@ export default function LessonPanel({ lesson, isOpen }: Props) {
                       href={file.file_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-indigo-50 to-indigo-25 text-indigo-700 border border-indigo-200/60 rounded-lg text-xs font-medium hover:from-indigo-100 hover:to-indigo-50 transition-all duration-200"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-indigo-50 to-indigo-25 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-medium hover:from-indigo-100 hover:to-indigo-50 transition-all duration-200"
                     >
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -154,7 +154,7 @@ export default function LessonPanel({ lesson, isOpen }: Props) {
 
         {/* Instructions/Description Section */}
         {hasDescription && (
-          <div className="bg-white/90 backdrop-blur-sm rounded-xl border border-slate-200/60 p-6">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
             <h4 className={`text-base font-semibold mb-4 flex items-center gap-2 ${
               isLab ? "text-blue-900" : "text-slate-900"
             }`}>
@@ -171,7 +171,7 @@ export default function LessonPanel({ lesson, isOpen }: Props) {
             
             {/* LAB Footer - moved inside description section */}
             {isLab && (
-              <div className="mt-6 pt-4 border-t border-slate-200/60">
+              <div className="mt-6 pt-4 border-t border-slate-200">
                 <div className="flex items-center gap-2 text-sm text-blue-700">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -185,7 +185,7 @@ export default function LessonPanel({ lesson, isOpen }: Props) {
 
         {/* No Content State */}
         {!hasVideo && !hasDescription && (
-          <div className="flex items-center justify-center py-12 text-slate-500 bg-white/90 backdrop-blur-sm rounded-xl border border-slate-200/60">
+          <div className="flex items-center justify-center py-12 text-slate-500 bg-white rounded-xl border border-slate-200 shadow-sm">
             <div className="text-center">
               <svg className="w-10 h-10 mx-auto mb-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />

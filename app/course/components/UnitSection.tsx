@@ -50,14 +50,14 @@ export default function UnitSection({ unit, unitOpen, onToggleUnit, openLesson, 
   return (
     <section
       key={unit.id}
-      className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden"
+      className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden"
       aria-labelledby={`unit-${unit.id}-title`}
     >
       <div
         className={`flex items-center justify-between p-6 cursor-pointer transition-all duration-200 border-r-4 ${
           unitOpen 
-            ? "bg-gradient-to-l from-indigo-50/80 to-slate-50/40 border-r-indigo-400 border-b border-indigo-100/60" 
-            : "hover:bg-slate-50/60 border-r-slate-200"
+            ? "bg-gradient-to-l from-indigo-50 to-slate-50 border-r-indigo-400 border-b border-indigo-100" 
+            : "hover:bg-slate-50 border-r-slate-200"
         }`}
         role="button"
         tabIndex={0}
@@ -69,8 +69,8 @@ export default function UnitSection({ unit, unitOpen, onToggleUnit, openLesson, 
         <div className="flex items-center gap-4">
           <div className={`flex items-center justify-center w-12 h-12 rounded-xl font-semibold text-sm transition-all duration-200 border ${
             unitOpen 
-              ? "bg-gradient-to-br from-indigo-100 to-indigo-50 text-indigo-700 border-indigo-200/60" 
-              : "bg-gradient-to-br from-slate-100 to-slate-50 text-slate-600 border-slate-200/60"
+              ? "bg-gradient-to-br from-indigo-100 to-indigo-50 text-indigo-700 border-indigo-200" 
+              : "bg-gradient-to-br from-slate-100 to-slate-50 text-slate-600 border-slate-200"
           }`}>
             {unit.order}
           </div>
@@ -104,8 +104,8 @@ export default function UnitSection({ unit, unitOpen, onToggleUnit, openLesson, 
         <button
           className={`inline-flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 border ${
             unitOpen 
-              ? "bg-indigo-100/80 text-indigo-600 rotate-90 border-indigo-200/60" 
-              : "bg-slate-100/80 text-slate-500 hover:bg-slate-200/80 border-slate-200/60"
+              ? "bg-indigo-100 text-indigo-600 rotate-90 border-indigo-200" 
+              : "bg-slate-100 text-slate-500 hover:bg-slate-200 border-slate-200"
           }`}
           aria-expanded={unitOpen}
           aria-controls={`unit-${unit.id}-panel`}
@@ -123,8 +123,8 @@ export default function UnitSection({ unit, unitOpen, onToggleUnit, openLesson, 
       </div>
 
       <div id={`unit-${unit.id}-panel`} className={`overflow-hidden transition-all duration-300 ease-in-out ${unitOpen ? "max-h-none opacity-100" : "max-h-0 opacity-0"}`}>
-        <div className="bg-gradient-to-b from-slate-25 to-zinc-25">
-          <ol className="divide-y divide-slate-200/60">
+        <div className="bg-slate-25">
+          <ol className="divide-y divide-slate-200">
             {unit.lessons.map((lesson) => {
               const isLocked = lesson.locked ?? true;
               const duration = lesson.duration ?? "—";
