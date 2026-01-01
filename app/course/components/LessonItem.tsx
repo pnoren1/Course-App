@@ -54,7 +54,7 @@ export default function LessonItem({
             }`}
             aria-hidden
           >
-            {lesson.id}
+            {lesson.order}
           </div>
 
           <div className="min-w-0">

@@ -33,7 +33,7 @@ export default function UnitSection({ unit, unitOpen, onToggleUnit, openLesson, 
           <div className="flex items-center gap-3">
             <span className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-primary-50 text-sm font-medium text-primary-700 dark:bg-primary-700/20 dark:text-primary-300 border border-primary-100">
               <span className="sr-only">יחידה</span>
-              <span className="font-semibold">יחידה {unit.id}</span>
+              <span className="font-semibold">יחידה {unit.order}</span>
             </span>
 
             <div>

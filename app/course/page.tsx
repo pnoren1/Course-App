@@ -3,46 +3,57 @@
 import AuthGuard from "../components/AuthGuardClient";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import data from "./lessons.json";
+import { useEffect, useState } from "react";
+// import data from "./lessons.json";
 
 import CourseHeader from "./components/CourseHeader";
 import UnitSection from "./components/UnitSection";
 import type { Lesson, Unit } from "./types";
 
-// Build units from JSON with sensible fallbacks and stable ordering
-function unitsFromData(src: any): Unit[] {
-  if (src && Array.isArray(src.units) && src.units.length > 0) {
-    return src.units
-      .slice()
-      .sort((a: Unit, b: Unit) => (a.order ?? a.id) - (b.order ?? b.id))
-      .map((u: Unit) => ({
-        ...u,
-        lessons: (u.lessons || [])
-          .slice()
-          .sort((a: Lesson, b: Lesson) => (a.order ?? a.id) - (b.order ?? b.id)),
-      }));
-  }
-
-  const flat = (src && Array.isArray(src.lessons) ? src.lessons : [])
-    .slice()
-    .sort((a: Lesson, b: Lesson) => (a.order ?? a.id) - (b.order ?? b.id));
-
-  return [
-    {
-      id: 1,
-      title: "יחידה 1",
-      lessons: flat,
-    },
-  ];
-}
 
 export default function CoursePage() {
   const router = useRouter();
   const [openUnit, setOpenUnit] = useState<number | null>(null);
   const [openLesson, setOpenLesson] = useState<number | null>(null);
+  const [units, setUnits] = useState<Unit[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const units = unitsFromData(data);
+  useEffect(() => {
+    const fetchUnits = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('units')
+          .select(`
+            id,
+            title,
+            order,
+            description,
+            lessons (
+              id,
+              title,
+              order,
+              duration,
+              locked,
+              embedUrl
+            )
+          `)
+          .order('order', { ascending: true })
+          .order('order', { foreignTable: 'lessons', ascending: true });
+
+        if (error) throw error;
+
+        setUnits(data ?? []);
+      } catch (err: any) {
+        setError(err.message ?? 'Failed to load course');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUnits();
+  }, []);
+  
 
   const handleSignOut = () => {
     supabase.auth.signOut();
