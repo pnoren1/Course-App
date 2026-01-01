@@ -29,11 +29,20 @@ export type Lesson = {
   is_lab?: boolean;
 };
 
+export type LessonFile = {
+  id: number;
+  lesson_id: number;
+  file_name: string;
+  file_url: string;
+  file_type?: string;
+  file_size?: number;
+  created_at?: string;
+};
+
 export type Unit = {
   id: number;
   title: string;
   description?: string;
   order: number;
   lessons: Lesson[];
-
 };
