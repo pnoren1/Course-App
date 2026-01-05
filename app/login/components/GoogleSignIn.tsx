@@ -20,12 +20,12 @@ export default function GoogleSignIn({ redirectTo = "/course", onError }: Props)
       });
 
       if (error) {
-        onError?.(error.message ?? "שגיאה בהתחברות עם Google, אנא נסה שוב.");
+        onError?.(error.message ?? "שגיאה בהתחברות עם Google, אנא נסו שוב.");
         setOauthLoading(false);
       }
       // On success Supabase will redirect the browser
     } catch (err) {
-      onError?.("שגיאה בהתחברות עם Google, אנא נסה שוב.");
+      onError?.("שגיאה בהתחברות עם Google, אנא נסו שוב.");
       setOauthLoading(false);
     }
   };
@@ -34,7 +34,7 @@ export default function GoogleSignIn({ redirectTo = "/course", onError }: Props)
     <button
       onClick={handleClick}
       disabled={oauthLoading}
-      aria-label="התחבר עם Google"
+      aria-label="התחברות עם Google"
       className={`w-full inline-flex justify-center items-center gap-3 transition-all duration-200 ${
         oauthLoading 
           ? "bg-slate-50 cursor-not-allowed border-slate-200 text-slate-400" 
@@ -63,7 +63,7 @@ export default function GoogleSignIn({ redirectTo = "/course", onError }: Props)
             מתחבר...
           </span>
         ) : (
-          "התחבר עם Google"
+          "התחברות עם Google"
         )}
       </span>
     </button>
