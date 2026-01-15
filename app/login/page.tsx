@@ -26,7 +26,7 @@ function LoginContent() {
   }, [searchParams]);
 
   return (
-    <main className="min-h-screen bg-slate-50 flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8">
+    <main className="bg-slate-50 flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-sm w-full" dir="rtl">
         {/* Header Section */}
         <div className="text-center mb-10">
@@ -77,7 +77,7 @@ function LoginContent() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="bg-slate-50 flex items-center justify-center py-16">
         <div className="flex items-center gap-3 text-slate-600">
           <svg className="animate-spin w-6 h-6" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

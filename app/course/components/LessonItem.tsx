@@ -139,9 +139,11 @@ export default function LessonItem({
         </div>
       </div>
 
-      <div id={`lesson-panel-${lesson.id}`} className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? "max-h-none opacity-100" : "max-h-0 opacity-0"}`}>
-        <LessonPanel lesson={lesson} isOpen={isOpen} />
-      </div>
+      {isOpen && (
+        <div id={`lesson-panel-${lesson.id}`}>
+          <LessonPanel lesson={lesson} isOpen={isOpen} />
+        </div>
+      )}
     </li>
   );
 }

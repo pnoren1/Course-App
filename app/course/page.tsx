@@ -63,8 +63,8 @@ function CourseContent() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <main className="max-w-4xl mx-auto px-4 py-8">
+    <div className="bg-slate-50">
+      <main className="max-w-4xl mx-auto px-4 py-8 pb-16">
         <CourseHeader onSignOut={handleSignOut} />
 
         {loading && (
@@ -124,7 +124,7 @@ function CourseContent() {
 export default function CoursePage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="bg-slate-50 flex items-center justify-center py-16">
         <div className="flex items-center gap-3 text-slate-600">
           <svg className="animate-spin w-6 h-6" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

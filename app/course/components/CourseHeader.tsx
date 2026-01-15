@@ -74,6 +74,28 @@ export default function CourseHeader({ onSignOut }: Props) {
         {/* Bottom Stats Bar */}
         <div className="bg-gradient-to-r from-slate-50 to-slate-25 border-t border-slate-200 px-8 py-4">
           <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <a
+                href="/course/about"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 hover:text-indigo-900 rounded-xl font-medium text-sm transition-all duration-200"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>אודות הקורס - הנחיות</span>
+              </a>
+              <a
+                // href="https://lzedeawtmzfenyrewhmo.supabase.co/storage/v1/object/sign/general/course.pdf?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNDZmMTNjZC02OTUyLTRkZTItODRhMC1lZmM3MWIxY2U2NTciLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJnZW5lcmFsL2NvdXJzZS5wZGYiLCJpYXQiOjE3Njg1MTU3MDUsImV4cCI6MjA4Mzg3NTcwNX0.qUsFqh4lr6yg9UyYnhCeq_rf3w2wWFpleUMowmNYSbs"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 hover:text-purple-900 rounded-xl font-medium text-sm transition-all duration-200"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                <span>מצגת הקורס</span>
+              </a>
+            </div>
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2 text-sm text-slate-600">
                 <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -88,12 +110,6 @@ export default function CourseHeader({ onSignOut }: Props) {
                 <span className="font-medium">למידה עצמית</span>
               </div>
             </div>
-            {/* <div className="flex items-center gap-2 text-sm text-slate-500">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>התחל מהיחידה הראשונה</span>
-            </div> */}
           </div>
         </div>
       </div>

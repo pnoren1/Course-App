@@ -122,8 +122,8 @@ export default function UnitSection({ unit, unitOpen, onToggleUnit, openLesson, 
         </button>
       </div>
 
-      <div id={`unit-${unit.id}-panel`} className={`overflow-hidden transition-all duration-300 ease-in-out ${unitOpen ? "max-h-none opacity-100" : "max-h-0 opacity-0"}`}>
-        <div className="bg-slate-25">
+      {unitOpen && (
+        <div id={`unit-${unit.id}-panel`} className="bg-slate-25">
           <ol className="divide-y divide-slate-200">
             {unit.lessons.map((lesson) => {
               const isLocked = lesson.locked ?? true;
@@ -145,7 +145,7 @@ export default function UnitSection({ unit, unitOpen, onToggleUnit, openLesson, 
             })}
           </ol>
         </div>
-      </div>
+      )}
     </section>
   );
 }
