@@ -85,7 +85,7 @@ export default function CourseHeader({ onSignOut }: Props) {
                 <span>אודות הקורס - הנחיות</span>
               </a>
               <a
-                // href="https://lzedeawtmzfenyrewhmo.supabase.co/storage/v1/object/sign/general/course.pdf?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNDZmMTNjZC02OTUyLTRkZTItODRhMC1lZmM3MWIxY2U2NTciLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJnZW5lcmFsL2NvdXJzZS5wZGYiLCJpYXQiOjE3Njg1MTU3MDUsImV4cCI6MjA4Mzg3NTcwNX0.qUsFqh4lr6yg9UyYnhCeq_rf3w2wWFpleUMowmNYSbs"
+                href="https://lzedeawtmzfenyrewhmo.supabase.co/storage/v1/object/sign/general/course.pdf?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNDZmMTNjZC02OTUyLTRkZTItODRhMC1lZmM3MWIxY2U2NTciLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJnZW5lcmFsL2NvdXJzZS5wZGYiLCJpYXQiOjE3Njg2ODE1NzYsImV4cCI6MTgwMDIxNzU3Nn0.opJMMSnVUuFF7_aLWzVXNDUaUK8KazjTRU31nSw1ZW4"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 hover:text-purple-900 rounded-xl font-medium text-sm transition-all duration-200"
