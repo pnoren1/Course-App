@@ -54,12 +54,12 @@ export default function AcknowledgmentForm({ onSubmit, isSubmitting }: Acknowled
   return (
     <div className="bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200">
       <form onSubmit={handleSubmit} className="space-y-3" noValidate>
-        <fieldset className="space-y-3">
+        <fieldset className="space-y-1">
           <legend className="sr-only">טופס אישור תנאי השימוש</legend>
           
           {/* Terms Agreement Checkbox - Requirement 1.3 */}
-          <div className="space-y-2">
-            <label className="flex items-start gap-3 cursor-pointer group p-2 rounded hover:bg-white transition-colors">
+          <div className="space-y-1">
+            <label className="flex items-start gap-3 cursor-pointer group p-1 rounded hover:bg-white transition-colors">
               <input
                 type="checkbox"
                 checked={formData.termsAgreed}
@@ -94,8 +94,8 @@ export default function AcknowledgmentForm({ onSubmit, isSubmitting }: Acknowled
           </div>
 
           {/* Message Read Checkbox - Requirement 1.4 */}
-          <div className="space-y-2">
-            <label className="flex items-start gap-3 cursor-pointer group p-2 rounded hover:bg-white transition-colors">
+          <div className="space-y-1">
+            <label className="flex items-start gap-3 cursor-pointer group p-1 rounded hover:bg-white transition-colors">
               <input
                 type="checkbox"
                 checked={formData.messageRead}
