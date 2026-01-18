@@ -64,11 +64,11 @@ function LoginContent() {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-8">
+        {/* <div className="text-center mt-8">
           <p className="text-xs text-slate-500">
             בהתחברות אתה מסכים/ה לתנאי השימוש ומדיניות הפרטיות
           </p>
-        </div>
+        </div> */}
       </div>
     </main>
   );

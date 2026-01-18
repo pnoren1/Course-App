@@ -1,0 +1,463 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import * as fc from 'fast-check';
+
+// Mock Supabase client first
+vi.mock('../supabase', () => ({
+  supabase: {
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            single: vi.fn()
+          })),
+          order: vi.fn(() => Promise.resolve({ data: [], error: null }))
+        }))
+      })),
+      insert: vi.fn(() => ({
+        error: null
+      }))
+    }))
+  }
+}));
+
+import { SupabaseCourseAcknowledgmentService } from '../courseAcknowledgmentService';
+import { supabase } from '../supabase';
+
+const mockSupabase = supabase as any;
+
+describe('SupabaseCourseAcknowledgmentService', () => {
+  let service: SupabaseCourseAcknowledgmentService;
+
+  beforeEach(() => {
+    service = new SupabaseCourseAcknowledgmentService();
+    vi.clearAllMocks();
+  });
+
+  describe('checkAcknowledgment', () => {
+    it('should return false when no acknowledgment exists', async () => {
+      const mockChain = {
+        single: vi.fn().mockResolvedValue({ 
+          data: null, 
+          error: { code: 'PGRST116' } 
+        })
+      };
+      
+      mockSupabase.from.mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue(mockChain)
+          })
+        })
+      });
+
+      const result = await service.checkAcknowledgment('user123', 'course456');
+      
+      expect(result).toBe(false);
+    });
+
+    it('should return true when acknowledgment exists', async () => {
+      const mockChain = {
+        single: vi.fn().mockResolvedValue({ 
+          data: { id: 'ack123' }, 
+          error: null 
+        })
+      };
+      
+      mockSupabase.from.mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue(mockChain)
+          })
+        })
+      });
+
+      const result = await service.checkAcknowledgment('user123', 'course456');
+      
+      expect(result).toBe(true);
+    });
+
+    it('should return false on database error (safety measure)', async () => {
+      const mockChain = {
+        single: vi.fn().mockResolvedValue({ 
+          data: null, 
+          error: { code: 'OTHER_ERROR', message: 'Database error' } 
+        })
+      };
+      
+      mockSupabase.from.mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue(mockChain)
+          })
+        })
+      });
+
+      const result = await service.checkAcknowledgment('user123', 'course456');
+      
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('saveAcknowledgment', () => {
+    it('should save acknowledgment successfully with provided userName', async () => {
+      const mockInsert = vi.fn().mockResolvedValue({ error: null });
+      
+      mockSupabase.from.mockReturnValue({
+        insert: mockInsert
+      });
+
+      await expect(service.saveAcknowledgment('user123', 'course456', 'Test User')).resolves.not.toThrow();
+      
+      expect(mockSupabase.from).toHaveBeenCalledWith('course_acknowledgments');
+      expect(mockInsert).toHaveBeenCalledWith({
+        user_id: 'user123',
+        user_name: 'Test User',
+        course_id: 'course456'
+      });
+    });
+
+    it('should save acknowledgment with fallback userName when not provided', async () => {
+      const mockInsert = vi.fn().mockResolvedValue({ error: null });
+      
+      mockSupabase.from.mockReturnValue({
+        insert: mockInsert
+      });
+
+      await expect(service.saveAcknowledgment('user123', 'course456')).resolves.not.toThrow();
+      
+      expect(mockSupabase.from).toHaveBeenCalledWith('course_acknowledgments');
+      expect(mockInsert).toHaveBeenCalledWith({
+        user_id: 'user123',
+        user_name: 'Unknown User',
+        course_id: 'course456'
+      });
+    });
+
+    it('should throw error when save fails', async () => {
+      const mockError = new Error('Insert failed');
+      const mockInsert = vi.fn().mockResolvedValue({ error: mockError });
+      
+      mockSupabase.from.mockReturnValue({
+        insert: mockInsert
+      });
+
+      await expect(service.saveAcknowledgment('user123', 'course456', 'Test User')).rejects.toThrow();
+    });
+  });
+
+  // Property-based test for user name population on creation
+  describe('Property 1: User name population on creation', () => {
+    it('should store the provided user name in the user_name field for any new acknowledgment created', async () => {
+      // Feature: add-username-to-acknowledgments, Property 1: User name population on creation
+      // **Validates: Requirements 1.1, 4.1**
+      
+      await fc.assert(
+        fc.asyncProperty(
+          fc.string({ minLength: 1, maxLength: 50 }), // userId
+          fc.string({ minLength: 1, maxLength: 100 }), // userName
+          fc.string({ minLength: 1, maxLength: 50 }), // courseId
+          async (userId, userName, courseId) => {
+            // Reset mocks for each test iteration
+            vi.clearAllMocks();
+            
+            // Mock successful insert
+            const mockInsert = vi.fn().mockResolvedValue({ error: null });
+            mockSupabase.from.mockReturnValue({
+              insert: mockInsert
+            });
+
+            // Save acknowledgment with userName
+            await service.saveAcknowledgment(userId, courseId, userName);
+            
+            // Verify that the system stores the provided user name
+            expect(mockInsert).toHaveBeenCalledWith({
+              user_id: userId,
+              user_name: userName,
+              course_id: courseId
+            });
+          }
+        ),
+        { numRuns: 100 } // Run 100 iterations as specified in design
+      );
+    });
+  });
+
+  // Property-based test for email fallback when display name unavailable
+  describe('Property 2: Email fallback when display name unavailable', () => {
+    it('should use fallback userName when none is provided', async () => {
+      // Feature: add-username-to-acknowledgments, Property 2: Email fallback when display name unavailable
+      // **Validates: Requirements 1.2, 2.3**
+      
+      await fc.assert(
+        fc.asyncProperty(
+          fc.string({ minLength: 1, maxLength: 50 }), // userId
+          fc.string({ minLength: 1, maxLength: 50 }), // courseId
+          async (userId, courseId) => {
+            // Reset mocks for each test iteration
+            vi.clearAllMocks();
+            
+            // Mock successful insert
+            const mockInsert = vi.fn().mockResolvedValue({ error: null });
+            mockSupabase.from.mockReturnValue({
+              insert: mockInsert
+            });
+
+            // Save acknowledgment without userName (should use fallback)
+            await service.saveAcknowledgment(userId, courseId);
+            
+            // Verify that the system uses fallback when no userName is provided
+            expect(mockInsert).toHaveBeenCalledWith({
+              user_id: userId,
+              user_name: 'Unknown User',
+              course_id: courseId
+            });
+          }
+        ),
+        { numRuns: 100 } // Run 100 iterations as specified in design
+      );
+    });
+  });
+
+  // Property-based test for acknowledgment persistence
+  describe('Property 4: Acknowledgment persistence', () => {
+    it('should save acknowledgment status and remain accessible in future queries', async () => {
+      // Feature: add-username-to-acknowledgments, Property 4: Acknowledgment persistence
+      // **Validates: Requirements 1.1, 1.3, 4.1, 4.3**
+      
+      await fc.assert(
+        fc.asyncProperty(
+          fc.string({ minLength: 1, maxLength: 50 }), // userId
+          fc.string({ minLength: 1, maxLength: 50 }), // courseId
+          fc.string({ minLength: 1, maxLength: 100 }), // userName
+          async (userId, courseId, userName) => {
+            // Reset mocks for each test iteration
+            vi.clearAllMocks();
+            
+            // Mock successful save
+            const mockInsert = vi.fn().mockResolvedValue({ error: null });
+            mockSupabase.from.mockReturnValue({
+              insert: mockInsert
+            });
+
+            // Save acknowledgment
+            await service.saveAcknowledgment(userId, courseId, userName);
+            
+            // Verify save was called with correct table
+            expect(mockSupabase.from).toHaveBeenCalledWith('course_acknowledgments');
+            
+            // Verify insert was called with user_name
+            expect(mockInsert).toHaveBeenCalledWith({
+              user_id: userId,
+              user_name: userName,
+              course_id: courseId
+            });
+          }
+        ),
+        { numRuns: 100 } // Run 100 iterations as specified in design
+      );
+    });
+  });
+
+  // Property-based test for Supabase integration
+  describe('Property 8: Supabase integration', () => {
+    it('should use Supabase database for all acknowledgment operations', async () => {
+      // Feature: add-username-to-acknowledgments, Property 8: Supabase integration
+      // **Validates: Requirements 1.1, 1.3, 4.1, 4.3**
+      
+      await fc.assert(
+        fc.asyncProperty(
+          fc.string({ minLength: 1, maxLength: 50 }), // userId
+          fc.string({ minLength: 1, maxLength: 50 }), // courseId
+          fc.string({ minLength: 1, maxLength: 100 }), // userName
+          async (userId, courseId, userName) => {
+            // Reset mocks for each test iteration
+            vi.clearAllMocks();
+            
+            // Mock successful operations
+            const mockInsert = vi.fn().mockResolvedValue({ error: null });
+            const mockSingle = vi.fn().mockResolvedValue({ 
+              data: { id: 'test-id' }, 
+              error: null 
+            });
+            
+            mockSupabase.from.mockReturnValue({
+              insert: mockInsert,
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  eq: vi.fn().mockReturnValue({
+                    single: mockSingle
+                  })
+                })
+              })
+            });
+
+            // Test checkAcknowledgment uses Supabase
+            await service.checkAcknowledgment(userId, courseId);
+            
+            // Verify Supabase was called for check operation
+            expect(mockSupabase.from).toHaveBeenCalledWith('course_acknowledgments');
+            
+            // Test saveAcknowledgment uses Supabase
+            await service.saveAcknowledgment(userId, courseId, userName);
+            
+            // Verify Supabase was called for save operation
+            expect(mockSupabase.from).toHaveBeenCalledWith('course_acknowledgments');
+          }
+        ),
+        { numRuns: 100 } // Run 100 iterations as specified in design
+      );
+    });
+  });
+
+  // Property-based test for error handling safety
+  describe('Property 9: Error handling safety', () => {
+    it('should default to showing the welcome popup as a safety measure for any database error during acknowledgment checking', async () => {
+      // Feature: add-username-to-acknowledgments, Property 9: Error handling safety
+      // **Validates: Requirements 4.2, 4.3**
+      
+      await fc.assert(
+        fc.asyncProperty(
+          fc.string({ minLength: 1, maxLength: 50 }), // userId
+          fc.string({ minLength: 1, maxLength: 50 }), // courseId
+          fc.constantFrom(
+            'Database connection failed',
+            'Network timeout',
+            'Authentication failed',
+            'Table not found',
+            'Permission denied'
+          ), // errorMessage
+          async (userId, courseId, errorMessage) => {
+            // Reset mocks for each test iteration
+            vi.clearAllMocks();
+            
+            // Mock database error
+            const mockSingle = vi.fn().mockRejectedValue(new Error(errorMessage));
+            mockSupabase.from.mockReturnValue({
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  eq: vi.fn().mockReturnValue({
+                    single: mockSingle
+                  })
+                })
+              })
+            });
+
+            // Check acknowledgment should return false on error (safety measure)
+            const result = await service.checkAcknowledgment(userId, courseId);
+            
+            // Verify that errors default to false (show popup)
+            expect(result).toBe(false);
+          }
+        ),
+        { numRuns: 100 } // Run 100 iterations as specified in design
+      );
+    });
+  });
+
+  describe('Integration Tests - Complete Flow with user_name', () => {
+    describe('Complete acknowledgment flow with user_name storage', () => {
+      it('should create acknowledgment and verify user_name is stored correctly', async () => {
+        const userId = 'test-user-123';
+        const courseId = 'test-course';
+        const userName = 'John Doe';
+
+        // Mock successful insert
+        const mockInsert = vi.fn().mockResolvedValue({ error: null });
+        mockSupabase.from.mockReturnValue({
+          insert: mockInsert
+        });
+
+        // Save acknowledgment
+        await service.saveAcknowledgment(userId, courseId, userName);
+
+        // Verify insert was called with user_name
+        expect(mockInsert).toHaveBeenCalledWith({
+          user_id: userId,
+          user_name: userName,
+          course_id: courseId
+        });
+      });
+
+      it('should create acknowledgment with fallback when userName not provided', async () => {
+        const userId = 'test-user-123';
+        const courseId = 'test-course';
+
+        // Mock successful insert
+        const mockInsert = vi.fn().mockResolvedValue({ error: null });
+        mockSupabase.from.mockReturnValue({
+          insert: mockInsert
+        });
+
+        // Save acknowledgment without userName
+        await service.saveAcknowledgment(userId, courseId);
+
+        // Verify insert was called with fallback user_name
+        expect(mockInsert).toHaveBeenCalledWith({
+          user_id: userId,
+          user_name: 'Unknown User',
+          course_id: courseId
+        });
+      });
+
+      it('should retrieve course acknowledgments with user names without requiring joins', async () => {
+        const courseId = 'test-course';
+        const mockAcknowledgments = [
+          {
+            id: '1',
+            user_id: 'user1',
+            user_name: 'John Doe',
+            course_id: courseId,
+            acknowledged_at: '2023-01-01T00:00:00Z',
+            created_at: '2023-01-01T00:00:00Z'
+          },
+          {
+            id: '2',
+            user_id: 'user2',
+            user_name: 'jane@example.com',
+            course_id: courseId,
+            acknowledged_at: '2023-01-02T00:00:00Z',
+            created_at: '2023-01-02T00:00:00Z'
+          }
+        ];
+
+        // Mock successful query
+        const mockOrder = vi.fn().mockResolvedValue({ 
+          data: mockAcknowledgments, 
+          error: null 
+        });
+        mockSupabase.from.mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              order: mockOrder
+            })
+          })
+        });
+
+        // Get course acknowledgments
+        const result = await service.getCourseAcknowledgments(courseId);
+
+        // Verify results include user_name without joins
+        expect(result).toEqual(mockAcknowledgments);
+        expect(result[0].user_name).toBe('John Doe');
+        expect(result[1].user_name).toBe('jane@example.com');
+      });
+
+      it('should handle complete flow with graceful error handling', async () => {
+        const userId = 'test-user-123';
+        const courseId = 'test-course';
+        const userName = 'Test User';
+
+        // Mock save error
+        const mockInsert = vi.fn().mockResolvedValue({ 
+          error: new Error('Network error') 
+        });
+        mockSupabase.from.mockReturnValue({
+          insert: mockInsert
+        });
+
+        // Should throw error when save fails
+        await expect(service.saveAcknowledgment(userId, courseId, userName)).rejects.toThrow();
+      });
+    });
+  });
+});

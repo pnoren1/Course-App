@@ -21,12 +21,12 @@ export type Lesson = {
   id: number;
   title: string;
   order: number;
-  duration?: string;
-  locked?: boolean;
+  duration?: string | null;
+  locked?: boolean | null;
   embedUrl: string;
-  notes?: string;
-  description?: string;
-  is_lab?: boolean;
+  notes?: string | null;
+  description?: string | null;
+  is_lab?: boolean | null;
 };
 
 export type LessonFile = {
@@ -34,15 +34,15 @@ export type LessonFile = {
   lesson_id: number;
   file_name: string;
   file_url: string;
-  file_type?: string;
-  file_size?: number;
-  created_at?: string;
+  file_type?: string | null;
+  file_size?: number | null;
+  created_at?: string | null;
 };
 
 export type Unit = {
   id: number;
   title: string;
-  description?: string;
+  description?: string | null;
   order: number;
   lessons: Lesson[];
 };
