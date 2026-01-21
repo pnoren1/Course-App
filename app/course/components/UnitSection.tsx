@@ -67,12 +67,12 @@ export default function UnitSection({ unit, unitOpen, onToggleUnit, openLesson, 
         }}
       >
         <div className="flex items-center gap-4">
-          <div className={`flex items-center justify-center w-12 h-12 rounded-xl font-semibold text-sm transition-all duration-200 border ${
+          <div className={`flex items-center justify-center w-12 h-12 rounded-lg font-bold text-sm transition-all duration-200 border-2 ${
             unitOpen 
-              ? "bg-gradient-to-br from-indigo-100 to-indigo-50 text-indigo-700 border-indigo-200" 
-              : "bg-gradient-to-br from-slate-100 to-slate-50 text-slate-600 border-slate-200"
+              ? "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white border-emerald-400 shadow-lg shadow-emerald-200" 
+              : "bg-gradient-to-br from-emerald-400 to-emerald-500 text-white border-emerald-300 hover:shadow-md hover:shadow-emerald-100"
           }`}>
-            {unit.order}
+            יח׳ {unit.order}
           </div>
 
           <div>

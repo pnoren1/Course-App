@@ -111,26 +111,30 @@ function AboutContent() {
                       </li>
                       <li className="flex gap-3">
                         <span className="font-semibold text-indigo-700 min-w-[2rem]">02</span>
-                        <span>IAM - ניהול המשתמשים וההרשאות</span>
+                        <span>תהליך פתיחת חשבון ב-AWS</span>
                       </li>
                       <li className="flex gap-3">
                         <span className="font-semibold text-indigo-700 min-w-[2rem]">03</span>
-                        <span>S3 - שירות האיחסון של AWS</span>
+                        <span>IAM - ניהול המשתמשים וההרשאות</span>
                       </li>
                       <li className="flex gap-3">
                         <span className="font-semibold text-indigo-700 min-w-[2rem]">04</span>
-                        <span>DB ב-AWS</span>
+                        <span>S3 - שירות האיחסון של AWS</span>
                       </li>
                       <li className="flex gap-3">
                         <span className="font-semibold text-indigo-700 min-w-[2rem]">05</span>
-                        <span>Lambda</span>
+                        <span>DB ב-AWS</span>
                       </li>
                       <li className="flex gap-3">
                         <span className="font-semibold text-indigo-700 min-w-[2rem]">06</span>
-                        <span>Containers On AWS</span>
+                        <span>Lambda</span>
                       </li>
                       <li className="flex gap-3">
                         <span className="font-semibold text-indigo-700 min-w-[2rem]">07</span>
+                        <span>Containers On AWS</span>
+                      </li>
+                      <li className="flex gap-3">
+                        <span className="font-semibold text-indigo-700 min-w-[2rem]">08</span>
                         <span>היכרות וכתיבת תהליכי CI/CD אפליקטיביים</span>
                       </li>
                     </ol>
