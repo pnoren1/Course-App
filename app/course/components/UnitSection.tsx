@@ -67,10 +67,10 @@ export default function UnitSection({ unit, unitOpen, onToggleUnit, openLesson, 
         }}
       >
         <div className="flex items-center gap-4">
-          <div className={`flex items-center justify-center w-12 h-12 rounded-lg font-bold text-sm transition-all duration-200 border-2 ${
+          <div className={`flex items-center justify-center w-14 h-10 rounded-xl font-medium text-sm transition-all duration-200 ${
             unitOpen 
-              ? "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white border-emerald-400 shadow-lg shadow-emerald-200" 
-              : "bg-gradient-to-br from-emerald-400 to-emerald-500 text-white border-emerald-300 hover:shadow-md hover:shadow-emerald-100"
+              ? "bg-gradient-to-r from-indigo-50 to-blue-50 text-indigo-700 border border-indigo-200 shadow-sm" 
+              : "bg-gradient-to-r from-indigo-25 to-blue-25 text-indigo-600 border border-indigo-150 hover:border-indigo-200 hover:shadow-sm"
           }`}>
             יח׳ {unit.order}
           </div>
