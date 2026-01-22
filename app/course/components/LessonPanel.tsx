@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import type { Lesson, LessonFile } from "../types";
 import { supabase } from "@/lib/supabase";
+import AudioHelpLink from "./AudioHelpLink";
 
 type Props = {
   lesson: Lesson;
@@ -12,6 +13,11 @@ type Props = {
 export default function LessonPanel({ lesson, isOpen }: Props) {
   const [files, setFiles] = useState<LessonFile[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  const isLab = lesson.is_lab;
+  const hasVideo = !!lesson.embedUrl;
+  const hasDescription = !!lesson.description;
 
   useEffect(() => {
     if (isOpen && lesson.id) {
@@ -37,12 +43,6 @@ export default function LessonPanel({ lesson, isOpen }: Props) {
   }, [isOpen, lesson.id]);
 
   if (!isOpen) return null;
-
-  const isLab = lesson.is_lab;
-  const hasVideo = !!lesson.embedUrl;
-  const hasDescription = !!lesson.description;
-
-  
 
   return (
     <div className={`mt-6 p-6 rounded-2xl border shadow-sm ${
@@ -72,15 +72,19 @@ export default function LessonPanel({ lesson, isOpen }: Props) {
         {/* Video Content */}
         {hasVideo && (
           <div>
-            <div className="w-full aspect-video rounded-xl overflow-hidden shadow-lg bg-black border border-slate-200">
-              <iframe
-                src={lesson.embedUrl}
-                className="w-full h-full"
-                allow="autoplay; fullscreen"
-                allowFullScreen
-                title={lesson.title}
-              />
+            <div className="relative">
+              <div className="w-full aspect-video rounded-xl overflow-hidden shadow-lg bg-black border border-slate-200">
+                <iframe
+                  ref={iframeRef}
+                  src={lesson.embedUrl}
+                  className="w-full h-full"
+                  allow="autoplay; fullscreen"
+                  allowFullScreen
+                  title={lesson.title}
+                />
+              </div>
             </div>
+            
             <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
               <div className="flex items-center gap-2">
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -89,9 +93,12 @@ export default function LessonPanel({ lesson, isOpen }: Props) {
                 <span className="font-medium">{isLab ? "צפה בהדגמה" : "צפה בשיעור"}</span>
               </div>
               <div className="text-xs text-slate-500">
-                לחץ על מסך מלא לחוויה טובה יותר
+                <span>לחץ על מסך מלא לחוויה טובה יותר</span>
               </div>
             </div>
+
+            {/* Audio Help Link */}
+            <AudioHelpLink />
           </div>
         )}
 
