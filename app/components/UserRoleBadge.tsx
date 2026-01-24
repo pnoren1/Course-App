@@ -8,17 +8,29 @@ interface UserRoleBadgeProps {
   showIcon?: boolean;
   className?: string;
   role?: RoleType | null; // אפשרות להעביר תפקיד ישירות במקום לשלוף מה-hook
+  userRoleData?: {
+    role: any;
+    userName: string | null;
+    userEmail: string | null;
+    organizationName: string | null;
+    organizationId: string | null;
+    userId: string | null;
+    isLoading: boolean;
+    error: string | null;
+  };
 }
 
 export default function UserRoleBadge({ 
   size = 'md', 
   showIcon = true, 
   className = '',
-  role: propRole 
+  role: propRole,
+  userRoleData
 }: UserRoleBadgeProps) {
-  const { role: hookRole, isLoading } = useUserRole();
+  const hookData = useUserRole();
   
-  // אם הועבר תפקיד כ-prop, נשתמש בו, אחרת נשתמש ב-hook
+  // אם הועברו נתונים כ-props, נשתמש בהם, אחרת נשתמש ב-hook
+  const { role: hookRole, isLoading, error } = userRoleData || hookData;
   const role = propRole !== undefined ? propRole : hookRole;
 
   if (isLoading && propRole === undefined) {
@@ -26,6 +38,18 @@ export default function UserRoleBadge({
       <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm bg-gray-100 animate-pulse ${className}`}>
         <div className="w-4 h-4 bg-gray-300 rounded"></div>
         <div className="w-12 h-4 bg-gray-300 rounded"></div>
+      </div>
+    );
+  }
+
+  // אם יש שגיאה של משתמש שלא קיים, נציג הודעת שגיאה עם כפתור יציאה
+  if (error?.includes('User from sub claim in JWT does not exist')) {
+    return (
+      <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm bg-red-50 text-red-700 border border-red-200 ${className}`}>
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+        </svg>
+        <span>שגיאת משתמש</span>
       </div>
     );
   }
@@ -64,6 +88,16 @@ interface UserInfoProps {
   className?: string;
   onSignOut?: () => void; // פונקציה ליציאה
   showSignOut?: boolean; // האם להציג כפתור יציאה
+  userRoleData?: {
+    role: any;
+    userName: string | null;
+    userEmail: string | null;
+    organizationName: string | null;
+    organizationId: string | null;
+    userId: string | null;
+    isLoading: boolean;
+    error: string | null;
+  };
 }
 
 export function UserInfo({ 
@@ -74,9 +108,13 @@ export function UserInfo({
   layout = 'horizontal',
   className = '',
   onSignOut,
-  showSignOut = false
+  showSignOut = false,
+  userRoleData
 }: UserInfoProps) {
-  const { organizationName } = useUserRole();
+  const hookData = useUserRole();
+  
+  // אם הועברו נתונים כ-props, נשתמש בהם, אחרת נשתמש ב-hook
+  const { organizationName, error } = userRoleData || hookData;
   
   const sizeClasses = {
     sm: 'text-xs',
@@ -89,6 +127,31 @@ export function UserInfo({
     md: 'w-4 h-4',
     lg: 'w-5 h-5'
   };
+
+  // אם יש שגיאה של משתמש שלא קיים, נציג הודעת שגיאה עם כפתור יציאה חירום
+  if (error?.includes('User from sub claim in JWT does not exist')) {
+    return (
+      <div className={`flex flex-col items-end gap-2 ${className}`}>
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-700 border border-red-200 rounded-lg text-sm">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
+          <span>שגיאת משתמש</span>
+        </div>
+        {onSignOut && (
+          <button
+            onClick={onSignOut}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-100 hover:bg-red-200 border border-red-200 text-red-700 hover:text-red-900 rounded-lg font-medium text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-1"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            <span>יציאה</span>
+          </button>
+        )}
+      </div>
+    );
+  }
 
   if (layout === 'vertical') {
     return (
@@ -121,7 +184,7 @@ export function UserInfo({
         {/* Second row: Role and Organization */}
         {(showRole || (showOrganization && organizationName)) && (
           <div className="flex items-center gap-2">
-            {showRole && <UserRoleBadge size={size} />}
+            {showRole && <UserRoleBadge size={size} userRoleData={userRoleData} />}
             {showOrganization && organizationName && (
               <div className="inline-flex items-center gap-2 px-2 py-1 bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-medium">
                 <svg className={`${iconSizes[size]} text-slate-500`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -139,7 +202,7 @@ export function UserInfo({
   // Horizontal layout (original)
   return (
     <div className={`flex items-center gap-3 ${className}`}>
-      {showRole && <UserRoleBadge size={size} />}
+      {showRole && <UserRoleBadge size={size} userRoleData={userRoleData} />}
       
       {showOrganization && organizationName && (
         <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-sm font-medium">

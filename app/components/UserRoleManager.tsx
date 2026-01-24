@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { rlsSupabase } from '@/lib/supabase';
 import { RoleType, Organization } from '@/lib/types/database.types';
 import UserRoleBadge from './UserRoleBadge';
+import AddUserForm from './AddUserForm';
+import PendingInvitations from './PendingInvitations';
 
 interface User {
   id: string;
@@ -241,6 +243,9 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
 
   return (
     <div className={`space-y-6 ${className}`}>
+      {/* Pending Invitations */}
+      <PendingInvitations />
+
       {/* Organizations Management */}
       <div className="bg-white rounded-lg border border-slate-200">
         <div className="p-6 border-b border-slate-200">
@@ -328,15 +333,21 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
               <h3 className="text-lg font-semibold text-slate-900">ניהול פרופילי משתמשים</h3>
               <p className="text-sm text-slate-600 mt-1">עריכת תפקידים וארגונים של משתמשים במערכת</p>
             </div>
-            <button
-              onClick={fetchUsers}
-              className="inline-flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              רענון
-            </button>
+            <div className="flex items-center gap-3">
+              <AddUserForm 
+                organizations={organizations} 
+                onUserAdded={fetchUsers}
+              />
+              <button
+                onClick={fetchUsers}
+                className="inline-flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                רענון
+              </button>
+            </div>
           </div>
 
           {/* Search Bar */}

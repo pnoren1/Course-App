@@ -6,7 +6,7 @@ import { WelcomePopupProps, WelcomePopupState, AcknowledgmentData } from '../../
 import AcknowledgmentForm from './AcknowledgmentForm';
 import UserRoleBadge from '../../components/UserRoleBadge';
 
-export default function WelcomePopup({ userId, userName, courseId, onAcknowledged }: WelcomePopupProps) {
+export default function WelcomePopup({ userId, userName, courseId, onAcknowledged, userRoleData }: WelcomePopupProps) {
   const [state, setState] = useState<WelcomePopupState>({
     isVisible: false,
     isLoading: true,
@@ -107,8 +107,8 @@ export default function WelcomePopup({ userId, userName, courseId, onAcknowledge
     try {
       setState(prev => ({ ...prev, isLoading: true }));
       
-      // Pass userName to the service
-      await courseAcknowledgmentService.saveAcknowledgment(userId, courseId, userName);
+      // Pass userName to the service, with fallback if undefined
+      await courseAcknowledgmentService.saveAcknowledgment(userId, courseId, userName || 'משתמש לא ידוע');
       
       setState(prev => ({
         ...prev,
@@ -177,7 +177,7 @@ export default function WelcomePopup({ userId, userName, courseId, onAcknowledge
               >
                 {userName ? `שלום ${userName}!` : 'ברוכות הבאות לקורס'}
               </h1>
-              <UserRoleBadge size="sm" />
+              <UserRoleBadge size="sm" userRoleData={userRoleData} />
             </div>
             <p 
               id="welcome-popup-description"

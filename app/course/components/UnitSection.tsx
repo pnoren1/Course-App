@@ -29,6 +29,7 @@ type Props = {
   setOpenLesson: (id: number | null) => void;
   setOpenUnit: (id: number | string | null) => void;
   userId?: string;
+  userSubmissions?: Map<number, any>;
 };
 
 export default function UnitSection({ 
@@ -38,44 +39,21 @@ export default function UnitSection({
   openLesson, 
   setOpenLesson, 
   setOpenUnit,
-  userId 
+  userId,
+  userSubmissions: propUserSubmissions
 }: Props) {
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [userSubmissions, setUserSubmissions] = useState<Map<number, AssignmentSubmission>>(new Map());
+  console.log('UnitSection unit:', unit);
+  console.log('UnitSection assignments:', unit.assignments);
+  
+  const [userSubmissions, setUserSubmissions] = useState<Map<number, AssignmentSubmission>>(propUserSubmissions || new Map());
   const [loadingAssignments, setLoadingAssignments] = useState(false);
 
-  // Load assignments for this unit when it opens
+  // Update local submissions when props change
   useEffect(() => {
-    if (unitOpen && userId) {
-      loadAssignments();
+    if (propUserSubmissions) {
+      setUserSubmissions(propUserSubmissions);
     }
-  }, [unitOpen, unit.id, userId]);
-
-  const loadAssignments = async () => {
-    try {
-      setLoadingAssignments(true);
-      
-      // Get assignments for this unit
-      const unitAssignments = await assignmentService.getAssignmentsByUnit(unit.id);
-      setAssignments(unitAssignments);
-
-      // Get user submissions for these assignments
-      if (userId && unitAssignments.length > 0) {
-        const submissions = await assignmentService.getSubmissionsByUser(userId);
-        const submissionMap = new Map<number, AssignmentSubmission>();
-        
-        submissions.forEach(submission => {
-          submissionMap.set(submission.assignment_id, submission);
-        });
-        
-        setUserSubmissions(submissionMap);
-      }
-    } catch (error) {
-      console.error('Failed to load assignments:', error);
-    } finally {
-      setLoadingAssignments(false);
-    }
-  };
+  }, [propUserSubmissions]);
 
   const handleSubmissionComplete = (submission: AssignmentSubmission) => {
     // Update the submissions map
@@ -166,12 +144,12 @@ export default function UnitSection({
                 {totalDuration}
               </span>
               {/* Assignment indicator */}
-              {assignments.length > 0 && (
+              {unit.assignments && unit.assignments.length > 0 && (
                 <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  {assignments.length} מטלות
+                  {unit.assignments.length} מטלות
                 </span>
               )}
             </div>
@@ -225,7 +203,7 @@ export default function UnitSection({
           </ol>
 
           {/* Assignments Section */}
-          {(assignments.length > 0 || loadingAssignments) && (
+          {((unit.assignments && unit.assignments.length > 0) || loadingAssignments) && (
             <div className="border-t border-slate-200 bg-slate-50 p-6">
               <div className="mb-4">
                 <h3 className="text-lg font-semibold text-slate-900 mb-2">
@@ -248,7 +226,7 @@ export default function UnitSection({
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {assignments.map((assignment) => (
+                  {unit.assignments && unit.assignments.map((assignment: any) => (
                     <AssignmentDisplay
                       key={assignment.id}
                       assignment={assignment}

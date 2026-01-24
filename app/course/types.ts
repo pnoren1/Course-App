@@ -36,7 +36,8 @@ export type Unit = {
   description?: string | null;
   order: number;
   lessons: Lesson[];
-  assignment?: Assignment; // Optional assignment for the unit;
+  assignment?: Assignment; // Optional assignment for the unit
+  assignments?: Assignment[]; // Optional assignments array for the unit
 };
 
 // Extended types for course with assignment data

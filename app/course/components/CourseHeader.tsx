@@ -1,28 +1,26 @@
 "use client";
 
-import { supabase } from "@/lib/supabase";
-import { useEffect, useState } from "react";
 import { UserInfo } from "@/app/components/UserRoleBadge";
-import { useUserRole } from "@/lib/hooks/useUserRole";
 import Link from "next/link";
 
 type Props = {
   onSignOut: () => void;
+  userRoleData: {
+    role: any;
+    userName: string | null;
+    userEmail: string | null;
+    organizationName: string | null;
+    organizationId: string | null;
+    userId: string | null;
+    isLoading: boolean;
+    error: string | null;
+  };
 };
 
-export default function CourseHeader({ onSignOut }: Props) {
-  const [userName, setUserName] = useState<string | null>(null);
-  const { role } = useUserRole();
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUserName(
-        data.user?.user_metadata?.full_name ??
-        data.user?.email ??
-        null
-      )
-    })
-  }, [])
+export default function CourseHeader({ onSignOut, userRoleData }: Props) {
+  // השתמש בנתונים מה-props במקום לקרוא מהדטאבייס
+  const { role, userName: roleUserName } = userRoleData;
+  const userName = roleUserName;
   
   return (
     <header className="mb-12">
@@ -56,13 +54,14 @@ export default function CourseHeader({ onSignOut }: Props) {
             <div className="flex flex-col items-end gap-3 pt-2">
               {/* User Info Section with integrated sign out - Using vertical layout to prevent line wrapping */}
               <UserInfo 
-                userName={userName || undefined} 
+                userName={userName || userRoleData.userName || undefined} 
                 showRole={true} 
                 showOrganization={true} 
                 size="sm" 
                 layout="vertical"
                 showSignOut={true}
                 onSignOut={onSignOut}
+                userRoleData={userRoleData}
               />
               
               {/* Admin Panel Link */}

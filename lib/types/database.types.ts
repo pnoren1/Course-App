@@ -424,6 +424,76 @@ export interface Database {
           }
         ];
       };
+      user_invitations: {
+        Row: {
+          id: string;
+          email: string;
+          user_name: string;
+          role: string;
+          organization_id: string | null;
+          invitation_token: string;
+          invited_by: string | null;
+          invited_at: string;
+          expires_at: string;
+          accepted_at: string | null;
+          accepted_by: string | null;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          email: string;
+          user_name: string;
+          role?: string;
+          organization_id?: string | null;
+          invitation_token: string;
+          invited_by?: string | null;
+          invited_at?: string;
+          expires_at?: string;
+          accepted_at?: string | null;
+          accepted_by?: string | null;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          email?: string;
+          user_name?: string;
+          role?: string;
+          organization_id?: string | null;
+          invitation_token?: string;
+          invited_by?: string | null;
+          invited_at?: string;
+          expires_at?: string;
+          accepted_at?: string | null;
+          accepted_by?: string | null;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_invitations_organization_id_fkey";
+            columns: ["organization_id"];
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "user_invitations_invited_by_fkey";
+            columns: ["invited_by"];
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "user_invitations_accepted_by_fkey";
+            columns: ["accepted_by"];
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -544,6 +614,73 @@ export interface Database {
           additional_context: any;
         }[];
       };
+      create_user_invitation: {
+        Args: {
+          p_email: string;
+          p_user_name: string;
+          p_role?: string;
+          p_organization_id?: string;
+        };
+        Returns: {
+          invitation_id: string;
+          invitation_token: string;
+          expires_at: string;
+        }[];
+      };
+      accept_user_invitation: {
+        Args: {
+          p_invitation_token: string;
+        };
+        Returns: {
+          success: boolean;
+          message: string;
+          user_profile_id: string;
+        }[];
+      };
+      get_pending_invitations: {
+        Args: {};
+        Returns: {
+          id: string;
+          email: string;
+          user_name: string;
+          role: string;
+          organization_id: string;
+          organization_name: string;
+          invited_by: string;
+          invited_by_name: string;
+          invited_at: string;
+          expires_at: string;
+          status: string;
+        }[];
+      };
+      cancel_user_invitation: {
+        Args: {
+          p_invitation_id: string;
+        };
+        Returns: boolean;
+      };
+      cleanup_expired_invitations: {
+        Args: {};
+        Returns: number;
+      };
+      get_invitation_by_token: {
+        Args: {
+          p_invitation_token: string;
+        };
+        Returns: {
+          id: string;
+          email: string;
+          user_name: string;
+          role: string;
+          organization_id: string;
+          organization_name: string;
+          invited_by: string;
+          invited_by_name: string;
+          invited_at: string;
+          expires_at: string;
+          status: string;
+        }[];
+      };
     };
     Enums: {
       [_ in never]: never;
@@ -571,8 +708,15 @@ export type AuditLog = Database['public']['Tables']['rls_audit_log']['Row'];
 export type AuditLogInsert = Database['public']['Tables']['rls_audit_log']['Insert'];
 export type AuditLogUpdate = Database['public']['Tables']['rls_audit_log']['Update'];
 
+export type UserInvitation = Database['public']['Tables']['user_invitations']['Row'];
+export type UserInvitationInsert = Database['public']['Tables']['user_invitations']['Insert'];
+export type UserInvitationUpdate = Database['public']['Tables']['user_invitations']['Update'];
+
 // Role types for type safety
 export type RoleType = 'student' | 'admin' | 'instructor' | 'moderator';
+
+// Invitation status types for type safety
+export type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'cancelled';
 
 // Audit operation types for type safety
 export type AuditOperation = 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE';
@@ -597,6 +741,16 @@ export interface WelcomePopupProps {
   userName?: string;
   courseId: string;
   onAcknowledged: () => void;
+  userRoleData?: {
+    role: any;
+    userName: string | null;
+    userEmail: string | null;
+    organizationName: string | null;
+    organizationId: string | null;
+    userId: string | null;
+    isLoading: boolean;
+    error: string | null;
+  };
 }
 
 export interface WelcomePopupState {

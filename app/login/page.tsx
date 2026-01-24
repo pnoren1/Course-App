@@ -17,9 +17,27 @@ function LoginContent() {
       try {
         const { data } = await supabase.auth.getSession();
         if (data.session) {
-          // User is already authenticated, redirect to course
-          router.push('/course');
-          return;
+          // בדיקה נוספת שהמשתמש קיים במסד הנתונים
+          try {
+            const { data: profile } = await supabase
+              .from('user_profile')
+              .select('user_id')
+              .eq('user_id', data.session.user.id)
+              .single();
+            
+            if (profile) {
+              // המשתמש קיים במסד הנתונים, אפשר להפנות לקורס
+              router.push('/course');
+            } else {
+              // המשתמש לא קיים במסד הנתונים, נתנתק אותו
+              console.log('User session exists but user not found in database, signing out');
+              await supabase.auth.signOut();
+            }
+          } catch (profileError) {
+            console.error('Error checking user profile:', profileError);
+            // במקרה של שגיאה, נתנתק את המשתמש
+            await supabase.auth.signOut();
+          }
         }
       } catch (error) {
         console.error('Error checking auth status:', error);
@@ -33,6 +51,7 @@ function LoginContent() {
   useEffect(() => {
     const errorParam = searchParams.get('error');
     const fromParam = searchParams.get('from');
+    const messageParam = searchParams.get('message');
     
     if (errorParam === 'unauthorized') {
       if (fromParam === 'google_auth') {
@@ -40,6 +59,10 @@ function LoginContent() {
       } else if (fromParam === 'course') {
         // setError('נראה שהחשבון שלך לא מורשה לגשת למערכת. אנא פנה למנהל המערכת או נסה להתחבר עם חשבון אחר.');
       }
+    } else if (errorParam === 'user_deleted' && messageParam) {
+      setError(decodeURIComponent(messageParam));
+    } else if (errorParam === 'session_error') {
+      setError('אירעה שגיאה בהתחברות. אנא נסה שוב.');
     }
   }, [searchParams]);
 

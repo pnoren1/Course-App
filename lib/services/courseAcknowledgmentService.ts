@@ -23,14 +23,12 @@ export class CourseAcknowledgmentService {
     }
   }
 
-  async saveAcknowledgment(userId: string, courseId: string, userName?: string): Promise<void> {
+  async saveAcknowledgment(userId: string, courseId: string, userName: string): Promise<void> {
     try {
-      const finalUserName = userName || await this.getUserName(userId);
-      
       const acknowledgmentData: CourseAcknowledgmentInsert = {
         user_id: userId,
         course_id: courseId,
-        user_name: finalUserName
+        user_name: userName
       };
 
       const { error } = await rlsSupabase
@@ -44,25 +42,6 @@ export class CourseAcknowledgmentService {
     } catch (error) {
       console.error('Error in saveAcknowledgment:', error);
       throw error;
-    }
-  }
-
-  private async getUserName(userId: string): Promise<string> {
-    try {
-      const { data: { user }, error } = await rlsSupabase.auth.getUser();
-      
-      if (error || !user) {
-        console.error('Error getting user:', error);
-        return 'משתמש לא ידוע';
-      }
-
-      return user.user_metadata?.display_name || 
-             user.user_metadata?.full_name || 
-             user.email || 
-             'משתמש לא ידוע';
-    } catch (error) {
-      console.error('Error in getUserName:', error);
-      return 'משתמש לא ידוע';
     }
   }
 }

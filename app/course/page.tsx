@@ -11,9 +11,11 @@ import WelcomePopup from "./components/WelcomePopup";
 import CourseHeader from "./components/CourseHeader";
 import UnitSection from "./components/UnitSection";
 import type { Lesson, Unit } from "./types";
+import { useUserRole } from "@/lib/hooks/useUserRole";
 
-function CourseContent() {
+function CourseContent({ userRoleData }: { userRoleData: any }) {
   const router = useRouter();
+  // הסרנו את הקריאה ל-useUserRole כי אנחנו מקבלים את הנתונים כ-props
   const [openUnit, setOpenUnit] = useState<number | string | null>(null);
   const [openLesson, setOpenLesson] = useState<number | null>(null);
   const [units, setUnits] = useState<Unit[]>([]);
@@ -22,38 +24,58 @@ function CourseContent() {
   const [user, setUser] = useState<any>(null);
   const [acknowledgmentLoading, setAcknowledgmentLoading] = useState(true);
   const [hasAcknowledged, setHasAcknowledged] = useState(false);
+  const [userSubmissions, setUserSubmissions] = useState<Map<number, any>>(new Map());
 
-  // Get current user
+  // Get user from userRoleData instead of separate API call
   useEffect(() => {
-    const getUser = async () => {
-      try {
-        const { user, error } = await rlsSupabase.getCurrentUser();
-        
-        if (error) {
-          console.error('Error getting user:', error);
-          
-          // Handle authentication errors
-          if ((error as any)?.message?.includes('JWT') || (error as any)?.code === 'invalid_token') {
-            router.push('/login?error=session_expired');
-            return;
-          }
+    if (userRoleData && !userRoleData.isLoading && !userRoleData.error && userRoleData.userId) {
+      // Create a user object from userRoleData
+      const userFromRoleData = {
+        id: userRoleData.userId,
+        email: userRoleData.userEmail,
+        user_metadata: {
+          full_name: userRoleData.userName,
+          display_name: userRoleData.userName
         }
+      };
+      setUser(userFromRoleData);
+    } else if (userRoleData && userRoleData.error) {
+      console.error('Error from userRoleData:', userRoleData.error);
+      if (userRoleData.error.includes('User from sub claim in JWT does not exist')) {
+        // המשתמש נמחק - AuthGuard יטפל בהפניה
+        console.log('User deleted error in course page, AuthGuard will handle redirect');
+        return;
+      } else if (userRoleData.error.includes('Authentication') || userRoleData.error.includes('התחבר')) {
+        router.push('/login?error=session_expired');
+      }
+    } else if (userRoleData && !userRoleData.isLoading && !userRoleData.userId) {
+      // אין משתמש - AuthGuard יטפל בהפניה
+      console.log('No user found, AuthGuard will handle redirect');
+    }
+  }, [userRoleData, router]);
+
+  // Load user submissions when user is available
+  useEffect(() => {
+    const loadUserSubmissions = async () => {
+      if (!user?.id) return;
+      
+      try {
+        const { assignmentService } = await import('../../lib/services/assignmentService');
+        const submissions = await assignmentService.getSubmissionsByUser(user.id);
+        const submissionMap = new Map<number, any>();
         
-        setUser(user);
-      } catch (error: any) {
-        console.error('Unexpected error getting user:', error);
-        const errorInfo = supabaseUtils.getErrorMessage(error, {
-          component: 'course-page',
-          operation: 'getCurrentUser'
+        submissions.forEach((submission: any) => {
+          submissionMap.set(submission.assignment_id, submission);
         });
         
-        if (errorInfo.message.includes('Authentication') || errorInfo.message.includes('התחבר')) {
-          router.push('/login?error=session_expired');
-        }
+        setUserSubmissions(submissionMap);
+      } catch (error) {
+        console.error('Failed to load user submissions:', error);
       }
     };
-    getUser();
-  }, [router]);
+
+    loadUserSubmissions();
+  }, [user?.id]);
 
   // Check acknowledgment status when user is available
   useEffect(() => {
@@ -90,6 +112,9 @@ function CourseContent() {
             // Fetch assignments
             const { data: assignments, error: assignmentsError } = await rlsSupabase.select('assignments', '*');
             
+            console.log('Assignments from DB:', assignments);
+            console.log('Assignments error:', assignmentsError);
+            
             // Build the response structure to match the original JSON format
             const formattedUnits = units.map((unit: any) => {
               // Find lessons for this unit
@@ -114,13 +139,15 @@ function CourseContent() {
                 ? assignments.filter((assignment: any) => assignment.unit_id === unit.id)
                 : [];
 
+              console.log(`Unit ${unit.id} assignments:`, unitAssignments);
+
               return {
                 id: unit.id,
                 title: unit.title,
                 description: unit.description || '',
                 order: unit.order,
                 lessons: unitLessons,
-                assignments: unitAssignments
+                assignments: unitAssignments as any[]
               };
             }).sort((a, b) => a.order - b.order);
 
@@ -202,11 +229,15 @@ function CourseContent() {
           }
           courseId="aws-course" // Using static course ID for now
           onAcknowledged={handleWelcomeAcknowledged}
+          userRoleData={userRoleData}
         />
       )}
       
       <main className="max-w-4xl mx-auto px-4 py-8 pb-16">
-        <CourseHeader onSignOut={handleSignOut} />
+        <CourseHeader 
+          onSignOut={handleSignOut} 
+          userRoleData={userRoleData}
+        />
 
         {/* Show loading state during acknowledgment check - Requirement 3.3 */}
         {acknowledgmentLoading && (
@@ -288,6 +319,7 @@ function CourseContent() {
                       setOpenLesson={(next) => setOpenLesson(next)}
                       setOpenUnit={(id) => setOpenUnit(id)}
                       userId={user?.id}
+                      userSubmissions={userSubmissions}
                     />
                   );
                 })}
@@ -313,9 +345,17 @@ export default function CoursePage() {
         </div>
       </div>
     }>
-      <AuthGuard>
-        <CourseContent />
-      </AuthGuard>
+      <CoursePageWithAuth />
     </Suspense>
+  );
+}
+
+function CoursePageWithAuth() {
+  const userRoleData = useUserRole(); // קריאה אחת לכל העמוד
+  
+  return (
+    <AuthGuard userRoleData={userRoleData}>
+      <CourseContent userRoleData={userRoleData} />
+    </AuthGuard>
   );
 }

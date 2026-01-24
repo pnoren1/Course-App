@@ -5,12 +5,37 @@ import { rlsSupabase, supabaseUtils } from "@/lib/supabase";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import UserRoleBadge from "./UserRoleBadge";
 
-export default function AuthGuard({ children }: { children: React.ReactNode }) {
+export default function AuthGuard({ 
+  children, 
+  userRoleData 
+}: { 
+  children: React.ReactNode;
+  userRoleData?: {
+    role: any;
+    userName: string | null;
+    userEmail: string | null;
+    organizationName: string | null;
+    organizationId: string | null;
+    userId: string | null;
+    isLoading: boolean;
+    error: string | null;
+  };
+}) {
   const [loading, setLoading] = useState(true);
   const [showRoleInfo, setShowRoleInfo] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  // בדיקה אם יש שגיאה של משתמש שלא קיים
+  useEffect(() => {
+    if (userRoleData?.error?.includes('User from sub claim in JWT does not exist')) {
+      // המשתמש נמחק מהמסד נתונים, נפנה לדף הלוגין
+      console.log('User deleted error detected, redirecting to login');
+      router.replace('/login?error=user_deleted&message=' + encodeURIComponent('המשתמש נמחק מהמערכת. אנא התחבר מחדש.'));
+      return;
+    }
+  }, [userRoleData?.error, router]);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -65,9 +90,34 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     };
 
     checkSession();
+
+    // הוספת מאזין לשינויי auth state
+    const { data: { subscription } } = rlsSupabase.raw.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event, session?.user?.id);
+      
+      if (event === 'SIGNED_OUT' && pathname !== '/login') {
+        console.log('User signed out, redirecting to login');
+        // שימוש ב-replace כדי למנוע חזרה לדף הקורס
+        router.replace('/login?error=user_deleted&message=' + encodeURIComponent('המשתמש נמחק מהמערכת. אנא התחבר מחדש.'));
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [pathname, router, searchParams]);
 
   if (loading && pathname !== "/login") return null;
+  
+  // אם יש שגיאה של משתמש שלא קיים, לא נציג את התוכן
+  if (userRoleData?.error?.includes('User from sub claim in JWT does not exist')) {
+    return null;
+  }
+  
+  // אם המשתמש לא טוען ואין לו userId, זה אומר שהוא לא מחובר
+  if (!userRoleData?.isLoading && !userRoleData?.userId && pathname !== "/login") {
+    return null;
+  }
   
   return (
     <>
@@ -77,7 +127,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-3">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
             <span className="text-sm text-slate-600">התחברת בהצלחה כ:</span>
-            <UserRoleBadge size="sm" />
+            <UserRoleBadge size="sm" userRoleData={userRoleData} />
           </div>
         </div>
       )}

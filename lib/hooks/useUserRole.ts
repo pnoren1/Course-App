@@ -8,6 +8,7 @@ interface UserRoleData {
   userEmail: string | null;
   organizationName: string | null;
   organizationId: string | null;
+  userId: string | null; // הוספת user ID
   isLoading: boolean;
   error: string | null;
 }
@@ -19,17 +20,28 @@ export function useUserRole(): UserRoleData {
     userEmail: null,
     organizationName: null,
     organizationId: null,
+    userId: null,
     isLoading: true,
     error: null
   });
+  const [hasSignedOut, setHasSignedOut] = useState(false); // flag למניעת לופ
 
   useEffect(() => {
+    let isMounted = true; // למנוע race conditions
+    
     const fetchUserRole = async () => {
+      // אם כבר התנתקנו, לא נבצע שוב את הפעולה
+      if (hasSignedOut) {
+        return;
+      }
+      
       try {
         setRoleData(prev => ({ ...prev, isLoading: true, error: null }));
 
         // בדיקה אם המשתמש מחובר
         const { user, error: userError } = await rlsSupabase.getCurrentUser();
+        
+        if (!isMounted) return; // אם הקומפוננט לא mounted, לא נעדכן state
         
         if (userError || !user) {
           setRoleData({
@@ -38,6 +50,7 @@ export function useUserRole(): UserRoleData {
             userEmail: null,
             organizationName: null,
             organizationId: null,
+            userId: null,
             isLoading: false,
             error: (userError as any)?.message || 'משתמש לא מחובר'
           });
@@ -50,45 +63,43 @@ export function useUserRole(): UserRoleData {
         if (userProfileResult.error) {
           console.error('Error fetching user profile:', userProfileResult.error);
           
-          // אם אין פרופיל, ננסה ליצור אחד
-          // const { error: insertError } = await rlsSupabase.insert('user_profile', {
-          //   user_id: user.id,
-          //   role: 'student',
-          //   user_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email,
-          //   email: user.email
-          // });
-
-          // if (insertError) {
-          //   console.error('Error creating profile:', insertError);
-          //   setRoleData({
-          //     role: 'student', // ברירת מחדל
-          //     userName: user.user_metadata?.full_name || user.user_metadata?.name || user.email || null,
-          //     userEmail: user.email || null,
-          //     organizationName: null,
-          //     organizationId: null,
-          //     isLoading: false,
-          //     error: null
-          //   });
-          //   return;
-          // }
-
-          // // אחרי יצירת הפרופיל, נסה שוב לשלוף
-          // const { data: newProfile } = await rlsSupabase.select(
-          //   'user_profile',
-          //   '*',
-          //   { user_id: user.id }
-          // );
-
-          // const profile = newProfile && newProfile.length > 0 ? newProfile[0] : null;
-          // setRoleData({
-          //   role: profile?.role as RoleType || 'student',
-          //   userName: profile?.user_name || user.user_metadata?.full_name || user.email || null,
-          //   userEmail: profile?.email || user.email || null,
-          //   organizationName: null, // נטפל בזה אחר כך
-          //   organizationId: profile?.organization_id || null,
-          //   isLoading: false,
-          //   error: null
-          // });
+          // בדיקה אם השגיאה מעידה על כך שהמשתמש לא קיים במסד הנתונים
+          const errorMessage = userProfileResult.error?.message || '';
+          if (errorMessage.includes('JWT') || errorMessage.includes('sub claim') || errorMessage.includes('does not exist')) {
+            console.error('User from sub claim in JWT does not exist - המשתמש נמחק מהמסד נתונים');
+            console.log('Signing out user and redirecting to login page');
+            
+            // סימון שהתנתקנו כדי למנוע לופ
+            setHasSignedOut(true);
+            
+            // המשתמש נמחק מהמסד נתונים אבל ה-JWT עדיין תקף
+            // נתנתק אותו ונפנה אותו לדף הלוגין
+            try {
+              await rlsSupabase.auth.signOut();
+              // ניקוי נוסף של session מקומי
+              if (typeof window !== 'undefined') {
+                localStorage.removeItem('supabase.auth.token');
+                sessionStorage.clear();
+              }
+            } catch (signOutError) {
+              console.error('Error signing out:', signOutError);
+            }
+            
+            setRoleData({
+              role: null,
+              userName: null,
+              userEmail: null,
+              organizationName: null,
+              organizationId: null,
+              userId: null,
+              isLoading: false,
+              error: 'User from sub claim in JWT does not exist'
+            });
+            
+            // לא נעשה redirect כאן - נתן ל-AuthGuard לטפל בזה
+            return;
+          }
+          
           return;
         }
 
@@ -132,24 +143,30 @@ export function useUserRole(): UserRoleData {
           organizationName = org && org.length > 0 ? org[0].name : null;
         }
 
+        if (!isMounted) return; // בדיקה נוספת לפני עדכון state
+
         setRoleData({
           role: profile?.role as RoleType || null,
           userName: profile?.user_name || user.user_metadata?.full_name || user.email || null,
           userEmail: profile?.email || user.email || null,
           organizationName,
           organizationId: profile?.organization_id || null,
+          userId: user.id,
           isLoading: false,
           error: null
         });
 
       } catch (error) {
         console.error('Error in useUserRole:', error);
+        if (!isMounted) return;
+        
         setRoleData({
           role: null,
           userName: null,
           userEmail: null,
           organizationName: null,
           organizationId: null,
+          userId: null,
           isLoading: false,
           error: 'שגיאה לא צפויה'
         });
@@ -157,6 +174,10 @@ export function useUserRole(): UserRoleData {
     };
 
     fetchUserRole();
+    
+    return () => {
+      isMounted = false; // cleanup
+    };
   }, []);
 
   return roleData;
