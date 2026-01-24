@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { courseAcknowledgmentService } from '../../../lib/services/courseAcknowledgmentService';
 import { WelcomePopupProps, WelcomePopupState, AcknowledgmentData } from '../../../lib/types/database.types';
 import AcknowledgmentForm from './AcknowledgmentForm';
+import UserRoleBadge from '../../components/UserRoleBadge';
 
 export default function WelcomePopup({ userId, userName, courseId, onAcknowledged }: WelcomePopupProps) {
   const [state, setState] = useState<WelcomePopupState>({
@@ -169,12 +170,15 @@ export default function WelcomePopup({ userId, userName, courseId, onAcknowledge
         <div className="px-4 sm:px-6 pb-4 sm:pb-6">
           {/* Minimal Header */}
           <div className="text-center mb-4 sm:mb-5">
-            <h1 
-              id="welcome-popup-title"
-              className="text-lg sm:text-xl font-bold text-gray-900 mb-2"
-            >
-              {userName ? `שלום ${userName}!` : 'ברוכות הבאות לקורס'}
-            </h1>
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <h1 
+                id="welcome-popup-title"
+                className="text-lg sm:text-xl font-bold text-gray-900"
+              >
+                {userName ? `שלום ${userName}!` : 'ברוכות הבאות לקורס'}
+              </h1>
+              <UserRoleBadge size="sm" />
+            </div>
             <p 
               id="welcome-popup-description"
               className="text-sm text-gray-600"

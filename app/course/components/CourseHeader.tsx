@@ -1,14 +1,18 @@
 "use client";
 
 import { supabase } from "@/lib/supabase";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { UserInfo } from "@/app/components/UserRoleBadge";
+import { useUserRole } from "@/lib/hooks/useUserRole";
+import Link from "next/link";
 
 type Props = {
   onSignOut: () => void;
 };
 
 export default function CourseHeader({ onSignOut }: Props) {
-  const [userName, setUserName] = useState<string | null>(null)
+  const [userName, setUserName] = useState<string | null>(null);
+  const { role } = useUserRole();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -49,24 +53,30 @@ export default function CourseHeader({ onSignOut }: Props) {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 pt-2">
-              {userName && (
-                <div className="inline-flex items-center gap-2 px-4 py-2 text-slate-600">
-                  <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            <div className="flex flex-col items-end gap-3 pt-2">
+              {/* User Info Section with integrated sign out - Using vertical layout to prevent line wrapping */}
+              <UserInfo 
+                userName={userName || undefined} 
+                showRole={true} 
+                showOrganization={true} 
+                size="sm" 
+                layout="vertical"
+                showSignOut={true}
+                onSignOut={onSignOut}
+              />
+              
+              {/* Admin Panel Link */}
+              {role === 'admin' && (
+                <Link
+                  href="/admin"
+                  className="inline-flex items-center gap-2 px-3 py-2 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 hover:text-red-900 rounded-xl font-medium text-sm transition-all duration-200"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
-                  <span className="text-sm text-slate-700 font-medium">שלום, {userName}</span>
-                </div>
+                  <span>ניהול</span>
+                </Link>
               )}
-              <button
-                onClick={onSignOut}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 hover:text-slate-900 rounded-xl font-medium text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-offset-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                <span>יציאה</span>
-              </button>
             </div>
           </div>
         </div>

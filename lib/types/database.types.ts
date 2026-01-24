@@ -265,11 +265,60 @@ export interface Database {
           }
         ];
       };
-      user_roles: {
+      organizations: {
+        Row: {
+          id: string;
+          name: string;
+          description: string | null;
+          contact_email: string | null;
+          contact_phone: string | null;
+          address: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+          created_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          description?: string | null;
+          contact_email?: string | null;
+          contact_phone?: string | null;
+          address?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          created_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string | null;
+          contact_email?: string | null;
+          contact_phone?: string | null;
+          address?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          created_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "organizations_created_by_fkey";
+            columns: ["created_by"];
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      user_profile: {
         Row: {
           id: string;
           user_id: string;
+          user_name: string | null;
+          email: string | null;
           role: string;
+          organization_id: string | null;
           granted_at: string;
           granted_by: string | null;
           created_at: string;
@@ -278,7 +327,10 @@ export interface Database {
         Insert: {
           id?: string;
           user_id: string;
+          user_name?: string | null;
+          email?: string | null;
           role?: string;
+          organization_id?: string | null;
           granted_at?: string;
           granted_by?: string | null;
           created_at?: string;
@@ -287,7 +339,10 @@ export interface Database {
         Update: {
           id?: string;
           user_id?: string;
+          user_name?: string | null;
+          email?: string | null;
           role?: string;
+          organization_id?: string | null;
           granted_at?: string;
           granted_by?: string | null;
           created_at?: string;
@@ -295,15 +350,21 @@ export interface Database {
         };
         Relationships: [
           {
-            foreignKeyName: "user_roles_user_id_fkey";
+            foreignKeyName: "user_profile_user_id_fkey";
             columns: ["user_id"];
             referencedRelation: "users";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_roles_granted_by_fkey";
+            foreignKeyName: "user_profile_granted_by_fkey";
             columns: ["granted_by"];
             referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "user_profile_organization_id_fkey";
+            columns: ["organization_id"];
+            referencedRelation: "organizations";
             referencedColumns: ["id"];
           }
         ];
@@ -382,6 +443,75 @@ export interface Database {
         Args: {};
         Returns: string[];
       };
+      get_user_roles_with_org: {
+        Args: {};
+        Returns: {
+          role: string;
+          user_name: string;
+          user_email: string;
+          organization_name: string;
+          organization_id: string;
+        }[];
+      };
+      search_user_profiles: {
+        Args: {
+          search_term: string;
+        };
+        Returns: {
+          user_id: string;
+          user_name: string;
+          user_email: string;
+          role: string;
+          organization_id: string;
+          organization_name: string;
+        }[];
+      };
+      get_user_profile_by_email: {
+        Args: {
+          email_address: string;
+        };
+        Returns: {
+          user_id: string;
+          user_name: string;
+          user_email: string;
+          role: string;
+          organization_id: string;
+          organization_name: string;
+          granted_at: string;
+        }[];
+      };
+      assign_user_role_with_org: {
+        Args: {
+          target_user_id: string;
+          new_role: string;
+          org_id?: string;
+        };
+        Returns: boolean;
+      };
+      create_organization: {
+        Args: {
+          org_name: string;
+          org_description?: string;
+          org_contact_email?: string;
+          org_contact_phone?: string;
+          org_address?: string;
+        };
+        Returns: string;
+      };
+      get_all_organizations: {
+        Args: {};
+        Returns: {
+          id: string;
+          name: string;
+          description: string;
+          contact_email: string;
+          contact_phone: string;
+          address: string;
+          is_active: boolean;
+          created_at: string;
+          user_count: number;
+        }[];
+      };
       log_audit_event: {
         Args: {
           p_table_name: string;
@@ -429,9 +559,13 @@ export type CourseAcknowledgment = Database['public']['Tables']['course_acknowle
 export type CourseAcknowledgmentInsert = Database['public']['Tables']['course_acknowledgments']['Insert'];
 export type CourseAcknowledgmentUpdate = Database['public']['Tables']['course_acknowledgments']['Update'];
 
-export type UserRole = Database['public']['Tables']['user_roles']['Row'];
-export type UserRoleInsert = Database['public']['Tables']['user_roles']['Insert'];
-export type UserRoleUpdate = Database['public']['Tables']['user_roles']['Update'];
+export type Organization = Database['public']['Tables']['organizations']['Row'];
+export type OrganizationInsert = Database['public']['Tables']['organizations']['Insert'];
+export type OrganizationUpdate = Database['public']['Tables']['organizations']['Update'];
+
+export type UserProfile = Database['public']['Tables']['user_profile']['Row'];
+export type UserProfileInsert = Database['public']['Tables']['user_profile']['Insert'];
+export type UserProfileUpdate = Database['public']['Tables']['user_profile']['Update'];
 
 export type AuditLog = Database['public']['Tables']['rls_audit_log']['Row'];
 export type AuditLogInsert = Database['public']['Tables']['rls_audit_log']['Insert'];
