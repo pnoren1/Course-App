@@ -2,6 +2,11 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Features
 
+### Authentication System
+- **Google OAuth**: Sign in with Google account
+- **Username/Password**: Sign in with email and password (for users created by admins)
+- **Dual Login Interface**: Users can choose their preferred authentication method
+
 ### User Management System
 - **Admin Panel**: Complete user management interface at `/admin`
 - **User Invitations**: Admins can invite new users via email
@@ -16,7 +21,7 @@ There are now two ways to add users to the system:
 1. Admin creates user with email, name, password, role, and optional organization
 2. User is immediately created in `auth.users` table with confirmed email
 3. User profile is automatically created in `user_profile` table
-4. User can login immediately with the provided credentials
+4. **User can login immediately with email and password** using the new username/password login option
 
 #### Option 2: Invitation Flow
 1. Admin creates invitation with email, name, role, and optional organization
@@ -118,6 +123,10 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key  # Optional - required only for 
 - Without the Service Role Key, only the invitation flow will be available
 - The system will automatically disable direct user creation if the key is missing
 - The Service Role Key should never be exposed to the client-side code
+
+## Authentication Guide
+
+For detailed information about the new username/password authentication system, see [USERNAME_PASSWORD_AUTH_GUIDE.md](./USERNAME_PASSWORD_AUTH_GUIDE.md).
 
 ## Security Notes
 

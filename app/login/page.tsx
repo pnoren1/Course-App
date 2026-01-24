@@ -4,12 +4,13 @@ import { supabase } from "@/lib/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
 import GoogleSignIn from "./components/GoogleSignIn";
+import UsernamePasswordSignIn from "./components/UsernamePasswordSignIn";
 
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loginMethod, setLoginMethod] = useState<'google' | 'password'>('password');
 
   // Check if user is already authenticated
   useEffect(() => {
@@ -82,7 +83,36 @@ function LoginContent() {
 
         {/* Login Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
-          <GoogleSignIn onError={(msg) => setError(msg)} />
+          {/* Login Method Tabs */}
+          <div className="flex rounded-lg bg-slate-50 p-1 mb-6">
+            <button
+              onClick={() => setLoginMethod('password')}
+              className={`flex-1 py-3 px-8 text-sm font-medium rounded-md transition-all duration-200 whitespace-nowrap ${
+                loginMethod === 'password'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              שם משתמש + סיסמה
+            </button>
+            <button
+              onClick={() => setLoginMethod('google')}
+              className={`flex-1 py-3 px-8 text-sm font-medium rounded-md transition-all duration-200 whitespace-nowrap ${
+                loginMethod === 'google'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Google
+            </button>
+          </div>
+
+          {/* Login Forms */}
+          {loginMethod === 'password' ? (
+            <UsernamePasswordSignIn onError={(msg) => setError(msg)} />
+          ) : (
+            <GoogleSignIn onError={(msg) => setError(msg)} />
+          )}
 
           {error && (
             <div role="alert" className="mt-6 rounded-xl bg-red-50 border border-red-100 p-4">
