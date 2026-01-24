@@ -11,6 +11,24 @@ function LoginContent() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Check if user is already authenticated
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+          // User is already authenticated, redirect to course
+          router.push('/course');
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking auth status:', error);
+      }
+    };
+    
+    checkAuth();
+  }, [router]);
+
   // בדיקה אם המשתמש הגיע עם שגיאת הרשאה
   useEffect(() => {
     const errorParam = searchParams.get('error');

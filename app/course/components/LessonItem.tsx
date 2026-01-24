@@ -6,12 +6,13 @@ import LessonPanel from "./LessonPanel";
 
 type Props = {
   lesson: Lesson;
-  unitId: number;
+  unitId: number | string;
   isOpen: boolean;
   isLocked: boolean;
   duration: string;
   onToggleLesson: (next: number | null) => void;
-  onSetOpenUnit: (id: number) => void;
+  onSetOpenUnit: (id: number | string) => void;
+  userId?: string;
 };
 
 export default function LessonItem({
@@ -22,6 +23,7 @@ export default function LessonItem({
   duration,
   onToggleLesson,
   onSetOpenUnit,
+  userId,
 }: Props) {
   const handleClick = () => {
     if (isLocked) return;
@@ -39,7 +41,7 @@ export default function LessonItem({
   return (
     <li key={lesson.id} className={`p-6 transition-all duration-200 ${
       isOpen ? "bg-white" : "hover:bg-white/60"
-    } ${lesson.is_lab ? "border-l-4 border-l-orange-300" : ""}`}>
+    }`}>
       <div className="flex items-center justify-between gap-4">
         <div
           className="flex items-center gap-4 min-w-0 cursor-pointer flex-1"
@@ -141,7 +143,7 @@ export default function LessonItem({
 
       {isOpen && (
         <div id={`lesson-panel-${lesson.id}`}>
-          <LessonPanel lesson={lesson} isOpen={isOpen} />
+          <LessonPanel lesson={lesson} isOpen={isOpen} userId={userId} />
         </div>
       )}
     </li>

@@ -1,8 +1,8 @@
 "use client";
 
 import AuthGuard from "../components/AuthGuardClient";
-import { supabase } from "@/lib/supabase";
-import { courseAcknowledgmentService } from "@/lib/courseAcknowledgmentService";
+import { rlsSupabase, supabaseUtils } from "@/lib/supabase";
+import { courseAcknowledgmentService } from "../../lib/courseAcknowledgmentService";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import WelcomePopup from "./components/WelcomePopup";
@@ -14,7 +14,7 @@ import type { Lesson, Unit } from "./types";
 
 function CourseContent() {
   const router = useRouter();
-  const [openUnit, setOpenUnit] = useState<number | null>(null);
+  const [openUnit, setOpenUnit] = useState<number | string | null>(null);
   const [openLesson, setOpenLesson] = useState<number | null>(null);
   const [units, setUnits] = useState<Unit[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -26,11 +26,34 @@ function CourseContent() {
   // Get current user
   useEffect(() => {
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
+      try {
+        const { user, error } = await rlsSupabase.getCurrentUser();
+        
+        if (error) {
+          console.error('Error getting user:', error);
+          
+          // Handle authentication errors
+          if ((error as any)?.message?.includes('JWT') || (error as any)?.code === 'invalid_token') {
+            router.push('/login?error=session_expired');
+            return;
+          }
+        }
+        
+        setUser(user);
+      } catch (error: any) {
+        console.error('Unexpected error getting user:', error);
+        const errorInfo = supabaseUtils.getErrorMessage(error, {
+          component: 'course-page',
+          operation: 'getCurrentUser'
+        });
+        
+        if (errorInfo.message.includes('Authentication') || errorInfo.message.includes('התחבר')) {
+          router.push('/login?error=session_expired');
+        }
+      }
     };
     getUser();
-  }, []);
+  }, [router]);
 
   // Check acknowledgment status when user is available
   useEffect(() => {
@@ -56,45 +79,107 @@ function CourseContent() {
   useEffect(() => {
     const fetchUnits = async () => {
       try {
-        const { data, error } = await supabase
-          .from('units')
-          .select(`
-            id,
-            title,
-            order,
-            description,
-            lessons (
-              id,
-              title,
-              order,
-              duration,
-              locked,
-              embedUrl,
-              notes,
-              description,
-              is_lab
-            )
-          `)
-          .order('order', { ascending: true })
-          .order('order', { foreignTable: 'lessons', ascending: true });
+        // Try to fetch directly from database first
+        const { data: units, error: unitsError } = await rlsSupabase.select('units', '*');
+        
+        if (!unitsError && units && units.length > 0) {
+          // Fetch lessons
+          const { data: lessons, error: lessonsError } = await rlsSupabase.select('lessons', '*');
+          
+          if (!lessonsError && lessons) {
+            // Fetch assignments
+            const { data: assignments, error: assignmentsError } = await rlsSupabase.select('assignments', '*');
+            
+            // Build the response structure to match the original JSON format
+            const formattedUnits = units.map((unit: any) => {
+              // Find lessons for this unit
+              const unitLessons = (lessons || [])
+                .filter((lesson: any) => lesson.unit_id === unit.id)
+                .map((lesson: any) => ({
+                  id: lesson.id,
+                  title: lesson.title,
+                  slug: `lesson-${lesson.id}`,
+                  embedUrl: lesson.embedUrl || lesson.embed_url || '',
+                  duration: lesson.duration || '0:00',
+                  durationSeconds: parseDuration(lesson.duration || '0:00'),
+                  locked: lesson.locked || false,
+                  order: lesson.order,
+                  description: lesson.description || '',
+                  resources: []
+                }))
+                .sort((a, b) => a.order - b.order);
 
-        if (error) throw error;
+              // Find assignments for this unit
+              const unitAssignments = assignments 
+                ? assignments.filter((assignment: any) => assignment.unit_id === unit.id)
+                : [];
 
-        setUnits(data ?? []);
+              return {
+                id: unit.id,
+                title: unit.title,
+                description: unit.description || '',
+                order: unit.order,
+                lessons: unitLessons,
+                assignments: unitAssignments
+              };
+            }).sort((a, b) => a.order - b.order);
+
+            setUnits(formattedUnits);
+            setLoading(false);
+            return;
+          }
+        }
+        
+        // Fallback to API if direct DB access fails
+        const response = await fetch('/api/course/lessons');
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('API Error:', errorData);
+          throw new Error(`Failed to fetch course data: ${errorData.error || response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!data.units || !Array.isArray(data.units)) {
+          console.error('Invalid data format:', data);
+          throw new Error('Invalid course data format');
+        }
+        
+        setUnits(data.units);
       } catch (err: any) {
+        console.error('Error fetching course data:', err);
         setError(err.message ?? 'Failed to load course');
       } finally {
         setLoading(false);
       }
     };
 
+    // Helper function to parse duration string to seconds
+    const parseDuration = (duration: string): number => {
+      if (!duration) return 0;
+      const parts = duration.split(':');
+      if (parts.length === 2) {
+        const minutes = parseInt(parts[0], 10) || 0;
+        const seconds = parseInt(parts[1], 10) || 0;
+        return minutes * 60 + seconds;
+      }
+      return 0;
+    };
+
     fetchUnits();
   }, []);
   
 
-  const handleSignOut = () => {
-    supabase.auth.signOut();
-    router.push("/");
+  const handleSignOut = async () => {
+    try {
+      await rlsSupabase.raw.auth.signOut();
+      router.push("/");
+    } catch (error) {
+      console.error('Error signing out:', error);
+      // Force navigation even if sign out fails
+      router.push("/");
+    }
   };
 
   const handleWelcomeAcknowledged = () => {
@@ -202,6 +287,7 @@ function CourseContent() {
                       openLesson={openLesson}
                       setOpenLesson={(next) => setOpenLesson(next)}
                       setOpenUnit={(id) => setOpenUnit(id)}
+                      userId={user?.id}
                     />
                   );
                 })}

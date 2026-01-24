@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import type { Lesson, LessonFile } from "../types";
 import { supabase } from "@/lib/supabase";
 import AudioHelpLink from "./AudioHelpLink";
@@ -8,17 +8,18 @@ import AudioHelpLink from "./AudioHelpLink";
 type Props = {
   lesson: Lesson;
   isOpen: boolean;
+  userId?: string;
 };
 
-export default function LessonPanel({ lesson, isOpen }: Props) {
+export default function LessonPanel({ lesson, isOpen, userId }: Props) {
   const [files, setFiles] = useState<LessonFile[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const isLab = lesson.is_lab;
   const hasVideo = !!lesson.embedUrl;
   const hasDescription = !!lesson.description;
 
+  // Load lesson files
   useEffect(() => {
     if (isOpen && lesson.id) {
       const fetchFiles = async () => {
@@ -75,7 +76,6 @@ export default function LessonPanel({ lesson, isOpen }: Props) {
             <div className="relative">
               <div className="w-full aspect-video rounded-xl overflow-hidden shadow-lg bg-black border border-slate-200">
                 <iframe
-                  ref={iframeRef}
                   src={lesson.embedUrl}
                   className="w-full h-full"
                   allow="autoplay; fullscreen"

@@ -1,19 +1,87 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import type { Unit } from "../types";
+import { Assignment, AssignmentSubmission } from "../../../lib/types/assignment";
+import { assignmentService } from "../../../lib/services/assignmentService";
 import LessonItem from "./LessonItem";
+import dynamic from "next/dynamic";
+
+// Use dynamic import to avoid potential issues
+const AssignmentDisplay = dynamic(() => import("./AssignmentDisplay"), {
+  loading: () => (
+    <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
+      <div className="animate-pulse">
+        <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+        <div className="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
+        <div className="h-20 bg-gray-200 rounded"></div>
+      </div>
+    </div>
+  ),
+  ssr: false
+});
 
 type Props = {
   unit: Unit;
   unitOpen: boolean;
-  onToggleUnit: (next: number | null) => void;
+  onToggleUnit: (next: number | string | null) => void;
   openLesson: number | null;
   setOpenLesson: (id: number | null) => void;
-  setOpenUnit: (id: number | null) => void;
+  setOpenUnit: (id: number | string | null) => void;
+  userId?: string;
 };
 
-export default function UnitSection({ unit, unitOpen, onToggleUnit, openLesson, setOpenLesson, setOpenUnit }: Props) {
+export default function UnitSection({ 
+  unit, 
+  unitOpen, 
+  onToggleUnit, 
+  openLesson, 
+  setOpenLesson, 
+  setOpenUnit,
+  userId 
+}: Props) {
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [userSubmissions, setUserSubmissions] = useState<Map<number, AssignmentSubmission>>(new Map());
+  const [loadingAssignments, setLoadingAssignments] = useState(false);
+
+  // Load assignments for this unit when it opens
+  useEffect(() => {
+    if (unitOpen && userId) {
+      loadAssignments();
+    }
+  }, [unitOpen, unit.id, userId]);
+
+  const loadAssignments = async () => {
+    try {
+      setLoadingAssignments(true);
+      
+      // Get assignments for this unit
+      const unitAssignments = await assignmentService.getAssignmentsByUnit(unit.id);
+      setAssignments(unitAssignments);
+
+      // Get user submissions for these assignments
+      if (userId && unitAssignments.length > 0) {
+        const submissions = await assignmentService.getSubmissionsByUser(userId);
+        const submissionMap = new Map<number, AssignmentSubmission>();
+        
+        submissions.forEach(submission => {
+          submissionMap.set(submission.assignment_id, submission);
+        });
+        
+        setUserSubmissions(submissionMap);
+      }
+    } catch (error) {
+      console.error('Failed to load assignments:', error);
+    } finally {
+      setLoadingAssignments(false);
+    }
+  };
+
+  const handleSubmissionComplete = (submission: AssignmentSubmission) => {
+    // Update the submissions map
+    setUserSubmissions(prev => new Map(prev.set(submission.assignment_id, submission)));
+  };
+
   // Calculate total duration for the unit
   const calculateTotalDuration = (lessons: Unit['lessons']) => {
     let totalSeconds = 0;
@@ -97,6 +165,15 @@ export default function UnitSection({ unit, unitOpen, onToggleUnit, openLesson, 
                 </svg>
                 {totalDuration}
               </span>
+              {/* Assignment indicator */}
+              {assignments.length > 0 && (
+                <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  {assignments.length} מטלות
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -124,6 +201,7 @@ export default function UnitSection({ unit, unitOpen, onToggleUnit, openLesson, 
 
       {unitOpen && (
         <div id={`unit-${unit.id}-panel`} className="bg-slate-25">
+          {/* Lessons */}
           <ol className="divide-y divide-slate-200">
             {unit.lessons.map((lesson) => {
               const isLocked = lesson.locked ?? true;
@@ -140,10 +218,49 @@ export default function UnitSection({ unit, unitOpen, onToggleUnit, openLesson, 
                   duration={duration}
                   onToggleLesson={(next) => setOpenLesson(next)}
                   onSetOpenUnit={(id) => setOpenUnit(id)}
+                  userId={userId}
                 />
               );
             })}
           </ol>
+
+          {/* Assignments Section */}
+          {(assignments.length > 0 || loadingAssignments) && (
+            <div className="border-t border-slate-200 bg-slate-50 p-6">
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                  📝 מטלות היחידה
+                </h3>
+                <p className="text-sm text-slate-600">
+                  מטלות שיש להגיש עבור יחידה זו
+                </p>
+              </div>
+
+              {loadingAssignments ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="flex items-center gap-3 text-slate-600">
+                    <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span className="text-sm font-medium">טוען מטלות...</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {assignments.map((assignment) => (
+                    <AssignmentDisplay
+                      key={assignment.id}
+                      assignment={assignment}
+                      userSubmission={userSubmissions.get(assignment.id)}
+                      onSubmissionComplete={handleSubmissionComplete}
+                      userId={userId}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </section>

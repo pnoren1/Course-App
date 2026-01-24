@@ -1,32 +1,23 @@
-// export type Lesson = {
-//   id: number;
-//   title: string;
-//   embedUrl: string;
-//   duration?: string;
-//   locked?: boolean;
-//   order?: number;
-//   [key: string]: any;
-// };
-
-//  type Unit = {
-//   id: number;
-//   title: string;
-//   description?: string;
-//   order?: number;
-//   lessons: Lesson[];
-//   [key: string]: any;
-// };
+// Import assignment types
+import { Assignment, AssignmentSubmission } from '../../lib/types/assignment';
 
 export type Lesson = {
   id: number;
   title: string;
   order: number;
   duration?: string | null;
+  durationSeconds?: number | null;
   locked?: boolean | null;
   embedUrl: string;
-  notes?: string | null;
+  slug: string;
   description?: string | null;
-  is_lab?: boolean | null;
+  is_lab?: boolean | null; // Optional lab indicator
+  resources?: LessonResource[];
+};
+
+export type LessonResource = {
+  label: string;
+  url: string;
 };
 
 export type LessonFile = {
@@ -40,9 +31,34 @@ export type LessonFile = {
 };
 
 export type Unit = {
-  id: number;
+  id: number | string; // Support both INTEGER and UUID IDs
   title: string;
   description?: string | null;
   order: number;
   lessons: Lesson[];
+  assignment?: Assignment; // Optional assignment for the unit;
 };
+
+// Extended types for course with assignment data
+export type UnitWithSubmission = Unit & {
+  assignment?: Assignment & {
+    userSubmission?: AssignmentSubmission;
+  };
+};
+
+export type CourseData = {
+  schemaVersion: number;
+  units: Unit[];
+};
+
+// Props for components that need assignment data
+export interface CoursePageProps {
+  units: UnitWithSubmission[];
+  userId?: string;
+}
+
+export interface UnitSectionProps {
+  unit: UnitWithSubmission;
+  userId?: string;
+  onAssignmentSubmit?: (submission: AssignmentSubmission) => void;
+}
