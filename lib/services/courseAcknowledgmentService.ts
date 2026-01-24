@@ -1,5 +1,5 @@
-import { rlsSupabase } from './supabase';
-import { AcknowledgmentData } from './database.types';
+import { rlsSupabase } from '../supabase';
+import { CourseAcknowledgmentInsert } from '../types/database.types';
 
 export class CourseAcknowledgmentService {
   async checkAcknowledgment(userId: string, courseId: string): Promise<boolean> {
@@ -27,7 +27,7 @@ export class CourseAcknowledgmentService {
     try {
       const finalUserName = userName || await this.getUserName(userId);
       
-      const acknowledgmentData: Omit<AcknowledgmentData, 'id' | 'created_at'> = {
+      const acknowledgmentData: CourseAcknowledgmentInsert = {
         user_id: userId,
         course_id: courseId,
         user_name: finalUserName

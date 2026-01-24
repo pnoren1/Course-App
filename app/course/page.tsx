@@ -2,7 +2,7 @@
 
 import AuthGuard from "../components/AuthGuardClient";
 import { rlsSupabase, supabaseUtils } from "@/lib/supabase";
-import { courseAcknowledgmentService } from "../../lib/courseAcknowledgmentService";
+import { courseAcknowledgmentService } from "../../lib/services/courseAcknowledgmentService";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import WelcomePopup from "./components/WelcomePopup";

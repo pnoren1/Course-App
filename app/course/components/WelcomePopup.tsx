@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
-import { courseAcknowledgmentService } from '../../../lib/courseAcknowledgmentService';
-import { WelcomePopupProps, WelcomePopupState, AcknowledgmentData } from '../../../lib/database.types';
+import { courseAcknowledgmentService } from '../../../lib/services/courseAcknowledgmentService';
+import { WelcomePopupProps, WelcomePopupState, AcknowledgmentData } from '../../../lib/types/database.types';
 import AcknowledgmentForm from './AcknowledgmentForm';
 
 export default function WelcomePopup({ userId, userName, courseId, onAcknowledged }: WelcomePopupProps) {

@@ -254,7 +254,7 @@ export default function UnitSection({
                       assignment={assignment}
                       userSubmission={userSubmissions.get(assignment.id)}
                       onSubmissionComplete={handleSubmissionComplete}
-                      userId={userId}
+                      userId={userId || ''}
                     />
                   ))}
                 </div>

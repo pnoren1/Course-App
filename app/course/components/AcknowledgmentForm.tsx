@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { AcknowledgmentFormProps, AcknowledgmentData } from '@/lib/database.types';
+import { AcknowledgmentFormProps, AcknowledgmentData } from '@/lib/types/database.types';
 
 export default function AcknowledgmentForm({ onSubmit, isSubmitting }: AcknowledgmentFormProps) {
   const [formData, setFormData] = useState<AcknowledgmentData>({

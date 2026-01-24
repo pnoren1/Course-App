@@ -1,6 +1,6 @@
 import { rlsSupabase } from '../supabase';
 import { Assignment, AssignmentSubmission } from '../types/assignment';
-import { Database } from '../database.types';
+import { Database } from '../types/database.types';
 
 export class AssignmentService {
   async getAssignmentsByUnit(unitId: number | string): Promise<Assignment[]> {

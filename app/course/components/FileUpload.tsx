@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { Assignment } from '../../../lib/types/assignment';
 import { fileService } from '../../../lib/services/fileService';
+import { assignmentService } from '../../../lib/services/assignmentService';
 
 interface FileUploadProps {
   assignment: Assignment;
@@ -69,8 +70,21 @@ export default function FileUpload({
       
       // If no submission exists, create one first
       if (!currentSubmissionId) {
-        console.error('No submission ID provided - cannot upload files');
-        return;
+        try {
+          const newSubmission = await assignmentService.createSubmission({
+            assignment_id: assignment.id,
+            user_id: userId,
+            submission_date: new Date().toISOString(),
+            status: 'submitted'
+          });
+          currentSubmissionId = newSubmission.id;
+        } catch (error) {
+          console.error('Error creating submission:', error);
+          if (onUploadError) {
+            onUploadError('שגיאה ביצירת הגשה חדשה');
+          }
+          return;
+        }
       }
       
       const uploadedFiles = [];
@@ -287,14 +301,14 @@ export default function FileUpload({
         </div>
       )}
 
-      {/* Upload Button */}
-      {files.length > 0 && submissionId && (
+      {/* Upload Button */}     
+      {files.length > 0 && (
         <button
           onClick={handleUpload}
           disabled={uploading || disabled || files.some(file => validateFile(file).length > 0)}
           className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {uploading ? 'מעלה קבצים...' : 'העלה קבצים'}
+          {uploading ? 'מעלה קבצים...' : submissionId ? 'העלה קבצים' : 'הגש מטלה'}
         </button>
       )}
     </div>
