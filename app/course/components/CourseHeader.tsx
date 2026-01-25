@@ -84,7 +84,7 @@ export default function CourseHeader({ onSignOut, userRoleData }: Props) {
         <div className="bg-gradient-to-r from-slate-50 to-slate-25 border-t border-slate-200 px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <a
+              <Link
                 href="/course/about"
                 className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 hover:text-indigo-900 rounded-xl font-medium text-sm transition-all duration-200"
               >
@@ -92,7 +92,7 @@ export default function CourseHeader({ onSignOut, userRoleData }: Props) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span>אודות הקורס - הנחיות</span>
-              </a>
+              </Link>
               <a
                 href="https://lzedeawtmzfenyrewhmo.supabase.co/storage/v1/object/sign/general/course.pdf?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNDZmMTNjZC02OTUyLTRkZTItODRhMC1lZmM3MWIxY2U2NTciLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJnZW5lcmFsL2NvdXJzZS5wZGYiLCJpYXQiOjE3Njg2ODE1NzYsImV4cCI6MTgwMDIxNzU3Nn0.opJMMSnVUuFF7_aLWzVXNDUaUK8KazjTRU31nSw1ZW4"
                 target="_blank"

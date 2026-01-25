@@ -1,16 +1,24 @@
 "use client";
 
 import AuthGuard from "../../components/AuthGuardClient";
-import { supabase } from "@/lib/supabase";
+import { rlsSupabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { Suspense } from "react";
+import { useUserRole } from "@/lib/hooks/useUserRole";
+import Link from "next/link";
 
-function AboutContent() {
+function AboutContent({ userRoleData }: { userRoleData: any }) {
   const router = useRouter();
 
-  const handleSignOut = () => {
-    supabase.auth.signOut();
-    router.push("/");
+  const handleSignOut = async () => {
+    try {
+      await rlsSupabase.raw.auth.signOut();
+      router.push("/");
+    } catch (error) {
+      console.error('Error signing out:', error);
+      // Force navigation even if sign out fails
+      router.push("/");
+    }
   };
 
   return (
@@ -19,7 +27,7 @@ function AboutContent() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-6">
-            <a
+            <Link
               href="/course"
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-slate-900 rounded-xl font-medium text-sm transition-all duration-200"
             >
@@ -27,7 +35,7 @@ function AboutContent() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
               </svg>
               <span>חזרה לקורס</span>
-            </a>
+            </Link>
             <button
               onClick={handleSignOut}
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 hover:text-slate-900 rounded-xl font-medium text-sm transition-all duration-200"
@@ -311,9 +319,17 @@ export default function AboutPage() {
         </div>
       </div>
     }>
-      <AuthGuard>
-        <AboutContent />
-      </AuthGuard>
+      <AboutPageWithAuth />
     </Suspense>
+  );
+}
+
+function AboutPageWithAuth() {
+  const userRoleData = useUserRole();
+  
+  return (
+    <AuthGuard userRoleData={userRoleData}>
+      <AboutContent userRoleData={userRoleData} />
+    </AuthGuard>
   );
 }
