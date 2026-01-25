@@ -244,7 +244,7 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Pending Invitations */}
-      <PendingInvitations />
+      {/* <PendingInvitations /> */}
 
       {/* Organizations Management */}
       <div className="bg-white rounded-lg border border-slate-200">
