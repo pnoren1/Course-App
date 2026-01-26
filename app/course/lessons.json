@@ -56,63 +56,68 @@
           "order": 4,
           "description": "סיכום הקורס והנחיות לבחינה",
           "resources": []
+        },
+        {
+          "id": 5,
+          "title": "מעבדה 1 – תרגול מעשי",
+          "slug": "lab-1-practical",
+          "embedUrl": "https://videos.spotlightr.com/watch/bbbb",
+          "duration": "45:00",
+          "durationSeconds": 2700,
+          "locked": false,
+          "order": 5,
+          "description": "תרגול מעשי של הנושאים שנלמדו",
+          "is_lab": true,
+          "resources": [
+            { "label": "הוראות המעבדה", "url": "/resources/lab1-instructions.pdf" }
+          ]
         }
       ]
     },
   {
       "id": 2,
-      "title": "יחידה 1",
-      "description": "יחידה ראשונית — מבוא וקונספטים בסיסיים",
+      "title": "יחידה 2",
+      "description": "יחידה מתקדמת — שירותים מתקדמים ותרגול",
       "order": 2,
       "lessons": [
         {
-          "id": 5,
-          "title": "שיעור 1 – מבוא",
-          "slug": "lesson-1-intro",
+          "id": 6,
+          "title": "שיעור 1 – שירותים מתקדמים",
+          "slug": "lesson-5-advanced",
           "embedUrl": "https://videos.cdn.spotlightr.com/watch/MTkyMTI3Mw==",
-          "duration": "12:34",
-          "durationSeconds": 754,
+          "duration": "25:15",
+          "durationSeconds": 1515,
           "locked": false,
           "order": 1,
-          "description": "הקדמה לקורס ולעקרונות AWS",
+          "description": "שירותים מתקדמים ב-AWS",
           "resources": []
-        },
-        {
-          "id": 6,
-          "title": "שיעור 2 – המשך",
-          "slug": "lesson-2",
-          "embedUrl": "https://videos.cdn.spotlightr.com/watch/MTkyMTI3Mw==",
-          "duration": "18:05",
-          "durationSeconds": 1085,
-          "locked": true,
-          "order": 2,
-          "description": "שיעור המשך בנושא שירותים",
-          "resources": [
-            { "label": "מצגת", "url": "/resources/lesson2-slides.pdf" }
-          ]
         },
         {
           "id": 7,
-          "title": "שיעור 3 – שירותים נפוצים",
-          "slug": "lesson-3-services",
-          "embedUrl": "https://videos.spotlightr.com/watch/zzzz",
-          "duration": "22:10",
-          "durationSeconds": 1330,
-          "locked": true,
-          "order": 3,
-          "description": "סקירה מעשית של שירותים נפוצים ב‑AWS",
-          "resources": []
+          "title": "מעבדה 2 – פרויקט מעשי",
+          "slug": "lab-2-project",
+          "embedUrl": "https://videos.cdn.spotlightr.com/watch/MTkyMTI3Mw==",
+          "duration": "60:00",
+          "durationSeconds": 3600,
+          "locked": false,
+          "order": 2,
+          "description": "פרויקט מעשי מקיף",
+          "is_lab": true,
+          "resources": [
+            { "label": "מדריך הפרויקט", "url": "/resources/project-guide.pdf" },
+            { "label": "קבצי התחלה", "url": "/resources/starter-files.zip" }
+          ]
         },
         {
           "id": 8,
-          "title": "שיעור 4 – סיכום ומבחן",
-          "slug": "lesson-4-summary",
-          "embedUrl": "https://videos.spotlightr.com/watch/aaaa",
-          "duration": "15:40",
-          "durationSeconds": 940,
+          "title": "שיעור 3 – סיכום",
+          "slug": "lesson-6-summary",
+          "embedUrl": "https://videos.spotlightr.com/watch/zzzz",
+          "duration": "20:30",
+          "durationSeconds": 1230,
           "locked": true,
-          "order": 4,
-          "description": "סיכום הקורס והנחיות לבחינה",
+          "order": 3,
+          "description": "סיכום כללי של הקורס",
           "resources": []
         }
       ]

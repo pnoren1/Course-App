@@ -130,6 +130,7 @@ function CourseContent({ userRoleData }: { userRoleData: any }) {
                   locked: lesson.locked || false,
                   order: lesson.order,
                   description: lesson.description || '',
+                  is_lab: lesson.is_lab || false, // Add is_lab field for lab lessons styling
                   resources: []
                 }))
                 .sort((a, b) => a.order - b.order);

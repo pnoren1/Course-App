@@ -48,21 +48,21 @@ export default function LessonPanel({ lesson, isOpen, userId }: Props) {
   return (
     <div className={`mt-6 p-6 rounded-2xl border shadow-sm ${
       isLab 
-        ? "bg-gradient-to-br from-blue-50 to-slate-50 border-blue-200" 
+        ? "bg-gradient-to-br from-orange-50 to-slate-50 border-orange-200" 
         : "bg-gradient-to-br from-slate-50 to-zinc-50 border-slate-200"
     }`}>
       {/* LAB Header */}
       {isLab && (
-        <div className="mb-6 pb-4 border-b border-blue-200">
+        <div className="mb-6 pb-4 border-b border-orange-200">
           <div className="flex items-center gap-3">
-            <div className="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-50 border border-blue-200 rounded-xl">
-              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-br from-orange-100 to-orange-50 border border-orange-200 rounded-xl">
+              <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.78 0-2.678-2.153-1.415-3.414l5-5A2 2 0 009 9.586V5L8 4z" />
               </svg>
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-blue-900">מעבדה מעשית</h3>
-              <p className="text-sm text-blue-700">תרגול מעשי עם הוראות שלב אחר שלב</p>
+              <h3 className="text-lg font-semibold text-orange-900">מעבדה מעשית</h3>
+              <p className="text-sm text-orange-700">תרגול מעשי עם הוראות שלב אחר שלב</p>
             </div>
           </div>
         </div>
@@ -106,7 +106,7 @@ export default function LessonPanel({ lesson, isOpen, userId }: Props) {
         {files.length > 0 && (
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
             <h4 className={`text-base font-semibold mb-4 flex items-center gap-2 ${
-              isLab ? "text-blue-900" : "text-slate-900"
+              isLab ? "text-orange-900" : "text-slate-900"
             }`}>
               <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
@@ -163,7 +163,7 @@ export default function LessonPanel({ lesson, isOpen, userId }: Props) {
         {hasDescription && (
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
             <h4 className={`text-base font-semibold mb-4 flex items-center gap-2 ${
-              isLab ? "text-blue-900" : "text-slate-900"
+              isLab ? "text-orange-900" : "text-slate-900"
             }`}>
               <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
