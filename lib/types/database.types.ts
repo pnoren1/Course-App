@@ -8,6 +8,7 @@ export interface Database {
           id: string;
           user_id: string;
           user_name: string;
+          user_email: string;
           course_id: string;
           acknowledged_at: string;
           created_at: string;
@@ -16,6 +17,7 @@ export interface Database {
           id?: string;
           user_id: string;
           user_name: string;
+          user_email: string;
           course_id: string;
           acknowledged_at?: string;
           created_at?: string;
@@ -24,6 +26,7 @@ export interface Database {
           id?: string;
           user_id?: string;
           user_name?: string;
+          user_email?: string;
           course_id?: string;
           acknowledged_at?: string;
           created_at?: string;

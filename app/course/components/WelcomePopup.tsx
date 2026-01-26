@@ -13,6 +13,8 @@ export default function WelcomePopup({ userId, userName, courseId, onAcknowledge
     hasAcknowledged: false,
   });
 
+  const [showCloseMessage, setShowCloseMessage] = useState(false);
+
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
 
@@ -107,8 +109,18 @@ export default function WelcomePopup({ userId, userName, courseId, onAcknowledge
     try {
       setState(prev => ({ ...prev, isLoading: true }));
       
-      // Pass userName to the service, with fallback if undefined
-      await courseAcknowledgmentService.saveAcknowledgment(userId, courseId, userName || 'משתמש לא ידוע');
+      // Get current user email
+      const { rlsSupabase } = await import('../../../lib/supabase');
+      const { user } = await rlsSupabase.getCurrentUser();
+      const userEmail = user?.email || 'unknown@example.com';
+      
+      // Pass userName and userEmail to the service, with fallback if undefined
+      await courseAcknowledgmentService.saveAcknowledgment(
+        userId, 
+        courseId, 
+        userName || 'משתמש לא ידוע',
+        userEmail
+      );
       
       setState(prev => ({
         ...prev,
@@ -131,6 +143,8 @@ export default function WelcomePopup({ userId, userName, courseId, onAcknowledge
     // Per Requirements 3.1: popup should appear again if closed without acknowledgment
     // We don't actually close the popup, just show a message or do nothing
     // This ensures persistence for unacknowledged users
+    setShowCloseMessage(true);
+    setTimeout(() => setShowCloseMessage(false), 5000); // Hide message after 5 seconds
     console.log('Close attempt blocked - acknowledgment required');
   };
 
@@ -153,12 +167,37 @@ export default function WelcomePopup({ userId, userName, courseId, onAcknowledge
         dir="rtl"
         tabIndex={-1}
       >
-        {/* Close button that doesn't actually close - for persistence */}
-        <div className="flex justify-end p-3 sm:p-4 border-b border-gray-100">
+        {/* Header with close and logout buttons */}
+        <div className="flex justify-between items-center p-3 sm:p-4 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={async () => {
+                try {
+                  const { rlsSupabase } = await import('../../../lib/supabase');
+                  await rlsSupabase.raw.auth.signOut();
+                  window.location.href = '/login';
+                } catch (error) {
+                  console.error('Error signing out:', error);
+                  // Fallback - redirect to login anyway
+                  window.location.href = '/login';
+                }
+              }}
+              className="inline-flex items-center gap-2 px-3 py-2 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 rounded-lg text-sm font-medium transition-colors"
+              title="יציאה מהמערכת"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              יציאה
+            </button>
+            
+          </div>
+          
           <button
             onClick={handleCloseAttempt}
             className="text-gray-400 hover:text-gray-600 focus:text-gray-600 transition-colors rounded-full p-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300"
-            aria-label="נסיון סגירה - נדרש אישור תנאים"
+            aria-label="לא ניתן לסגור - נדרש אישור תנאים"
+            title="לא ניתן לסגור ללא אישור תנאים"
             type="button"
           >
             <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -168,6 +207,21 @@ export default function WelcomePopup({ userId, userName, courseId, onAcknowledge
         </div>
         
         <div className="px-4 sm:px-6 pb-4 sm:pb-6">
+          {/* Close attempt message */}
+          {showCloseMessage && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg animate-in slide-in-from-top-2 duration-300">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-yellow-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                <div className="text-sm text-yellow-800">
+                  <p className="font-medium">לא ניתן לסגור את החלון</p>
+                  <p>יש לאשר את תנאי השימוש לפני המשך. לחלופין, ניתן ללחוץ על "יציאה" להתנתק מהמערכת.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Minimal Header */}
           <div className="text-center mb-4 sm:mb-5">
             <div className="flex items-center justify-center gap-3 mb-3">
@@ -184,6 +238,9 @@ export default function WelcomePopup({ userId, userName, courseId, onAcknowledge
               className="text-sm text-gray-600"
             >
               נא לקרוא את ההנחיות והתנאים לפני תחילת הלמידה
+            </p>
+            <p className="text-xs text-gray-500 mt-2">
+              לא ניתן לסגור חלון זה ללא אישור התנאים. ניתן לצאת מהמערכת באמצעות כפתור "יציאה" למעלה.
             </p>
           </div>
 

@@ -23,12 +23,20 @@ export class CourseAcknowledgmentService {
     }
   }
 
-  async saveAcknowledgment(userId: string, courseId: string, userName: string): Promise<void> {
+  async saveAcknowledgment(userId: string, courseId: string, userName: string, userEmail?: string): Promise<void> {
     try {
+      // If userEmail is not provided, try to get it from the current user
+      let email = userEmail;
+      if (!email) {
+        const { user } = await rlsSupabase.getCurrentUser();
+        email = user?.email || 'unknown@example.com';
+      }
+
       const acknowledgmentData: CourseAcknowledgmentInsert = {
         user_id: userId,
         course_id: courseId,
-        user_name: userName
+        user_name: userName,
+        user_email: email
       };
 
       const { error } = await rlsSupabase
