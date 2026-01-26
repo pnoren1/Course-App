@@ -80,6 +80,25 @@ export default function AddUserForm({ organizations, onUserAdded, className = ''
     }
   }, [isOpen]);
 
+  // הוספת מאזין למקש Escape
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      // מניעת גלילה ברקע כשהמודאל פתוח
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.removeEventListener('keydown', handleEscape);
+        document.body.style.overflow = 'unset';
+      };
+    }
+  }, [isOpen]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -186,7 +205,7 @@ export default function AddUserForm({ organizations, onUserAdded, className = ''
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className={`inline-flex items-center gap-2 px-4 py-2 bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium transition-colors ${className}`}
+        className={`inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm hover:shadow-md ${className}`}
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
@@ -197,31 +216,45 @@ export default function AddUserForm({ organizations, onUserAdded, className = ''
   }
 
   return (
-    <div className={`bg-white rounded-lg border border-slate-200 p-6 ${className}`}>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="inline-flex items-center justify-center w-10 h-10 bg-green-100 rounded-lg">
-            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-            </svg>
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-slate-900">הוספת משתמש חדש</h3>
-            <p className="text-sm text-slate-600">
-              {mode === 'create' ? 'יצירת משתמש חדש במערכת' : 'הזמנת משתמש חדש למערכת'}
-            </p>
-          </div>
-        </div>
-        
-        <button
-          onClick={() => setIsOpen(false)}
-          className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+    <>
+      {/* Modal Backdrop */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            setIsOpen(false);
+          }
+        }}
+      >
+        <div 
+          className="bg-white rounded-lg border border-slate-200 w-full max-w-md sm:max-w-md max-h-[90vh] sm:max-h-[90vh] overflow-y-auto shadow-xl animate-in slide-in-from-bottom-4 duration-300 mx-2 sm:mx-4"
+          onClick={(e) => e.stopPropagation()}
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="inline-flex items-center justify-center w-10 h-10 bg-green-100 rounded-lg">
+                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">הוספת משתמש חדש</h3>
+                  <p className="text-sm text-slate-600">
+                    {mode === 'create' ? 'יצירת משתמש חדש במערכת' : 'הזמנת משתמש חדש למערכת'}
+                  </p>
+                </div>
+              </div>
+              
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
 
       {/* Mode Selection */}
       {checkingAvailability ? (
@@ -419,7 +452,10 @@ export default function AddUserForm({ organizations, onUserAdded, className = ''
             )}
           </div>
         </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

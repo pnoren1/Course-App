@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { RoleType, Organization } from '@/lib/types/database.types';
 import { rlsSupabase } from '@/lib/supabase';
 
@@ -255,11 +255,30 @@ export default function BulkUserImport({ organizations, onUsersAdded, className 
     document.body.removeChild(link);
   };
 
+  // הוספת מאזין למקש Escape
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      // מניעת גלילה ברקע כשהמודאל פתוח
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.removeEventListener('keydown', handleEscape);
+        document.body.style.overflow = 'unset';
+      };
+    }
+  }, [isOpen]);
+
   if (!isOpen) {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className={`inline-flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 rounded-lg text-sm font-medium transition-colors ${className}`}
+        className={`inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm hover:shadow-md ${className}`}
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -270,317 +289,334 @@ export default function BulkUserImport({ organizations, onUsersAdded, className 
   }
 
   return (
-    <div className={`bg-white rounded-lg border border-slate-200 p-6 ${className}`}>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="inline-flex items-center justify-center w-10 h-10 bg-blue-100 rounded-lg">
-            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-            </svg>
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-slate-900">ייבוא משתמשים מ-CSV</h3>
-            <p className="text-sm text-slate-600">העלאת רשימת משתמשים מקובץ CSV</p>
-          </div>
-        </div>
-        
-        <button
-          onClick={() => setIsOpen(false)}
-          className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+    <>
+      {/* Modal Backdrop */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            setIsOpen(false);
+          }
+        }}
+      >
+        <div 
+          className="bg-white rounded-lg border border-slate-200 w-full max-w-4xl sm:max-w-4xl max-h-[90vh] sm:max-h-[90vh] overflow-y-auto shadow-xl animate-in slide-in-from-bottom-4 duration-300 mx-2 sm:mx-4"
+          onClick={(e) => e.stopPropagation()}
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Mode Selection */}
-      <div className="mb-4">
-        <div className="flex bg-slate-100 rounded-lg p-1">
-          <button
-            type="button"
-            onClick={() => {
-              setMode('create');
-              resetForm();
-            }}
-            className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-              mode === 'create'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            יצירה ישירה
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setMode('invite');
-              resetForm();
-            }}
-            className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-              mode === 'invite'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            שליחת הזמנות
-          </button>
-        </div>
-      </div>
-
-      {/* Template Download */}
-      <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-            <span className="text-sm text-amber-700">
-              הורד תבנית CSV עם הכותרות הנדרשות
-            </span>
-          </div>
-          <button
-            onClick={downloadTemplate}
-            className="px-3 py-1 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded text-sm font-medium transition-colors"
-          >
-            הורדת תבנית
-          </button>
-        </div>
-      </div>
-
-      {/* Encoding Warning */}
-      <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-        <div className="flex items-start gap-2">
-          <svg className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v3.75m-9-.75a9 9 0 1118 0 9 9 0 01-18 0zm9 3.75h.008v.008H12V15.75z" />
-          </svg>
-          <div className="text-sm text-red-700">
-            <p className="font-medium mb-1">חשוב לגבי תווים בעברית:</p>
-            <p>כדי שתווים בעברית יוצגו נכון, שמור את הקובץ עם encoding UTF-8:</p>
-            <ul className="mt-1 space-y-1 text-xs">
-              <li>• <strong>Excel:</strong> "שמירה בשם" → "CSV UTF-8 (מופרד בפסיקים)"</li>
-              <li>• <strong>Google Sheets:</strong> "הורדה" → "CSV (.csv)"</li>
-              <li>• <strong>LibreOffice:</strong> בחר "UTF-8" בתור Character Set</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-          {error}
-        </div>
-      )}
-
-      {importResult && (
-        <div className="mb-4 p-4 bg-slate-50 border border-slate-200 rounded-lg">
-          <h4 className="font-medium text-slate-900 mb-2">תוצאות הייבוא:</h4>
-          <div className="space-y-2 text-sm">
-            {importResult.success > 0 && (
-              <div className="flex items-center gap-2 text-green-700">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="inline-flex items-center justify-center w-10 h-10 bg-blue-100 rounded-lg">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">ייבוא משתמשים מ-CSV</h3>
+                  <p className="text-sm text-slate-600">העלאת רשימת משתמשים מקובץ CSV</p>
+                </div>
+              </div>
+              
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
                 </svg>
-                <span className="font-medium">
-                  {importResult.success} משתמשים {mode === 'create' ? 'נוצרו' : 'הוזמנו'} בהצלחה
-                </span>
-              </div>
-            )}
-            {importResult.failed > 0 && (
-              <div className="text-red-700">
-                <div className="flex items-center gap-2 mb-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                  <span className="font-medium">{importResult.failed} משתמשים נכשלו</span>
-                </div>
-                <div className="max-h-32 overflow-y-auto space-y-1">
-                  {importResult.errors.map((err, idx) => (
-                    <div key={idx} className="text-xs bg-red-100 p-2 rounded">
-                      <span className="font-medium">{err.email}:</span> {err.error}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            {importResult.success === 0 && importResult.failed === 0 && (
-              <div className="text-amber-700">
-                <div className="flex items-center gap-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                  לא בוצע ייבוא - אין משתמשים תקינים
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+              </button>
+            </div>
 
-      {/* File Upload */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-slate-700 mb-2">
-          בחירת קובץ CSV
-        </label>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".csv"
-          onChange={handleFileChange}
-          className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-        />
-      </div>
-
-      {/* Data Preview */}
-      {loading && (
-        <div className="mb-4 p-4 bg-slate-50 rounded-lg">
-          <div className="flex items-center gap-2 text-slate-600">
-            <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span className="text-sm">מעבד קובץ CSV...</span>
-          </div>
-        </div>
-      )}
-
-      {parsedData.length > 0 && (
-        <div className="mb-4">
-          <h4 className="font-medium text-slate-900 mb-2">
-            תצוגה מקדימה ({parsedData.filter(u => u.isValid).length} תקינים מתוך {parsedData.length})
-          </h4>
-          <div className="max-h-64 overflow-auto border border-slate-200 rounded-lg">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 sticky top-0">
-                <tr>
-                  <th className="px-3 py-2 text-right">סטטוס</th>
-                  <th className="px-3 py-2 text-right">מייל</th>
-                  <th className="px-3 py-2 text-right">שם משתמש</th>
-                  <th className="px-3 py-2 text-right">תפקיד</th>
-                  <th className="px-3 py-2 text-right">ארגון ID</th>
-                  {mode === 'create' && <th className="px-3 py-2 text-right">סיסמה</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {parsedData.map((user, idx) => (
-                  <tr key={idx} className={user.isValid ? 'bg-green-50' : 'bg-red-50'}>
-                    <td className="px-3 py-2">
-                      {user.isValid ? (
-                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      ) : (
-                        <div className="group relative">
-                          <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                          <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block bg-black text-white text-xs rounded p-2 whitespace-nowrap z-10">
-                            {user.errors.join(', ')}
-                          </div>
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-3 py-2">{user.email}</td>
-                    <td className="px-3 py-2">{user.userName}</td>
-                    <td className="px-3 py-2">{user.role}</td>
-                    <td className="px-3 py-2">{user.organizationId || 'ללא ארגון'}</td>
-                    {mode === 'create' && (
-                      <td className="px-3 py-2">
-                        {user.password ? '••••••' : 'חסרה'}
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Action Buttons */}
-      <div className="flex gap-3 pt-2">
-        <button
-          onClick={handleImport}
-          disabled={importing || parsedData.filter(u => u.isValid).length === 0}
-          className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-lg text-sm font-medium transition-colors"
-        >
-          {importing ? (
-            <>
-              <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              {mode === 'create' ? 'יוצר משתמשים...' : 'שולח הזמנות...'}
-            </>
-          ) : (
-            <>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-              {mode === 'create' ? 'יצירת משתמשים' : 'שליחת הזמנות'}
-              {parsedData.filter(u => u.isValid).length > 0 && 
-                ` (${parsedData.filter(u => u.isValid).length})`
-              }
-            </>
-          )}
-        </button>
-        
-        <button
-          onClick={resetForm}
-          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors"
-        >
-          איפוס
-        </button>
-        
-        <button
-          onClick={() => setIsOpen(false)}
-          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors"
-        >
-          ביטול
-        </button>
-      </div>
-
-      {/* Help Text */}
-      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-        <div className="flex items-start gap-2">
-          <svg className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <div className="text-xs text-blue-700">
-            <p className="font-medium mb-1">הוראות שימוש:</p>
-            <ul className="space-y-1">
-              <li>• הורד את תבנית ה-CSV המתאימה למצב שבחרת</li>
-              <li>• מלא את הנתונים בקובץ (email נדרש, שאר השדות אופציונליים)</li>
-              <li>• <strong>חשוב:</strong> שמור את הקובץ עם encoding UTF-8 (בExcel: "CSV UTF-8")</li>
-              <li>• תפקידים תקינים: student, instructor, moderator, admin</li>
-              <li>• organization_id חייב להיות UUID תקין של ארגון קיים במערכת</li>
-              {mode === 'create' && <li>• במצב יצירה ישירה, סיסמה נדרשת (לפחות 6 תווים)</li>}
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      {/* Organizations List */}
-      {organizations.length > 0 && (
-        <div className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-          <div className="flex items-start gap-2">
-            <svg className="w-4 h-4 text-slate-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
-            <div className="text-xs text-slate-700 flex-1">
-              <p className="font-medium mb-2">ארגונים זמינים:</p>
-              <div className="space-y-1 max-h-32 overflow-y-auto">
-                {organizations.map(org => (
-                  <div key={org.id} className="flex items-center justify-between p-2 bg-white rounded border">
-                    <span className="font-medium">{org.name}</span>
-                    <code className="text-xs bg-slate-100 px-2 py-1 rounded font-mono">{org.id}</code>
-                  </div>
-                ))}
+            {/* Mode Selection */}
+            <div className="mb-4">
+              <div className="flex bg-slate-100 rounded-lg p-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('create');
+                    resetForm();
+                  }}
+                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                    mode === 'create'
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  יצירה ישירה
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('invite');
+                    resetForm();
+                  }}
+                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                    mode === 'invite'
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  שליחת הזמנות
+                </button>
               </div>
             </div>
+
+            {/* Template Download */}
+            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                  <span className="text-sm text-amber-700">
+                    הורד תבנית CSV עם הכותרות הנדרשות
+                  </span>
+                </div>
+                <button
+                  onClick={downloadTemplate}
+                  className="px-3 py-1 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded text-sm font-medium transition-colors"
+                >
+                  הורדת תבנית
+                </button>
+              </div>
+            </div>
+
+            {/* Encoding Warning */}
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <svg className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v3.75m-9-.75a9 9 0 1118 0 9 9 0 01-18 0zm9 3.75h.008v.008H12V15.75z" />
+                </svg>
+                <div className="text-sm text-red-700">
+                  <p className="font-medium mb-1">חשוב לגבי תווים בעברית:</p>
+                  <p>כדי שתווים בעברית יוצגו נכון, שמור את הקובץ עם encoding UTF-8:</p>
+                  <ul className="mt-1 space-y-1 text-xs">
+                    <li>• <strong>Excel:</strong> "שמירה בשם" → "CSV UTF-8 (מופרד בפסיקים)"</li>
+                    <li>• <strong>Google Sheets:</strong> "הורדה" → "CSV (.csv)"</li>
+                    <li>• <strong>LibreOffice:</strong> בחר "UTF-8" בתור Character Set</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                {error}
+              </div>
+            )}
+
+            {importResult && (
+              <div className="mb-4 p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                <h4 className="font-medium text-slate-900 mb-2">תוצאות הייבוא:</h4>
+                <div className="space-y-2 text-sm">
+                  {importResult.success > 0 && (
+                    <div className="flex items-center gap-2 text-green-700">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="font-medium">
+                        {importResult.success} משתמשים {mode === 'create' ? 'נוצרו' : 'הוזמנו'} בהצלחה
+                      </span>
+                    </div>
+                  )}
+                  {importResult.failed > 0 && (
+                    <div className="text-red-700">
+                      <div className="flex items-center gap-2 mb-2">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        <span className="font-medium">{importResult.failed} משתמשים נכשלו</span>
+                      </div>
+                      <div className="max-h-32 overflow-y-auto space-y-1">
+                        {importResult.errors.map((err, idx) => (
+                          <div key={idx} className="text-xs bg-red-100 p-2 rounded">
+                            <span className="font-medium">{err.email}:</span> {err.error}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {importResult.success === 0 && importResult.failed === 0 && (
+                    <div className="text-amber-700">
+                      <div className="flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
+                        לא בוצע ייבוא - אין משתמשים תקינים
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* File Upload */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                בחירת קובץ CSV
+              </label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv"
+                onChange={handleFileChange}
+                className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              />
+            </div>
+
+            {/* Data Preview */}
+            {loading && (
+              <div className="mb-4 p-4 bg-slate-50 rounded-lg">
+                <div className="flex items-center gap-2 text-slate-600">
+                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span className="text-sm">מעבד קובץ CSV...</span>
+                </div>
+              </div>
+            )}
+
+            {parsedData.length > 0 && (
+              <div className="mb-4">
+                <h4 className="font-medium text-slate-900 mb-2">
+                  תצוגה מקדימה ({parsedData.filter(u => u.isValid).length} תקינים מתוך {parsedData.length})
+                </h4>
+                <div className="max-h-64 overflow-auto border border-slate-200 rounded-lg">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50 sticky top-0">
+                      <tr>
+                        <th className="px-3 py-2 text-right">סטטוס</th>
+                        <th className="px-3 py-2 text-right">מייל</th>
+                        <th className="px-3 py-2 text-right">שם משתמש</th>
+                        <th className="px-3 py-2 text-right">תפקיד</th>
+                        <th className="px-3 py-2 text-right">ארגון ID</th>
+                        {mode === 'create' && <th className="px-3 py-2 text-right">סיסמה</th>}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {parsedData.map((user, idx) => (
+                        <tr key={idx} className={user.isValid ? 'bg-green-50' : 'bg-red-50'}>
+                          <td className="px-3 py-2">
+                            {user.isValid ? (
+                              <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            ) : (
+                              <div className="group relative">
+                                <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                                <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block bg-black text-white text-xs rounded p-2 whitespace-nowrap z-10">
+                                  {user.errors.join(', ')}
+                                </div>
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-3 py-2">{user.email}</td>
+                          <td className="px-3 py-2">{user.userName}</td>
+                          <td className="px-3 py-2">{user.role}</td>
+                          <td className="px-3 py-2">{user.organizationId || 'ללא ארגון'}</td>
+                          {mode === 'create' && (
+                            <td className="px-3 py-2">
+                              {user.password ? '••••••' : 'חסרה'}
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={handleImport}
+                disabled={importing || parsedData.filter(u => u.isValid).length === 0}
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                {importing ? (
+                  <>
+                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    {mode === 'create' ? 'יוצר משתמשים...' : 'שולח הזמנות...'}
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    {mode === 'create' ? 'יצירת משתמשים' : 'שליחת הזמנות'}
+                    {parsedData.filter(u => u.isValid).length > 0 && 
+                      ` (${parsedData.filter(u => u.isValid).length})`
+                    }
+                  </>
+                )}
+              </button>
+              
+              <button
+                onClick={resetForm}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors"
+              >
+                איפוס
+              </button>
+              
+              <button
+                onClick={() => setIsOpen(false)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors"
+              >
+                ביטול
+              </button>
+            </div>
+
+            {/* Help Text */}
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <svg className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="text-xs text-blue-700">
+                  <p className="font-medium mb-1">הוראות שימוש:</p>
+                  <ul className="space-y-1">
+                    <li>• הורד את תבנית ה-CSV המתאימה למצב שבחרת</li>
+                    <li>• מלא את הנתונים בקובץ (email נדרש, שאר השדות אופציונליים)</li>
+                    <li>• <strong>חשוב:</strong> שמור את הקובץ עם encoding UTF-8 (בExcel: "CSV UTF-8")</li>
+                    <li>• תפקידים תקינים: student, instructor, moderator, admin</li>
+                    <li>• organization_id חייב להיות UUID תקין של ארגון קיים במערכת</li>
+                    {mode === 'create' && <li>• במצב יצירה ישירה, סיסמה נדרשת (לפחות 6 תווים)</li>}
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Organizations List */}
+            {organizations.length > 0 && (
+              <div className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-slate-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  <div className="text-xs text-slate-700 flex-1">
+                    <p className="font-medium mb-2">ארגונים זמינים:</p>
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {organizations.map(org => (
+                        <div key={org.id} className="flex items-center justify-between p-2 bg-white rounded border">
+                          <span className="font-medium">{org.name}</span>
+                          <code className="text-xs bg-slate-100 px-2 py-1 rounded font-mono">{org.id}</code>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 }
