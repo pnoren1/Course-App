@@ -82,7 +82,7 @@ export default function UsernamePasswordSignIn({ onError }: Props) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
-          כתובת אימייל
+          שם משתמש
         </label>
         <input
           id="email"
@@ -91,7 +91,7 @@ export default function UsernamePasswordSignIn({ onError }: Props) {
           onChange={(e) => setEmail(e.target.value)}
           disabled={loading}
           className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 disabled:bg-slate-50 disabled:text-slate-400 text-right"
-          placeholder="הכנס כתובת אימייל"
+          placeholder="הכנס שם משתמש"
           dir="ltr"
         />
       </div>
