@@ -316,7 +316,7 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
                   <h4 className="font-medium text-slate-900">{org.name}</h4>
                 </div>
                 {org.description && (
-                  <p className="text-sm text-slate-600 mb-2">{org.description}</p>
+                  <p className="text-sm text-slate-600 mb-2 whitespace-pre-line">{org.description}</p>
                 )}
                 <div className="text-xs text-slate-500">
                   {(org as any).user_count || 0} משתמשים

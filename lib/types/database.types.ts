@@ -42,22 +42,28 @@ export interface Database {
       };
       units: {
         Row: {
-          id: number | string; // Support both INTEGER and UUID IDs
+          id: number;
           title: string;
           description: string | null;
-          order: number;
+          order: number; // Your actual DB schema uses 'order'
+          created_at?: string;
+          updated_at?: string;
         };
         Insert: {
-          id?: number | string; // Support both INTEGER and UUID IDs
+          id?: number;
           title: string;
           description?: string | null;
-          order: number;
+          order?: number; // Your actual DB schema uses 'order'
+          created_at?: string;
+          updated_at?: string;
         };
         Update: {
-          id?: number | string; // Support both INTEGER and UUID IDs
+          id?: number;
           title?: string;
           description?: string | null;
-          order?: number;
+          order_number?: number;
+          created_at?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -150,6 +156,7 @@ export interface Database {
           unit_id: number | string; // Support both INTEGER and UUID unit IDs
           title: string;
           description: string | null;
+          due_date: string | null;
           estimated_duration_minutes: number | null;
           max_file_size_mb: number;
           allowed_file_types: string[];
@@ -162,22 +169,26 @@ export interface Database {
           unit_id: number | string; // Support both INTEGER and UUID unit IDs
           title: string;
           description?: string | null;
+          due_date?: string | null;
           estimated_duration_minutes?: number | null;
           max_file_size_mb?: number;
           allowed_file_types?: string[];
           created_at?: string;
           updated_at?: string;
+          required_files?: any;
         };
         Update: {
           id?: number;
           unit_id?: number | string; // Support both INTEGER and UUID unit IDs
           title?: string;
           description?: string | null;
+          due_date?: string | null;
           estimated_duration_minutes?: number | null;
           max_file_size_mb?: number;
           allowed_file_types?: string[];
           created_at?: string;
           updated_at?: string;
+          required_files?: any;
         };
         Relationships: [
           {

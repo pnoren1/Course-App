@@ -89,7 +89,7 @@ export default function AssignmentDisplay({
               </svg>
             </div>
             {assignment.description && (
-              <p className="text-sm text-slate-600 leading-relaxed">
+              <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
                 {assignment.description}
               </p>
             )}

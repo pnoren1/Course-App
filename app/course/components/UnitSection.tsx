@@ -126,7 +126,7 @@ export default function UnitSection({
               {unit.title}
             </h2>
             {unit.description && (
-              <p className="text-sm text-slate-600 leading-relaxed max-w-2xl">
+              <p className="text-sm text-slate-600 leading-relaxed max-w-2xl whitespace-pre-line">
                 {unit.description}
               </p>
             )}

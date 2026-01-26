@@ -35,9 +35,12 @@ export type Unit = {
   title: string;
   description?: string | null;
   order: number;
+  order_number?: number; // For database compatibility
   lessons: Lesson[];
   assignment?: Assignment; // Optional assignment for the unit
   assignments?: Assignment[]; // Optional assignments array for the unit
+  created_at?: string;
+  updated_at?: string;
 };
 
 // Extended types for course with assignment data

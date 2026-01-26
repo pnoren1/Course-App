@@ -24,9 +24,10 @@ export function createServerSupabaseClient(request: NextRequest) {
     
     // רשימת שמות cookies אפשריים של Supabase
     const possibleCookieNames = [
-      'sb-access-token',
+      'sb-lzedeawtmzfenyrewhmo-auth-token', // עם project ref הנכון
+      'sb-lzedeawtmzfenyrewhmo-auth-token-code-verifier',
       'supabase-auth-token',
-      'sb-lzedeawtmzfenyrewhmo-auth-token', // עם project ref
+      'sb-access-token',
       'supabase.auth.token'
     ];
     
@@ -47,6 +48,11 @@ export function createServerSupabaseClient(request: NextRequest) {
         }
       }
     }
+    
+    // אם עדיין לא מצאנו, נסה לחפש בכל ה-cookies
+    if (!token) {
+      console.log('🍪 Available cookies:', Array.from(cookies.getAll()).map(c => c.name));
+    }
   }
 
   return { supabase, token };
@@ -56,6 +62,8 @@ export function createServerSupabaseClient(request: NextRequest) {
 export async function getAuthenticatedUser(request: NextRequest) {
   const { supabase, token } = createServerSupabaseClient(request);
   
+  console.log('🔑 Token found:', token ? 'Yes' : 'No');
+  
   if (token) {
     try {
       // הגדרת הטוקן
@@ -63,13 +71,19 @@ export async function getAuthenticatedUser(request: NextRequest) {
         access_token: token,
         refresh_token: ''
       });
+      console.log('✅ Session set successfully');
     } catch (error) {
-      console.error('Error setting session:', error);
+      console.error('❌ Error setting session:', error);
     }
   }
 
   // קבלת המשתמש
   const { data: { user }, error } = await supabase.auth.getUser();
+  
+  console.log('👤 User from auth:', user ? { id: user.id, email: user.email } : 'No user');
+  if (error) {
+    console.error('❌ Auth error:', error);
+  }
   
   return { user, error, supabase };
 }

@@ -3,7 +3,7 @@ export interface Assignment {
   title: string;
   description: string | null;
   unit_id: number | string;
-  due_date?: string;
+  due_date?: string | null;
   max_file_size_mb: number;
   allowed_file_types: string[];
   created_at: string;
