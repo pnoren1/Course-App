@@ -5,6 +5,8 @@ import { rlsSupabase } from '@/lib/supabase';
 import { RoleType, Organization } from '@/lib/types/database.types';
 import UserRoleBadge from './UserRoleBadge';
 import AddUserForm from './AddUserForm';
+import BulkUserImport from './BulkUserImport';
+import ExportUsersCSV from './ExportUsersCSV';
 import PendingInvitations from './PendingInvitations';
 
 interface User {
@@ -338,6 +340,11 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
                 organizations={organizations} 
                 onUserAdded={fetchUsers}
               />
+              <BulkUserImport
+                organizations={organizations}
+                onUsersAdded={fetchUsers}
+              />
+              <ExportUsersCSV organizations={organizations} />
               <button
                 onClick={fetchUsers}
                 className="inline-flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors"
