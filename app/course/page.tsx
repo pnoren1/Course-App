@@ -10,6 +10,7 @@ import WelcomePopup from "./components/WelcomePopup";
 
 import CourseHeader from "./components/CourseHeader";
 import UnitSection from "./components/UnitSection";
+import SubmissionStatusIndicator from "./components/SubmissionStatusIndicator";
 import type { Lesson, Unit } from "./types";
 import { useUserRole } from "@/lib/hooks/useUserRole";
 
@@ -25,6 +26,7 @@ function CourseContent({ userRoleData }: { userRoleData: any }) {
   const [acknowledgmentLoading, setAcknowledgmentLoading] = useState(true);
   const [hasAcknowledged, setHasAcknowledged] = useState(false);
   const [userSubmissions, setUserSubmissions] = useState<Map<number, any>>(new Map());
+  const [showSubmissionDetails, setShowSubmissionDetails] = useState(false);
 
   // Get user from userRoleData instead of separate API call
   useEffect(() => {
@@ -238,6 +240,7 @@ function CourseContent({ userRoleData }: { userRoleData: any }) {
         <CourseHeader 
           onSignOut={handleSignOut} 
           userRoleData={userRoleData}
+          onToggleSubmissionDetails={() => setShowSubmissionDetails(!showSubmissionDetails)}
         />
 
         {/* Show loading state during acknowledgment check - Requirement 3.3 */}
@@ -275,6 +278,13 @@ function CourseContent({ userRoleData }: { userRoleData: any }) {
         {/* Show course content only after acknowledgment */}
         {!acknowledgmentLoading && hasAcknowledged && (
           <>
+            {/* Submission Status Indicator - Only show when toggled */}
+            {user?.id && showSubmissionDetails && (
+              <div className="mb-6">
+                <SubmissionStatusIndicator userId={user.id} />
+              </div>
+            )}
+
             {loading && (
               <div className="flex items-center justify-center py-16">
                 <div className="flex items-center gap-3 text-slate-600">

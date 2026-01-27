@@ -3,6 +3,26 @@ import { Assignment, AssignmentSubmission } from '../types/assignment';
 import { Database } from '../types/database.types';
 
 export class AssignmentService {
+  async getAllAssignments(): Promise<Assignment[]> {
+    try {
+      const { data, error } = await rlsSupabase
+        .from('assignments')
+        .select('*')
+        .order('unit_id', { ascending: true })
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching all assignments:', error);
+        throw error;
+      }
+
+      return (data as Database['public']['Tables']['assignments']['Row'][]) || [];
+    } catch (error) {
+      console.error('Error in getAllAssignments:', error);
+      throw error;
+    }
+  }
+
   async getAssignmentsByUnit(unitId: number | string): Promise<Assignment[]> {
     try {
       const { data, error } = await rlsSupabase
