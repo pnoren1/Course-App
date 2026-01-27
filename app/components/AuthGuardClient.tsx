@@ -65,6 +65,13 @@ export default function AuthGuard({
           
           router.push(redirectUrl);
         } else {
+          // בדיקת תוקף הסשן (30 דקות)
+          const { expired } = await supabaseUtils.checkSessionExpiry(30 * 60 * 1000);
+          if (expired) {
+            router.push("/login?error=session_expired&message=" + encodeURIComponent('הסשן פג תוקף. אנא התחבר מחדש.'));
+            return;
+          }
+
           // אם המשתמש מחובר, נציג את מידע התפקיד לכמה שניות
           if (pathname === "/course") {
             setShowRoleInfo(true);
@@ -102,8 +109,15 @@ export default function AuthGuard({
       }
     });
 
+    // הגדרת בדיקה תקופתית לתוקף הסשן (כל 5 דקות)
+    const sessionCheckInterval = supabaseUtils.setupSessionExpiryCheck(
+      30 * 60 * 1000, // 30 דקות מקסימום
+      5 * 60 * 1000   // בדיקה כל 5 דקות
+    );
+
     return () => {
       subscription.unsubscribe();
+      clearInterval(sessionCheckInterval);
     };
   }, [pathname, router, searchParams]);
 

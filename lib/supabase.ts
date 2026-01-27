@@ -4,7 +4,17 @@ import { Database } from "./types/database.types";
 // Create the base Supabase client
 export const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  {
+    auth: {
+      // הגדרת זמן תוקף הסשן (בשניות)
+      // 1800 = 30 דקות, 900 = 15 דקות
+      autoRefreshToken: true, // רענון אוטומטי
+      persistSession: true, // שמירת סשן בלוקל סטורג'
+      detectSessionInUrl: true, // זיהוי סשן מ-URL
+      // flowType: 'pkce' // אבטחה משופרת
+    }
+  }
 );
 
 // Create admin client with service role key (server-side only)
@@ -307,5 +317,52 @@ export const supabaseUtils = {
     }
     
     return error.message || 'אירעה שגיאה לא צפויה';
+  },
+
+  /**
+   * בדיקת תוקף הסשן ויציאה אוטומטית אם פג תוקף
+   */
+  checkSessionExpiry: async (maxSessionTime: number = 30 * 60 * 1000) => { // 30 דקות ברירת מחדל
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        return { expired: true, session: null };
+      }
+
+      const now = Date.now();
+      const sessionStart = new Date(session.user.created_at).getTime();
+      const sessionAge = now - sessionStart;
+
+      if (sessionAge > maxSessionTime) {
+        // יציאה אוטומטית אם פג תוקף
+        await supabase.auth.signOut();
+        return { expired: true, session: null };
+      }
+
+      return { expired: false, session };
+    } catch (error) {
+      console.error('Error checking session expiry:', error);
+      return { expired: true, session: null };
+    }
+  },
+
+  /**
+   * הגדרת טיימר לבדיקת תוקף סשן
+   */
+  setupSessionExpiryCheck: (
+    maxSessionTime: number = 30 * 60 * 1000, // 30 דקות
+    checkInterval: number = 5 * 60 * 1000 // בדיקה כל 5 דקות
+  ) => {
+    const intervalId = setInterval(async () => {
+      const { expired } = await supabaseUtils.checkSessionExpiry(maxSessionTime);
+      if (expired) {
+        clearInterval(intervalId);
+        // ניתן להוסיף כאן הפניה לדף התחברות
+        window.location.href = '/login';
+      }
+    }, checkInterval);
+
+    return intervalId;
   }
 };
