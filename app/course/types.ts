@@ -30,17 +30,22 @@ export type LessonFile = {
   created_at?: string | null;
 };
 
-export type Unit = {
+// Base unit type from database
+export type BaseUnit = {
   id: number | string; // Support both INTEGER and UUID IDs
   title: string;
   description?: string | null;
   order: number;
   order_number?: number; // For database compatibility
+  created_at?: string;
+  updated_at?: string;
+};
+
+// Full unit type with lessons for course display
+export type Unit = BaseUnit & {
   lessons: Lesson[];
   assignment?: Assignment; // Optional assignment for the unit
   assignments?: Assignment[]; // Optional assignments array for the unit
-  created_at?: string;
-  updated_at?: string;
 };
 
 // Extended types for course with assignment data

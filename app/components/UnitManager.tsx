@@ -1,17 +1,17 @@
 "use client";
 
 import { useState } from 'react';
-import { Unit } from '@/app/course/types';
+import { BaseUnit } from '@/app/course/types';
 import { rlsSupabase } from '@/lib/supabase';
 
 interface UnitManagerProps {
-  units: Unit[];
+  units: BaseUnit[];
   onUnitsChange: () => void;
 }
 
 export default function UnitManager({ units, onUnitsChange }: UnitManagerProps) {
   const [showForm, setShowForm] = useState(false);
-  const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
+  const [editingUnit, setEditingUnit] = useState<BaseUnit | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -28,7 +28,7 @@ export default function UnitManager({ units, onUnitsChange }: UnitManagerProps) 
     setShowForm(true);
   };
 
-  const handleEditUnit = (unit: Unit) => {
+  const handleEditUnit = (unit: BaseUnit) => {
     setEditingUnit(unit);
     setFormData({
       title: unit.title,

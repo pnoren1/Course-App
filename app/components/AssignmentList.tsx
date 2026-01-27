@@ -1,11 +1,11 @@
 "use client";
 
 import { Assignment } from '@/lib/types/assignment';
-import { Unit } from '@/app/course/types';
+import { BaseUnit } from '@/app/course/types';
 
 interface AssignmentListProps {
   assignments: Assignment[];
-  units: Unit[];
+  units: BaseUnit[];
   onEdit: (assignment: Assignment) => void;
   onDelete: (assignmentId: number) => void;
 }

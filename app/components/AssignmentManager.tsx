@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Assignment } from '@/lib/types/assignment';
-import { Unit } from '@/app/course/types';
+import { BaseUnit } from '@/app/course/types';
 import { rlsSupabase } from '@/lib/supabase';
 import AssignmentForm from './AssignmentForm';
 import AssignmentList from './AssignmentList';
@@ -10,7 +10,7 @@ import UnitManager from './UnitManager';
 
 export default function AssignmentManager() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [units, setUnits] = useState<Unit[]>([]);
+  const [units, setUnits] = useState<BaseUnit[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showUnitManager, setShowUnitManager] = useState(false);
@@ -151,7 +151,7 @@ export default function AssignmentManager() {
       // Convert database units to match the expected format
       const formattedUnits = units?.map(unit => {
         // Handle both database format and JSON format with type assertion
-        const unitWithDbFields = unit as Unit & { 
+        const unitWithDbFields = unit as BaseUnit & { 
           order?: number;
           order_number?: number;
           created_at?: string;
@@ -167,7 +167,6 @@ export default function AssignmentManager() {
           description: unit.description,
           order: orderValue,
           order_number: orderValue,
-          lessons: [], // Will be populated separately if needed
           created_at: unitWithDbFields.created_at || new Date().toISOString(),
           updated_at: unitWithDbFields.updated_at || new Date().toISOString()
         };

@@ -1,207 +1,276 @@
 "use client";
 
-import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import AdminLayout from '@/app/components/AdminLayout';
 import { rlsSupabase } from '@/lib/supabase';
-import UserRoleManager from '@/app/components/UserRoleManager';
-import { UserInfo } from '@/app/components/UserRoleBadge';
+
+interface Stats {
+  totalUsers: number;
+  totalAssignments: number;
+  totalUnits: number;
+  pendingSubmissions: number;
+}
 
 export default function AdminPage() {
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const [stats, setStats] = useState<Stats>({
+    totalUsers: 0,
+    totalAssignments: 0,
+    totalUnits: 0,
+    pendingSubmissions: 0
+  });
+  const [loadingStats, setLoadingStats] = useState(true);
 
   useEffect(() => {
-    checkAdminAccess();
+    loadStats();
   }, []);
 
-  const checkAdminAccess = async () => {
+  const loadStats = async () => {
     try {
-      const { user } = await rlsSupabase.getCurrentUser();
-      
-      if (!user) {
-        router.push('/login');
-        return;
-      }
+      // Load users count
+      const { count: usersCount } = await rlsSupabase.raw
+        .from('user_profile')
+        .select('*', { count: 'exact', head: true });
 
-      const { isAdmin: adminStatus } = await rlsSupabase.isAdmin();
-      setIsAdmin(adminStatus);
-      
-      if (!adminStatus) {
-        // Redirect non-admin users to course page
-        router.push('/course');
-      }
+      // Load assignments count
+      const { count: assignmentsCount } = await rlsSupabase.raw
+        .from('assignments')
+        .select('*', { count: 'exact', head: true });
+
+      // Load units count
+      const { count: unitsCount } = await rlsSupabase.raw
+        .from('units')
+        .select('*', { count: 'exact', head: true });
+
+      setStats({
+        totalUsers: usersCount || 0,
+        totalAssignments: assignmentsCount || 0,
+        totalUnits: unitsCount || 0,
+        pendingSubmissions: 0 // Will be implemented later
+      });
     } catch (error) {
-      console.error('Error checking admin access:', error);
-      router.push('/login');
+      console.error('Error loading stats:', error);
     } finally {
-      setLoading(false);
+      setLoadingStats(false);
     }
   };
-
-  const handleSignOut = async () => {
-    try {
-      await rlsSupabase.raw.auth.signOut();
-      router.push('/login');
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="flex items-center gap-3 text-slate-600">
-          <svg className="animate-spin w-6 h-6" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <span className="text-sm font-medium">בודק הרשאות...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return null; // Will redirect in useEffect
-  }
 
   return (
-    <div className="min-h-screen bg-slate-50" dir="rtl">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <div className="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-br from-red-100 to-red-50 rounded-xl border border-red-200">
-                <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+    <AdminLayout 
+      title="לוח בקרה" 
+      description="סקירה כללית של המערכת"
+      icon={
+        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v0a2 2 0 01-2 2H10a2 2 0 01-2-2v0z" />
+        </svg>
+      }
+    >
+      <div className="space-y-8">
+        {/* Welcome Section */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
+          <div className="flex items-center gap-4">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">ברוך הבא לפאנל הניהול</h2>
+              <p className="text-sm text-slate-600">כאן תוכל לנהל את כל היבטי המערכת בצורה נוחה ומסודרת</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="bg-white rounded-lg border border-slate-200 p-6">
+            <div className="flex items-center gap-3">
+              <div className="inline-flex items-center justify-center w-10 h-10 bg-blue-100 rounded-lg">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
                 </svg>
               </div>
               <div>
-                <h1 className="text-xl font-semibold text-slate-900">פאנל ניהול</h1>
-                <p className="text-sm text-slate-600">ניהול משתמשים ותפקידים</p>
+                <p className="text-sm text-slate-600">משתמשים רשומים</p>
+                <p className="text-2xl font-semibold text-slate-900">
+                  {loadingStats ? (
+                    <span className="inline-block w-8 h-6 bg-slate-200 rounded animate-pulse"></span>
+                  ) : (
+                    stats.totalUsers
+                  )}
+                </p>
               </div>
             </div>
+          </div>
 
-            <div className="flex items-center gap-4">
-              <UserInfo showRole={true} size="sm" />
-              
+          <div className="bg-white rounded-lg border border-slate-200 p-6">
+            <div className="flex items-center gap-3">
+              <div className="inline-flex items-center justify-center w-10 h-10 bg-green-100 rounded-lg">
+                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm text-slate-600">מטלות פעילות</p>
+                <p className="text-2xl font-semibold text-slate-900">
+                  {loadingStats ? (
+                    <span className="inline-block w-8 h-6 bg-slate-200 rounded animate-pulse"></span>
+                  ) : (
+                    stats.totalAssignments
+                  )}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg border border-slate-200 p-6">
+            <div className="flex items-center gap-3">
+              <div className="inline-flex items-center justify-center w-10 h-10 bg-purple-100 rounded-lg">
+                <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm text-slate-600">יחידות קורס</p>
+                <p className="text-2xl font-semibold text-slate-900">
+                  {loadingStats ? (
+                    <span className="inline-block w-8 h-6 bg-slate-200 rounded animate-pulse"></span>
+                  ) : (
+                    stats.totalUnits
+                  )}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg border border-slate-200 p-6">
+            <div className="flex items-center gap-3">
+              <div className="inline-flex items-center justify-center w-10 h-10 bg-orange-100 rounded-lg">
+                <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm text-slate-600">הגשות ממתינות</p>
+                <p className="text-2xl font-semibold text-slate-900">
+                  {loadingStats ? (
+                    <span className="inline-block w-8 h-6 bg-slate-200 rounded animate-pulse"></span>
+                  ) : (
+                    stats.pendingSubmissions
+                  )}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="bg-white rounded-lg border border-slate-200 p-6 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="inline-flex items-center justify-center w-10 h-10 bg-blue-100 rounded-lg">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                </svg>
+              </div>
+              <h3 className="font-semibold text-slate-900">ניהול משתמשים</h3>
+            </div>
+            <p className="text-sm text-slate-600 mb-4">הוספה, עריכה וניהול משתמשים ותפקידים</p>
+            <button 
+              onClick={() => router.push('/admin/users')}
+              className="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium py-2 px-4 rounded-lg transition-colors"
+            >
+              ניהול משתמשים
+            </button>
+          </div>
+
+          <div className="bg-white rounded-lg border border-slate-200 p-6 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="inline-flex items-center justify-center w-10 h-10 bg-green-100 rounded-lg">
+                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h3 className="font-semibold text-slate-900">ניהול מטלות</h3>
+            </div>
+            <p className="text-sm text-slate-600 mb-4">יצירה ועריכה של מטלות ליחידות הקורס</p>
+            <button 
+              onClick={() => router.push('/admin/assignments')}
+              className="w-full bg-green-50 hover:bg-green-100 text-green-700 font-medium py-2 px-4 rounded-lg transition-colors"
+            >
+              ניהול מטלות
+            </button>
+          </div>
+
+          <div className="bg-white rounded-lg border border-slate-200 p-6 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="inline-flex items-center justify-center w-10 h-10 bg-purple-100 rounded-lg">
+                <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              </div>
+              <h3 className="font-semibold text-slate-900">ניהול יחידות</h3>
+            </div>
+            <p className="text-sm text-slate-600 mb-4">ניהול יחידות הקורס והתוכן</p>
+            <button 
+              onClick={() => router.push('/admin/units')}
+              className="w-full bg-purple-50 hover:bg-purple-100 text-purple-700 font-medium py-2 px-4 rounded-lg transition-colors"
+            >
+              ניהול יחידות
+            </button>
+          </div>
+
+          <div className="bg-white rounded-lg border border-slate-200 p-6 hover:shadow-md transition-shadow opacity-60">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="inline-flex items-center justify-center w-10 h-10 bg-orange-100 rounded-lg">
+                <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => router.push('/course')}
-                  className="inline-flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                  </svg>
-                  לקורס
-                </button>
-                
-                <button
-                  onClick={handleSignOut}
-                  className="inline-flex items-center gap-2 px-3 py-2 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 rounded-lg text-sm font-medium transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                  יציאה
-                </button>
+                <h3 className="font-semibold text-slate-900">ניהול הגשות</h3>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                  בקרוב
+                </span>
               </div>
             </div>
+            <p className="text-sm text-slate-600 mb-4">צפייה וניהול הגשות המטלות</p>
+            <button 
+              disabled
+              className="w-full bg-slate-100 text-slate-400 font-medium py-2 px-4 rounded-lg cursor-not-allowed"
+            >
+              ניהול הגשות
+            </button>
           </div>
-        </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-8">
-          {/* Welcome Section */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
-            <div className="flex items-center gap-4">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          <div className="bg-white rounded-lg border border-slate-200 p-6 hover:shadow-md transition-shadow opacity-60">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="inline-flex items-center justify-center w-10 h-10 bg-indigo-100 rounded-lg">
+                <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900">ברוך הבא לפאנל הניהול</h2>
-                <p className="text-sm text-slate-600">כאן תוכל לנהל משתמשים, תפקידים והרשאות במערכת</p>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-slate-900">דוחות וסטטיסטיקות</h3>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                  בקרוב
+                </span>
               </div>
             </div>
-          </div>
-
-          {/* User Role Management */}
-          <UserRoleManager />
-
-          {/* Additional Admin Tools */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="bg-white rounded-lg border border-slate-200 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="inline-flex items-center justify-center w-10 h-10 bg-blue-100 rounded-lg">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                <h3 className="font-semibold text-slate-900">ניהול מטלות</h3>
-              </div>
-              <p className="text-sm text-slate-600 mb-3">יצירה ועריכה של מטלות ליחידות הקורס</p>
-              <button 
-                onClick={() => router.push('/admin/assignments')}
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-              >
-                ניהול מטלות →
-              </button>
-            </div>
-
-            <div className="bg-white rounded-lg border border-slate-200 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="inline-flex items-center justify-center w-10 h-10 bg-green-100 rounded-lg">
-                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                </div>
-                <h3 className="font-semibold text-slate-900">סטטיסטיקות</h3>
-              </div>
-              <p className="text-sm text-slate-600 mb-3">צפייה בנתוני השימוש במערכת</p>
-              <button className="text-sm text-blue-600 hover:text-blue-800 font-medium">
-                צפייה בדוח →
-              </button>
-            </div>
-
-            <div className="bg-white rounded-lg border border-slate-200 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="inline-flex items-center justify-center w-10 h-10 bg-purple-100 rounded-lg">
-                  <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </div>
-                <h3 className="font-semibold text-slate-900">הגדרות מערכת</h3>
-              </div>
-              <p className="text-sm text-slate-600 mb-3">ניהול הגדרות כלליות של המערכת</p>
-              <button className="text-sm text-blue-600 hover:text-blue-800 font-medium">
-                עריכת הגדרות →
-              </button>
-            </div>
-
-            <div className="bg-white rounded-lg border border-slate-200 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="inline-flex items-center justify-center w-10 h-10 bg-orange-100 rounded-lg">
-                  <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12V15.75z" />
-                  </svg>
-                </div>
-                <h3 className="font-semibold text-slate-900">לוגים ואבטחה</h3>
-              </div>
-              <p className="text-sm text-slate-600 mb-3">מעקב אחר פעילות ואירועי אבטחה</p>
-              <button className="text-sm text-blue-600 hover:text-blue-800 font-medium">
-                צפייה בלוגים →
-              </button>
-            </div>
+            <p className="text-sm text-slate-600 mb-4">צפייה בנתוני השימוש במערכת</p>
+            <button 
+              disabled
+              className="w-full bg-slate-100 text-slate-400 font-medium py-2 px-4 rounded-lg cursor-not-allowed"
+            >
+              צפייה בדוחות
+            </button>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </AdminLayout>
   );
 }

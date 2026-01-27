@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { Assignment, RequiredFile } from '@/lib/types/assignment';
-import { Unit } from '@/app/course/types';
+import { BaseUnit } from '@/app/course/types';
 
 interface AssignmentFormProps {
   assignment?: Assignment | null;
-  units: Unit[];
+  units: BaseUnit[];
   onSubmit: (data: Partial<Assignment>) => void;
   onCancel: () => void;
 }
