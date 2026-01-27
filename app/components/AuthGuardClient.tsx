@@ -16,6 +16,8 @@ export default function AuthGuard({
     userEmail: string | null;
     organizationName: string | null;
     organizationId: string | null;
+    groupName: string | null;
+    groupId: string | null;
     userId: string | null;
     isLoading: boolean;
     error: string | null;

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { getSupabaseAdmin } from '@/lib/supabase';
 import { createClient } from '@supabase/supabase-js';
 
 export async function GET(request: NextRequest) {
@@ -116,13 +116,7 @@ export async function GET(request: NextRequest) {
     }
 
     // בדיקה אם Service Role Key זמין
-    if (!supabaseAdmin) {
-      return NextResponse.json({
-        available: false,
-        reason: 'Service Role Key לא מוגדר',
-        details: { serviceRoleAvailable: false }
-      });
-    }
+    const supabaseAdmin = getSupabaseAdmin();
 
     return NextResponse.json({
       available: true,

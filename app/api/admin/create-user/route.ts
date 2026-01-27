@@ -1,19 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { getSupabaseAdmin } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/supabase-server';
 
 export async function POST(request: NextRequest) {
   try {
-    // בדיקה אם Service Role Key זמין
-    if (!supabaseAdmin) {
-      return NextResponse.json(
-        { error: 'Service Role Key לא מוגדר. יצירת משתמש ישירה לא זמינה.' },
-        { status: 500 }
-      );
-    }
-
+    const supabaseAdmin = getSupabaseAdmin();
+    
     const body = await request.json();
-    const { email, userName, role = 'student', organizationId, password, currentUserId } = body;
+    const { email, userName, role = 'student', organizationId, groupId, password, currentUserId } = body;
 
     // ולידציה בסיסית
     if (!email) {
@@ -114,6 +108,7 @@ export async function POST(request: NextRequest) {
       email: email.trim(),
       role: role,
       organization_id: organizationId || null,
+      group_id: groupId || null,
       granted_by: currentUserId // המשתמש המנהל שיוצר את המשתמש החדש
     }).select().single();
 
@@ -138,6 +133,7 @@ export async function POST(request: NextRequest) {
         userName: finalUserName,
         role: role,
         organizationId: organizationId || null,
+        groupId: groupId || null,
         createdAt: newUser.user.created_at
       }
     });

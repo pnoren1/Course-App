@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { getSupabaseAdmin } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/supabase-server';
 
 export async function GET(request: NextRequest) {
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
         available: false,
         reason: 'נדרשת התחברות למערכת',
         details: { 
-          userError: userError?.message,
+          userError: userError && typeof userError === 'object' && 'message' in userError ? userError.message : String(userError),
           hasUser: !!currentUser
         }
       });
@@ -72,13 +72,7 @@ export async function GET(request: NextRequest) {
     }
 
     // בדיקה אם Service Role Key זמין
-    if (!supabaseAdmin) {
-      return NextResponse.json({
-        available: false,
-        reason: 'Service Role Key לא מוגדר',
-        details: { serviceRoleAvailable: false }
-      });
-    }
+    const supabaseAdmin = getSupabaseAdmin();
 
     return NextResponse.json({
       available: true,

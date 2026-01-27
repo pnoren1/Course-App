@@ -5,6 +5,10 @@ export interface UserSubmissionStats {
   userId: string;
   userName: string;
   userEmail: string;
+  organizationId?: string;
+  organizationName?: string;
+  groupId?: string;
+  groupName?: string;
   totalAssignments: number;
   submittedAssignments: number;
   pendingAssignments: number;
@@ -34,21 +38,50 @@ export class SubmissionStatsService {
    */
   async getUserSubmissionStats(userId: string): Promise<UserSubmissionStats> {
     try {
-      // Get user profile with explicit typing
+      // Get user profile - fetch basic data first
       const { data: userProfile, error: userError } = await rlsSupabase
         .from('user_profile')
-        .select('user_name, email')
+        .select(`
+          user_name, 
+          email,
+          organization_id,
+          group_id
+        `)
         .eq('user_id', userId)
         .single() as { 
           data: {
             user_name: string;
             email: string;
+            organization_id?: string;
+            group_id?: string;
           } | null;
           error: any;
         };
 
       if (userError) {
         throw new Error(`Error fetching user profile: ${userError.message}`);
+      }
+
+      // Get organization name if user has one
+      let organizationName: string | undefined;
+      if (userProfile?.organization_id) {
+        const { data: org } = await rlsSupabase
+          .from('organizations')
+          .select('name')
+          .eq('id', userProfile.organization_id)
+          .single() as { data: { name: string } | null; error: any };
+        organizationName = org?.name;
+      }
+
+      // Get group name if user has one
+      let groupName: string | undefined;
+      if (userProfile?.group_id) {
+        const { data: group } = await rlsSupabase
+          .from('groups')
+          .select('name')
+          .eq('id', userProfile.group_id)
+          .single() as { data: { name: string } | null; error: any };
+        groupName = group?.name;
       }
 
       // Get all assignments with explicit typing
@@ -105,6 +138,10 @@ export class SubmissionStatsService {
         userId,
         userName: userProfile?.user_name || 'Unknown',
         userEmail: userProfile?.email || 'Unknown',
+        organizationId: userProfile?.organization_id,
+        organizationName,
+        groupId: userProfile?.group_id,
+        groupName,
         totalAssignments,
         submittedAssignments,
         pendingAssignments,
@@ -130,14 +167,13 @@ export class SubmissionStatsService {
           id,
           title,
           unit_id,
-          units!inner(title, order_number)
-        `)
-        .order('unit_id', { ascending: true }) as { 
+          units!inner(title, order)
+        `) as { 
           data: Array<{
             id: number;
             title: string;
             unit_id: number;
-            units: { title: string; order_number: number };
+            units: { title: string; order: number };
           }> | null;
           error: any;
         };
@@ -176,7 +212,7 @@ export class SubmissionStatsService {
           assignmentTitle: assignment.title,
           unitId: assignment.unit_id,
           unitTitle: assignment.units?.title || 'Unknown Unit',
-          unitOrder: assignment.units?.order_number || 999,
+          unitOrder: assignment.units?.order || 999,
           isSubmitted: !!submission,
           submissionDate: submission?.submission_date,
           submissionStatus: submission?.status
@@ -184,6 +220,7 @@ export class SubmissionStatsService {
       });
 
       // Sort by unit order, then by assignment ID within each unit
+      // This ensures consistent ordering across all views
       detailedStatus.sort((a, b) => {
         if (a.unitOrder !== b.unitOrder) {
           return a.unitOrder - b.unitOrder;
@@ -203,10 +240,17 @@ export class SubmissionStatsService {
    */
   async getAllUsersSubmissionStats(): Promise<UserSubmissionStats[]> {
     try {
-      // Get all users with student role with explicit typing
+      // Get all users with student role - fetch basic data first
       const { data: users, error: usersError } = await rlsSupabase
         .from('user_profile')
-        .select('user_id, user_name, email, role')
+        .select(`
+          user_id, 
+          user_name, 
+          email, 
+          role,
+          organization_id,
+          group_id
+        `)
         .eq('role', 'student')
         .order('user_name', { ascending: true }) as { 
           data: Array<{
@@ -214,6 +258,8 @@ export class SubmissionStatsService {
             user_name: string;
             email: string;
             role: string;
+            organization_id?: string;
+            group_id?: string;
           }> | null;
           error: any;
         };
@@ -221,6 +267,34 @@ export class SubmissionStatsService {
       if (usersError) {
         throw new Error(`Error fetching users: ${usersError.message}`);
       }
+
+      // Get all organizations separately
+      const { data: organizations, error: orgsError } = await rlsSupabase
+        .from('organizations')
+        .select('id, name') as {
+          data: Array<{ id: string; name: string }> | null;
+          error: any;
+        };
+
+      if (orgsError) {
+        console.warn('Error fetching organizations:', orgsError.message);
+      }
+
+      // Get all groups separately
+      const { data: groups, error: groupsError } = await rlsSupabase
+        .from('groups')
+        .select('id, name') as {
+          data: Array<{ id: string; name: string }> | null;
+          error: any;
+        };
+
+      if (groupsError) {
+        console.warn('Error fetching groups:', groupsError.message);
+      }
+
+      // Create lookup maps
+      const orgMap = new Map((organizations || []).map(org => [org.id, org.name]));
+      const groupMap = new Map((groups || []).map(group => [group.id, group.name]));
 
       // Get all assignments count with explicit typing
       const { data: assignments, error: assignmentsError } = await rlsSupabase
@@ -289,6 +363,10 @@ export class SubmissionStatsService {
           userId: user.user_id,
           userName: user.user_name || 'Unknown',
           userEmail: user.email || 'Unknown',
+          organizationId: user.organization_id,
+          organizationName: user.organization_id ? orgMap.get(user.organization_id) : undefined,
+          groupId: user.group_id,
+          groupName: user.group_id ? groupMap.get(user.group_id) : undefined,
           totalAssignments,
           submittedAssignments,
           pendingAssignments,

@@ -80,7 +80,7 @@ export default function BulkUserImport({ organizations, onUsersAdded, className 
       }
 
       // ולידציה של תפקיד
-      const validRoles: RoleType[] = ['student', 'instructor', 'moderator', 'admin'];
+      const validRoles: RoleType[] = ['student', 'instructor', 'moderator', 'org_admin', 'admin'];
       const role = validRoles.includes(roleStr as RoleType) ? roleStr as RoleType : 'student';
       if (roleStr && !validRoles.includes(roleStr as RoleType)) {
         errors.push(`תפקיד לא תקין: ${roleStr}. תפקידים תקינים: ${validRoles.join(', ')}`);
@@ -585,7 +585,7 @@ export default function BulkUserImport({ organizations, onUsersAdded, className 
                     <li>• הורד את תבנית ה-CSV המתאימה למצב שבחרת</li>
                     <li>• מלא את הנתונים בקובץ (email נדרש, שאר השדות אופציונליים)</li>
                     <li>• <strong>חשוב:</strong> שמור את הקובץ עם encoding UTF-8 (בExcel: "CSV UTF-8")</li>
-                    <li>• תפקידים תקינים: student, instructor, moderator, admin</li>
+                    <li>• תפקידים תקינים: student, instructor, moderator, org_admin, admin</li>
                     <li>• organization_id חייב להיות UUID תקין של ארגון קיים במערכת</li>
                     {mode === 'create' && <li>• במצב יצירה ישירה, סיסמה נדרשת (לפחות 6 תווים)</li>}
                   </ul>

@@ -10,7 +10,27 @@ export async function GET(request: NextRequest) {
     }
 
     const { isAdmin } = await rlsSupabase.isAdmin();
+    
+    // בדיקה נוספת אם המשתמש הוא מנהל ארגון
+    let hasAdminAccess = isAdmin;
     if (!isAdmin) {
+      try {
+        const { data: profile, error } = await rlsSupabase.from('user_profile')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching user profile:', error);
+        } else {
+          hasAdminAccess = (profile as any)?.role === 'org_admin';
+        }
+      } catch (error) {
+        console.error('Error checking user role:', error);
+      }
+    }
+    
+    if (!hasAdminAccess) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -64,7 +84,27 @@ export async function PATCH(request: NextRequest) {
     }
 
     const { isAdmin } = await rlsSupabase.isAdmin();
+    
+    // בדיקה נוספת אם המשתמש הוא מנהל ארגון
+    let hasAdminAccess = isAdmin;
     if (!isAdmin) {
+      try {
+        const { data: profile, error } = await rlsSupabase.from('user_profile')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching user profile:', error);
+        } else {
+          hasAdminAccess = (profile as any)?.role === 'org_admin';
+        }
+      } catch (error) {
+        console.error('Error checking user role:', error);
+      }
+    }
+    
+    if (!hasAdminAccess) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

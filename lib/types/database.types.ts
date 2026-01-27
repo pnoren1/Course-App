@@ -325,6 +325,37 @@ export interface Database {
           }
         ];
       };
+      groups: {
+        Row: {
+          id: string;
+          name: string;
+          organization_id: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          organization_id: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          organization_id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "groups_organization_id_fkey";
+            columns: ["organization_id"];
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       user_profile: {
         Row: {
           id: string;
@@ -333,6 +364,7 @@ export interface Database {
           email: string | null;
           role: string;
           organization_id: string | null;
+          group_id: string | null;
           granted_at: string;
           granted_by: string | null;
           created_at: string;
@@ -345,6 +377,7 @@ export interface Database {
           email?: string | null;
           role?: string;
           organization_id?: string | null;
+          group_id?: string | null;
           granted_at?: string;
           granted_by?: string | null;
           created_at?: string;
@@ -357,6 +390,7 @@ export interface Database {
           email?: string | null;
           role?: string;
           organization_id?: string | null;
+          group_id?: string | null;
           granted_at?: string;
           granted_by?: string | null;
           created_at?: string;
@@ -379,6 +413,12 @@ export interface Database {
             foreignKeyName: "user_profile_organization_id_fkey";
             columns: ["organization_id"];
             referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "user_profile_group_id_fkey";
+            columns: ["group_id"];
+            referencedRelation: "groups";
             referencedColumns: ["id"];
           }
         ];
@@ -738,6 +778,39 @@ export interface Database {
           status: string;
         }[];
       };
+      get_groups_by_organization: {
+        Args: {
+          org_id: string;
+        };
+        Returns: {
+          id: string;
+          name: string;
+          organization_id: string;
+          user_count: number;
+          created_at: string;
+          updated_at: string;
+        }[];
+      };
+      get_users_by_group: {
+        Args: {
+          group_id: string;
+        };
+        Returns: {
+          id: string;
+          user_id: string;
+          user_name: string;
+          email: string;
+          role: string;
+          created_at: string;
+        }[];
+      };
+      create_group: {
+        Args: {
+          group_name: string;
+          org_id: string;
+        };
+        Returns: string;
+      };
     };
     Enums: {
       [_ in never]: never;
@@ -757,9 +830,15 @@ export type Organization = Database['public']['Tables']['organizations']['Row'];
 export type OrganizationInsert = Database['public']['Tables']['organizations']['Insert'];
 export type OrganizationUpdate = Database['public']['Tables']['organizations']['Update'];
 
+export type Group = Database['public']['Tables']['groups']['Row'];
+export type GroupInsert = Database['public']['Tables']['groups']['Insert'];
+export type GroupUpdate = Database['public']['Tables']['groups']['Update'];
+
 export type UserProfile = Database['public']['Tables']['user_profile']['Row'];
 export type UserProfileInsert = Database['public']['Tables']['user_profile']['Insert'];
 export type UserProfileUpdate = Database['public']['Tables']['user_profile']['Update'];
+
+
 
 export type AuditLog = Database['public']['Tables']['rls_audit_log']['Row'];
 export type AuditLogInsert = Database['public']['Tables']['rls_audit_log']['Insert'];
@@ -770,7 +849,7 @@ export type UserInvitationInsert = Database['public']['Tables']['user_invitation
 export type UserInvitationUpdate = Database['public']['Tables']['user_invitations']['Update'];
 
 // Role types for type safety
-export type RoleType = 'student' | 'admin' | 'instructor' | 'moderator';
+export type RoleType = 'student' | 'admin' | 'instructor' | 'moderator' | 'org_admin';
 
 // Invitation status types for type safety
 export type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'cancelled';
@@ -807,6 +886,8 @@ export interface WelcomePopupProps {
     userEmail: string | null;
     organizationName: string | null;
     organizationId: string | null;
+    groupName: string | null;
+    groupId: string | null;
     userId: string | null;
     isLoading: boolean;
     error: string | null;

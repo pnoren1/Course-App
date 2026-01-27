@@ -7,6 +7,7 @@ import { UserProfile, SubmissionFile } from '@/lib/types/database.types';
 import { fileService } from '@/lib/services/fileService';
 import FileViewer from './FileViewer';
 import SubmissionComments from './SubmissionComments';
+import UserGroupDisplay from './UserGroupDisplay';
 
 interface SubmissionWithDetails extends AssignmentSubmission {
   assignment: Assignment;
@@ -289,13 +290,21 @@ export default function SubmissionManager({
                       <span className="text-slate-600">מספר קבצים:</span>
                       <span className="text-slate-900">{files.length}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="space-y-2">
                       <span className="text-slate-600">משתמש:</span>
-                      <span className="text-slate-900">{submission.user_profile?.user_name}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">אימייל:</span>
-                      <span className="text-slate-900 text-xs">{submission.user_profile?.email}</span>
+                      <div className="text-slate-900">
+                        <div className="font-medium">{submission.user_profile?.user_name}</div>
+                        <div className="text-xs text-slate-500">{submission.user_profile?.email}</div>
+                        {submission.user_profile && (
+                          <div className="mt-1">
+                            <UserGroupDisplay 
+                              user={submission.user_profile}
+                              showOrganization={true}
+                              size="sm"
+                            />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

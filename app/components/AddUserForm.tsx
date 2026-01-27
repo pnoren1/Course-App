@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { rlsSupabase } from '@/lib/supabase';
 import { RoleType, Organization } from '@/lib/types/database.types';
 import { fetchWithAuth, debugAuthStorage } from '@/lib/auth-utils';
+import GroupSelector from './GroupSelector';
 
 interface AddUserFormProps {
   organizations: Organization[];
@@ -27,7 +28,8 @@ export default function AddUserForm({ organizations, onUserAdded, className = ''
     userName: '',
     password: '',
     role: 'student' as RoleType,
-    organizationId: ''
+    organizationId: '',
+    groupId: ''
   });
 
   // בדיקת זמינות יצירה ישירה בעת טעינת הקומפוננט
@@ -107,6 +109,16 @@ export default function AddUserForm({ organizations, onUserAdded, className = ''
       return;
     }
 
+    if (!formData.organizationId) {
+      setError('נדרש לבחור ארגון');
+      return;
+    }
+
+    if (!formData.groupId) {
+      setError('נדרש לבחור קבוצה');
+      return;
+    }
+
     if (mode === 'create' && (!formData.password || formData.password.length < 6)) {
       setError('נדרש להזין סיסמה באורך של לפחות 6 תווים');
       return;
@@ -134,13 +146,15 @@ export default function AddUserForm({ organizations, onUserAdded, className = ''
             password: formData.password,
             role: formData.role,
             organizationId: formData.organizationId || null,
+            groupId: formData.groupId || null,
             currentUserId: user.id
           }
         : {
             email: formData.email.trim(),
             userName: finalUserName,
             role: formData.role,
-            organizationId: formData.organizationId || null
+            organizationId: formData.organizationId || null,
+            groupId: formData.groupId || null
           };
 
       const response = await fetch(endpoint, {
@@ -175,7 +189,8 @@ export default function AddUserForm({ organizations, onUserAdded, className = ''
         userName: '',
         password: '',
         role: 'student',
-        organizationId: ''
+        organizationId: '',
+        groupId: ''
       });
       
       // קריאה לפונקציה להתעדכנות
@@ -383,25 +398,44 @@ export default function AddUserForm({ organizations, onUserAdded, className = ''
             <option value="student">סטודנט</option>
             <option value="instructor">מרצה</option>
             <option value="moderator">מנחה</option>
+            <option value="org_admin">מנהל ארגון</option>
             <option value="admin">מנהל</option>
           </select>
         </div>
 
         <div>
           <label htmlFor="organization" className="block text-sm font-medium text-slate-700 mb-1">
-            ארגון
+            ארגון *
           </label>
           <select
             id="organization"
             value={formData.organizationId}
-            onChange={(e) => handleInputChange('organizationId', e.target.value)}
+            onChange={(e) => {
+              handleInputChange('organizationId', e.target.value);
+              // Clear group selection when organization changes
+              handleInputChange('groupId', '');
+            }}
             className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm bg-white"
+            required
           >
-            <option value="">ללא ארגון</option>
+            <option value="">בחר ארגון</option>
             {organizations.map(org => (
               <option key={org.id} value={org.id}>{org.name}</option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <label htmlFor="group" className="block text-sm font-medium text-slate-700 mb-1">
+            קבוצה *
+          </label>
+          <GroupSelector
+            organizationId={formData.organizationId}
+            value={formData.groupId}
+            onChange={(groupId) => handleInputChange('groupId', groupId)}
+            required={true}
+            placeholder="בחר קבוצה..."
+          />
         </div>
 
         <div className="flex gap-3 pt-2">

@@ -34,9 +34,32 @@ export default function AdminLayout({ children, title, description, icon }: Admi
       }
 
       const { isAdmin: adminStatus } = await rlsSupabase.isAdmin();
-      setIsAdmin(adminStatus);
       
+      // בדיקה נוספת אם המשתמש הוא מנהל ארגון
+      let hasAdminAccess = adminStatus;
       if (!adminStatus) {
+        const { user: currentUser } = await rlsSupabase.getCurrentUser();
+        if (currentUser) {
+          try {
+            const { data: profile, error } = await rlsSupabase.from('user_profile')
+              .select('*')
+              .eq('user_id', currentUser.id)
+              .single();
+            
+            if (error) {
+              console.error('Error fetching user profile:', error);
+            } else {
+              hasAdminAccess = (profile as any)?.role === 'org_admin';
+            }
+          } catch (error) {
+            console.error('Error checking user role:', error);
+          }
+        }
+      }
+      
+      setIsAdmin(hasAdminAccess);
+      
+      if (!hasAdminAccess) {
         router.push('/course');
       }
     } catch (error) {

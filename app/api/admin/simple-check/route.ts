@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { getSupabaseAdmin } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,14 +13,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // בדיקה אם Service Role Key זמין
-    if (!supabaseAdmin) {
-      return NextResponse.json({
-        available: false,
-        reason: 'Service Role Key לא מוגדר',
-        details: { serviceRoleAvailable: false }
-      });
-    }
+    const supabaseAdmin = getSupabaseAdmin();
 
     // בדיקת פרופיל המשתמש ישירות עם supabaseAdmin
     const profileResult = await supabaseAdmin.from('user_profile')

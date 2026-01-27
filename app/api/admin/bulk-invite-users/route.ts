@@ -19,7 +19,29 @@ export async function POST(request: NextRequest) {
     // בדיקת הרשאות מנהל
     const { isAdmin } = await rlsSupabase.isAdmin();
     
+    // בדיקה נוספת אם המשתמש הוא מנהל ארגון
+    let hasAdminAccess = isAdmin;
     if (!isAdmin) {
+      const { user: currentUser } = await rlsSupabase.getCurrentUser();
+      if (currentUser) {
+        try {
+          const { data: profile, error } = await rlsSupabase.from('user_profile')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .single();
+          
+          if (error) {
+            console.error('Error fetching user profile:', error);
+          } else {
+            hasAdminAccess = (profile as any)?.role === 'org_admin';
+          }
+        } catch (error) {
+          console.error('Error checking user role:', error);
+        }
+      }
+    }
+    
+    if (!hasAdminAccess) {
       return NextResponse.json(
         { error: 'אין הרשאה לבצע פעולה זו' },
         { status: 403 }

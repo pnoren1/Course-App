@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useUserRole } from '../../../lib/hooks/useUserRole';
 import { submissionStatsService, UserSubmissionStats, DetailedSubmissionStatus } from '../../../lib/services/submissionStatsService';
 import AdminLayout from '../../components/AdminLayout';
+import UserGroupDisplay from '../../components/UserGroupDisplay';
 import { useRouter } from 'next/navigation';
 
 export default function StudentProgressPage() {
@@ -42,7 +43,7 @@ export default function StudentProgressPage() {
       }
     };
 
-    if (role === 'admin') {
+    if (role === 'admin' || role === 'org_admin') {
       loadAllUsersStats();
     }
   }, [role]);
@@ -199,7 +200,7 @@ export default function StudentProgressPage() {
               </h2>
             </div>
             
-            <div className="max-h-96 overflow-y-auto">
+            <div className="h-[640px] overflow-y-auto">
               {loading ? (
                 <div className="p-8 text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
@@ -230,6 +231,28 @@ export default function StudentProgressPage() {
                             <div>
                               <h3 className="font-medium text-gray-900">{user.userName}</h3>
                               <p className="text-sm text-gray-600">{user.userEmail}</p>
+                              {/* Group information */}
+                              <div className="mt-1">
+                                <UserGroupDisplay 
+                                  user={{
+                                    id: user.userId,
+                                    user_id: user.userId,
+                                    user_name: user.userName,
+                                    email: user.userEmail,
+                                    role: 'student',
+                                    organization_id: user.organizationId || null,
+                                    group_id: user.groupId || null,
+                                    organizationName: user.organizationName,
+                                    groupName: user.groupName,
+                                    granted_at: new Date().toISOString(),
+                                    granted_by: null,
+                                    created_at: new Date().toISOString(),
+                                    updated_at: new Date().toISOString()
+                                  } as any}
+                                  showOrganization={true}
+                                  size="sm"
+                                />
+                              </div>
                             </div>
                           </div>
                         </div>

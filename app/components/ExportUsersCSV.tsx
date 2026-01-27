@@ -30,7 +30,11 @@ export default function ExportUsersCSV({ organizations = [], className = '' }: E
           user_name,
           role,
           organization_id,
+          group_id,
           organizations (
+            name
+          ),
+          groups (
             name
           )
         `);
@@ -56,12 +60,13 @@ export default function ExportUsersCSV({ organizations = [], className = '' }: E
       }
 
       // הכנת הנתונים לייצוא
-      const csvHeaders = 'email,username,role,organization\n';
+      const csvHeaders = 'email,username,role,organization,group\n';
       const csvRows = users.map(user => {
         const email = user.email || '';
         const username = user.user_name || '';
         const role = user.role || 'student';
         const organization = user.organizations?.name || '';
+        const group = user.groups?.name || '';
         
         // הימנעות מבעיות עם פסיקים בנתונים
         const escapeCsvField = (field: string) => {
@@ -75,7 +80,8 @@ export default function ExportUsersCSV({ organizations = [], className = '' }: E
           escapeCsvField(email),
           escapeCsvField(username),
           escapeCsvField(role),
-          escapeCsvField(organization)
+          escapeCsvField(organization),
+          escapeCsvField(group)
         ].join(',');
       }).join('\n');
 
@@ -184,6 +190,7 @@ export default function ExportUsersCSV({ organizations = [], className = '' }: E
                   <option value="student">סטודנט</option>
                   <option value="instructor">מרצה</option>
                   <option value="moderator">מנחה</option>
+                  <option value="org_admin">מנהל ארגון</option>
                   <option value="admin">מנהל</option>
                 </select>
               </div>

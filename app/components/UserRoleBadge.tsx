@@ -2,6 +2,7 @@
 
 import { useUserRole, getRoleLabel, getRoleColor, getRoleIcon } from "@/lib/hooks/useUserRole";
 import { RoleType } from "@/lib/types/database.types";
+import UserGroupDisplay from "./UserGroupDisplay";
 
 interface UserRoleBadgeProps {
   size?: 'sm' | 'md' | 'lg';
@@ -14,6 +15,8 @@ interface UserRoleBadgeProps {
     userEmail: string | null;
     organizationName: string | null;
     organizationId: string | null;
+    groupName: string | null;
+    groupId: string | null;
     userId: string | null;
     isLoading: boolean;
     error: string | null;
@@ -94,6 +97,8 @@ interface UserInfoProps {
     userEmail: string | null;
     organizationName: string | null;
     organizationId: string | null;
+    groupName: string | null;
+    groupId: string | null;
     userId: string | null;
     isLoading: boolean;
     error: string | null;
@@ -114,7 +119,7 @@ export function UserInfo({
   const hookData = useUserRole();
   
   // אם הועברו נתונים כ-props, נשתמש בהם, אחרת נשתמש ב-hook
-  const { organizationName, error } = userRoleData || hookData;
+  const { organizationName, groupName, error } = userRoleData || hookData;
   
   const sizeClasses = {
     sm: 'text-xs',
@@ -126,6 +131,30 @@ export function UserInfo({
     sm: 'w-3 h-3',
     md: 'w-4 h-4',
     lg: 'w-5 h-5'
+  };
+
+  // יצירת אובייקט משתמש עבור UserGroupDisplay
+  const userForGroupDisplay = {
+    id: userRoleData?.userId || hookData.userId || '',
+    user_id: userRoleData?.userId || hookData.userId || '',
+    user_name: userName || userRoleData?.userName || hookData.userName,
+    email: userRoleData?.userEmail || hookData.userEmail,
+    role: userRoleData?.role || hookData.role || 'student',
+    organization_id: userRoleData?.organizationId || hookData.organizationId,
+    group_id: userRoleData?.groupId || hookData.groupId,
+    granted_at: new Date().toISOString(),
+    granted_by: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    // הוספת המידע על הארגון והקבוצה מה-userRoleData
+    organization: userRoleData?.organizationName || hookData.organizationName ? {
+      id: userRoleData?.organizationId || hookData.organizationId,
+      name: userRoleData?.organizationName || hookData.organizationName
+    } : undefined,
+    group: userRoleData?.groupName || hookData.groupName ? {
+      id: userRoleData?.groupId || hookData.groupId,
+      name: userRoleData?.groupName || hookData.groupName
+    } : undefined
   };
 
   // אם יש שגיאה של משתמש שלא קיים, נציג הודעת שגיאה עם כפתור יציאה חירום
@@ -181,17 +210,16 @@ export function UserInfo({
           </div>
         )}
         
-        {/* Second row: Role and Organization */}
-        {(showRole || (showOrganization && organizationName)) && (
+        {/* Second row: Role and Organization/Group */}
+        {(showRole || showOrganization) && (
           <div className="flex items-center gap-2">
             {showRole && <UserRoleBadge size={size} userRoleData={userRoleData} />}
-            {showOrganization && organizationName && (
-              <div className="inline-flex items-center gap-2 px-2 py-1 bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-medium">
-                <svg className={`${iconSizes[size]} text-slate-500`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-                <span className="text-xs">{organizationName}</span>
-              </div>
+            {showOrganization && (
+              <UserGroupDisplay 
+                user={userForGroupDisplay}
+                showOrganization={true}
+                size={size}
+              />
             )}
           </div>
         )}
@@ -204,13 +232,12 @@ export function UserInfo({
     <div className={`flex items-center gap-3 ${className}`}>
       {showRole && <UserRoleBadge size={size} userRoleData={userRoleData} />}
       
-      {showOrganization && organizationName && (
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-sm font-medium">
-          <svg className={`${iconSizes[size]} text-slate-500`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-          </svg>
-          <span className={sizeClasses[size]}>{organizationName}</span>
-        </div>
+      {showOrganization && (
+        <UserGroupDisplay 
+          user={userForGroupDisplay}
+          showOrganization={true}
+          size={size}
+        />
       )}
       
       {userName && (

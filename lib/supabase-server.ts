@@ -43,18 +43,37 @@ export function createServerSupabaseClient(request: NextRequest) {
           }
         } catch {
           // אם זה לא JSON, אולי זה הטוקן עצמו
-          token = cookieValue;
-          break;
+          if (cookieValue.startsWith('eyJ')) { // JWT token starts with eyJ
+            token = cookieValue;
+            break;
+          }
         }
       }
     }
     
-    // אם עדיין לא מצאנו, נסה לחפש בכל ה-cookies
+    // אם עדיין לא מצאנו, נסה לחפש בכל ה-cookies שמתחילים ב-sb-
     if (!token) {
-      console.log('🍪 Available cookies:', Array.from(cookies.getAll()).map(c => c.name));
+      console.log('🍪 Available cookies:', Array.from(cookies.getAll()).map(c => ({ name: c.name, hasValue: !!c.value })));
+      
+      // חיפוש בכל ה-cookies שמתחילים ב-sb-
+      for (const cookie of cookies.getAll()) {
+        if (cookie.name.startsWith('sb-') && cookie.value) {
+          try {
+            const parsed = JSON.parse(cookie.value);
+            if (parsed.access_token) {
+              token = parsed.access_token;
+              console.log('🎯 Found token in cookie:', cookie.name);
+              break;
+            }
+          } catch {
+            // ignore parsing errors
+          }
+        }
+      }
     }
   }
 
+  console.log('🔍 Final token status:', token ? `Found (${token.substring(0, 20)}...)` : 'Not found');
   return { supabase, token };
 }
 
@@ -64,26 +83,23 @@ export async function getAuthenticatedUser(request: NextRequest) {
   
   console.log('🔑 Token found:', token ? 'Yes' : 'No');
   
-  if (token) {
-    try {
-      // הגדרת הטוקן
-      await supabase.auth.setSession({
-        access_token: token,
-        refresh_token: ''
-      });
-      console.log('✅ Session set successfully');
-    } catch (error) {
-      console.error('❌ Error setting session:', error);
-    }
+  if (!token) {
+    console.log('❌ No token found in request');
+    return { user: null, error: { message: 'No authentication token found' }, supabase };
   }
 
-  // קבלת המשתמש
-  const { data: { user }, error } = await supabase.auth.getUser();
-  
-  console.log('👤 User from auth:', user ? { id: user.id, email: user.email } : 'No user');
-  if (error) {
-    console.error('❌ Auth error:', error);
+  try {
+    // הגדרת הטוקן
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    console.log('👤 User from auth:', user ? { id: user.id, email: user.email } : 'No user');
+    if (error) {
+      console.error('❌ Auth error:', error);
+    }
+    
+    return { user, error, supabase };
+  } catch (error) {
+    console.error('❌ Error in getAuthenticatedUser:', error);
+    return { user: null, error, supabase };
   }
-  
-  return { user, error, supabase };
 }

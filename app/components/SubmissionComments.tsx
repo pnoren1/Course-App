@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { rlsSupabase } from '@/lib/supabase';
+import UserGroupDisplay from './UserGroupDisplay';
 import { SubmissionComment } from '@/lib/types/assignment';
 
 interface SubmissionCommentsProps {
@@ -170,14 +171,23 @@ export default function SubmissionComments({ submissionId, onCommentAdded }: Sub
                   }`}
                 >
                   <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-slate-900">
-                        {(comment as any).user_profile?.user_name || 'מנהל'}
-                      </span>
-                      {comment.is_internal && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                          פנימי
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-slate-900">
+                          {(comment as any).user_profile?.user_name || 'מנהל'}
                         </span>
+                        {comment.is_internal && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            פנימי
+                          </span>
+                        )}
+                      </div>
+                      {(comment as any).user_profile && (
+                        <UserGroupDisplay 
+                          user={(comment as any).user_profile}
+                          showOrganization={true}
+                          size="sm"
+                        />
                       )}
                     </div>
                     <span className="text-xs text-slate-500">
