@@ -65,13 +65,6 @@ export default function AuthGuard({
           
           router.push(redirectUrl);
         } else {
-          // בדיקת תוקף הסשן (30 דקות)
-          const { expired } = await supabaseUtils.checkSessionExpiry(30 * 60 * 1000);
-          if (expired) {
-            router.push("/login?error=session_expired&message=" + encodeURIComponent('הסשן פג תוקף. אנא התחבר מחדש.'));
-            return;
-          }
-
           // אם המשתמש מחובר, נציג את מידע התפקיד לכמה שניות
           if (pathname === "/course") {
             setShowRoleInfo(true);
@@ -80,17 +73,7 @@ export default function AuthGuard({
         }
       } catch (error) {
         console.error('Error checking session:', error);
-        
-        // Use RLS-aware error handling
-        const errorMessage = supabaseUtils.getErrorMessage(error, {
-          component: 'auth-guard',
-          operation: 'getSession'
-        });
-        
-        // If authentication is required, redirect to login
-        if (errorMessage?.includes('Authentication') || errorMessage?.includes('התחבר')) {
-          router.push("/login?error=session_error");
-        }
+        router.push("/login?error=session_error");
       } finally {
         setLoading(false);
       }
@@ -104,20 +87,12 @@ export default function AuthGuard({
       
       if (event === 'SIGNED_OUT' && pathname !== '/login') {
         console.log('User signed out, redirecting to login');
-        // שימוש ב-replace כדי למנוע חזרה לדף הקורס
-        router.replace('/login?error=user_deleted&message=' + encodeURIComponent('המשתמש נמחק מהמערכת. אנא התחבר מחדש.'));
+        router.replace('/login');
       }
     });
 
-    // הגדרת בדיקה תקופתית לתוקף הסשן (כל 5 דקות)
-    const sessionCheckInterval = supabaseUtils.setupSessionExpiryCheck(
-      30 * 60 * 1000, // 30 דקות מקסימום
-      5 * 60 * 1000   // בדיקה כל 5 דקות
-    );
-
     return () => {
       subscription.unsubscribe();
-      clearInterval(sessionCheckInterval);
     };
   }, [pathname, router, searchParams]);
 

@@ -6,6 +6,7 @@ import { rlsSupabase } from '@/lib/supabase';
 import { UserInfo } from '@/app/components/UserRoleBadge';
 import AdminNavigation from '@/app/components/AdminNavigation';
 import AdminBreadcrumb from '@/app/components/AdminBreadcrumb';
+import SubmissionNotifications from '@/app/components/SubmissionNotifications';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -92,6 +93,7 @@ export default function AdminLayout({ children, title, description, icon }: Admi
             </div>
 
             <div className="flex items-center gap-4">
+              <SubmissionNotifications />
               <UserInfo showRole={true} size="sm" />
               
               <div className="flex items-center gap-2">

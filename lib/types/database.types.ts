@@ -438,6 +438,49 @@ export interface Database {
           }
         ];
       };
+      submission_comments: {
+        Row: {
+          id: number;
+          submission_id: number;
+          user_id: string;
+          comment: string;
+          is_internal: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: number;
+          submission_id: number;
+          user_id?: string;
+          comment: string;
+          is_internal?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: number;
+          submission_id?: number;
+          user_id?: string;
+          comment?: string;
+          is_internal?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "submission_comments_submission_id_fkey";
+            columns: ["submission_id"];
+            referencedRelation: "assignment_submissions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "submission_comments_user_id_fkey";
+            columns: ["user_id"];
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       user_invitations: {
         Row: {
           id: string;
@@ -734,6 +777,9 @@ export type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'cancelled';
 
 // Audit operation types for type safety
 export type AuditOperation = 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE';
+
+// Submission file type
+export type SubmissionFile = Database['public']['Tables']['submission_files']['Row'];
 
 // Additional types for the popup system
 export interface PopupContent {

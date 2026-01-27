@@ -43,11 +43,17 @@ export default function AdminPage() {
         .from('units')
         .select('*', { count: 'exact', head: true });
 
+      // Load pending submissions count (submitted status)
+      const { count: pendingCount } = await rlsSupabase.raw
+        .from('assignment_submissions')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'submitted');
+
       setStats({
         totalUsers: usersCount || 0,
         totalAssignments: assignmentsCount || 0,
         totalUnits: unitsCount || 0,
-        pendingSubmissions: 0 // Will be implemented later
+        pendingSubmissions: pendingCount || 0
       });
     } catch (error) {
       console.error('Error loading stats:', error);
@@ -223,7 +229,7 @@ export default function AdminPage() {
             </button>
           </div>
 
-          <div className="bg-white rounded-lg border border-slate-200 p-6 hover:shadow-md transition-shadow opacity-60">
+          <div className="bg-white rounded-lg border border-slate-200 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3 mb-4">
               <div className="inline-flex items-center justify-center w-10 h-10 bg-orange-100 rounded-lg">
                 <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -231,17 +237,12 @@ export default function AdminPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-slate-900">ניהול הגשות</h3>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                  בקרוב
-                </span>
-              </div>
+              <h3 className="font-semibold text-slate-900">ניהול הגשות</h3>
             </div>
             <p className="text-sm text-slate-600 mb-4">צפייה וניהול הגשות המטלות</p>
             <button 
-              disabled
-              className="w-full bg-slate-100 text-slate-400 font-medium py-2 px-4 rounded-lg cursor-not-allowed"
+              onClick={() => router.push('/admin/submissions')}
+              className="w-full bg-orange-50 hover:bg-orange-100 text-orange-700 font-medium py-2 px-4 rounded-lg transition-colors"
             >
               ניהול הגשות
             </button>

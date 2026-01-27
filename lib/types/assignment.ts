@@ -34,10 +34,21 @@ export interface SubmissionFile {
   id: number;
   submission_id: number;
   original_filename: string;
+  stored_filename: string;
   storage_path: string;
   file_size_bytes: number;
   file_type: string;
   uploaded_at: string;
+}
+
+export interface SubmissionComment {
+  id: number;
+  submission_id: number;
+  user_id: string;
+  comment: string;
+  is_internal: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface AssignmentDisplayProps {

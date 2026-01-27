@@ -330,12 +330,12 @@ export const supabaseUtils = {
         return { expired: true, session: null };
       }
 
-      const now = Date.now();
-      const sessionStart = new Date(session.user.created_at).getTime();
-      const sessionAge = now - sessionStart;
+      // בדיקה לפי expires_at של הטוקן
+      const now = Math.floor(Date.now() / 1000); // Unix timestamp בשניות
+      const expiresAt = session.expires_at;
 
-      if (sessionAge > maxSessionTime) {
-        // יציאה אוטומטית אם פג תוקף
+      if (expiresAt && now >= expiresAt) {
+        // הטוקן פג תוקף
         await supabase.auth.signOut();
         return { expired: true, session: null };
       }
