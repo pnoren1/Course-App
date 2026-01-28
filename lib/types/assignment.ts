@@ -49,6 +49,23 @@ export interface SubmissionComment {
   is_internal: boolean;
   created_at: string;
   updated_at: string;
+  user_profile?: {
+    user_id: string;
+    user_name: string | null;
+    email: string;
+    role: string;
+    organization_id: string | null;
+    group_id: string | null;
+    organization?: {
+      id: string;
+      name: string;
+    } | null;
+    group?: {
+      id: string;
+      name: string;
+      organization_id: string;
+    } | null;
+  } | null;
 }
 
 export interface AssignmentDisplayProps {

@@ -2,6 +2,9 @@ import { rlsSupabase } from '../supabase';
 import { SubmissionFile } from '../types/assignment';
 
 export class FileService {
+  private fileCache = new Map<number, { files: SubmissionFile[], timestamp: number }>();
+  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 דקות
+
   async uploadFiles(files: File[], submissionId: number, userId: string): Promise<SubmissionFile[]> {
     try {
       const uploadedFiles: SubmissionFile[] = [];
@@ -47,6 +50,9 @@ export class FileService {
         uploadedFiles.push(dbData as SubmissionFile);
       }
 
+      // נקה cache עבור submission זה כי נוספו קבצים חדשים
+      this.clearSubmissionCache(submissionId);
+
       return uploadedFiles;
     } catch (error) {
       console.error('Error in uploadFiles:', error);
@@ -85,8 +91,18 @@ export class FileService {
     }
   }
 
-  async getFilesBySubmission(submissionId: number): Promise<SubmissionFile[]> {
+  async getFilesBySubmission(submissionId: number, forceRefresh = false): Promise<SubmissionFile[]> {
     try {
+      // בדוק cache אם לא מבקשים refresh מאולץ
+      if (!forceRefresh) {
+        const cached = this.fileCache.get(submissionId);
+        if (cached && (Date.now() - cached.timestamp) < this.CACHE_DURATION) {
+          console.log(`Using cached files for submission ${submissionId}`);
+          return cached.files;
+        }
+      }
+
+      console.log(`Fetching files from database for submission ${submissionId}`);
       const { data, error } = await rlsSupabase
         .from('submission_files')
         .select('*')
@@ -98,11 +114,29 @@ export class FileService {
         throw error;
       }
 
-      return (data || []) as SubmissionFile[];
+      const files = (data || []) as SubmissionFile[];
+      
+      // שמור ב-cache
+      this.fileCache.set(submissionId, {
+        files,
+        timestamp: Date.now()
+      });
+
+      return files;
     } catch (error) {
       console.error('Error in getFilesBySubmission:', error);
       throw error;
     }
+  }
+
+  // נקה cache עבור submission מסוים (לאחר העלאת קבצים חדשים)
+  clearSubmissionCache(submissionId: number) {
+    this.fileCache.delete(submissionId);
+  }
+
+  // נקה את כל ה-cache
+  clearAllCache() {
+    this.fileCache.clear();
   }
 }
 

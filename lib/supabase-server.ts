@@ -30,14 +30,28 @@ export function createServerSupabaseClient(request: NextRequest) {
       valueStart: c.value ? c.value.substring(0, 20) + '...' : 'empty'
     })));
     
+    // Get the actual project reference from environment
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    let projectRef = 'lzedeawtmzfenyrewhmo'; // default fallback
+    
+    if (supabaseUrl) {
+      const match = supabaseUrl.match(/https:\/\/([^.]+)\.supabase\.co/);
+      if (match) {
+        projectRef = match[1];
+        console.log('🎯 Detected project ref:', projectRef);
+      }
+    }
+    
     // רשימת שמות cookies אפשריים של Supabase
     const possibleCookieNames = [
-      'sb-lzedeawtmzfenyrewhmo-auth-token', // עם project ref הנכון
-      'sb-lzedeawtmzfenyrewhmo-auth-token-code-verifier',
+      `sb-${projectRef}-auth-token`,
+      `sb-${projectRef}-auth-token-code-verifier`,
       'supabase-auth-token',
       'sb-access-token',
       'supabase.auth.token'
     ];
+    
+    console.log('🔍 Looking for cookies:', possibleCookieNames);
     
     for (const cookieName of possibleCookieNames) {
       const cookieValue = cookies.get(cookieName)?.value;
@@ -97,6 +111,28 @@ export async function getAuthenticatedUser(request: NextRequest) {
   
   if (!token) {
     console.log('❌ No token found in request');
+    
+    // Try to get token from session cookie as fallback
+    const cookies = request.cookies;
+    const sessionCookie = cookies.get('sb-lzedeawtmzfenyrewhmo-auth-token');
+    
+    if (sessionCookie?.value) {
+      try {
+        const sessionData = JSON.parse(sessionCookie.value);
+        if (sessionData.access_token) {
+          console.log('🔄 Found token in session cookie');
+          const { data: { user }, error } = await supabase.auth.getUser(sessionData.access_token);
+          
+          if (user && !error) {
+            console.log('✅ User authenticated via session cookie:', { id: user.id, email: user.email });
+            return { user, error: null, supabase };
+          }
+        }
+      } catch (parseError) {
+        console.log('❌ Error parsing session cookie:', parseError);
+      }
+    }
+    
     return { user: null, error: { message: 'No authentication token found' }, supabase };
   }
 

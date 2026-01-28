@@ -1,6 +1,7 @@
 import { rlsSupabase } from '../supabase';
 import { Assignment, AssignmentSubmission, SubmissionFile } from '../types/assignment';
 import { Database } from '../types/database.types';
+import { fileService } from './fileService';
 
 export class AssignmentService {
   async getAllAssignments(): Promise<Assignment[]> {
@@ -207,34 +208,18 @@ export class AssignmentService {
 
       if (error) {
         console.error('Error updating submission status:', error);
-        throw error;
+        throw new Error(`Failed to update submission status: ${error.message || error.code || 'Unknown error'}`);
       }
 
       return data as Database['public']['Tables']['assignment_submissions']['Row'];
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in updateSubmissionStatus:', error);
       throw error;
     }
   }
 
   async getSubmissionFiles(submissionId: number): Promise<SubmissionFile[]> {
-    try {
-      const { data, error } = await rlsSupabase
-        .from('submission_files')
-        .select('*')
-        .eq('submission_id', submissionId)
-        .order('uploaded_at', { ascending: true });
-
-      if (error) {
-        console.error('Error fetching submission files:', error);
-        throw error;
-      }
-
-      return (data as any[]) || [];
-    } catch (error) {
-      console.error('Error in getSubmissionFiles:', error);
-      throw error;
-    }
+    return fileService.getFilesBySubmission(submissionId);
   }
 }
 

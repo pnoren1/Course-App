@@ -79,6 +79,48 @@ function CourseContent({ userRoleData }: { userRoleData: any }) {
     loadUserSubmissions();
   }, [user?.id]);
 
+  // Function to refresh user submissions
+  const refreshUserSubmissions = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { assignmentService } = await import('../../lib/services/assignmentService');
+      const submissions = await assignmentService.getSubmissionsByUser(user.id);
+      const submissionMap = new Map<number, any>();
+      
+      submissions.forEach((submission: any) => {
+        submissionMap.set(submission.assignment_id, submission);
+      });
+      
+      setUserSubmissions(submissionMap);
+    } catch (error) {
+      console.error('Failed to refresh user submissions:', error);
+    }
+  };
+
+  // Auto-refresh submissions every 30 seconds to catch status updates
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const interval = setInterval(() => {
+      refreshUserSubmissions();
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [user?.id]);
+
+  // Also refresh when the page becomes visible again (user returns to tab)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user?.id) {
+        refreshUserSubmissions();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [user?.id]);
+
   // Check acknowledgment status when user is available
   useEffect(() => {
     const checkAcknowledgmentStatus = async () => {

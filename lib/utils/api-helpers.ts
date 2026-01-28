@@ -4,7 +4,17 @@ import { rlsSupabase } from '@/lib/supabase';
  * Helper function to create authenticated headers for API calls
  */
 export async function getAuthHeaders(): Promise<HeadersInit> {
-  const { data: { session } } = await rlsSupabase.auth.getSession();
+  console.log('🔍 Getting auth headers...');
+  
+  const { data: { session }, error } = await rlsSupabase.auth.getSession();
+  
+  console.log('📋 Session status:', { 
+    hasSession: !!session, 
+    hasAccessToken: !!session?.access_token,
+    error: error?.message,
+    expiresAt: session?.expires_at ? new Date(session.expires_at * 1000).toISOString() : 'N/A'
+  });
+  
   const token = session?.access_token;
   
   const headers: HeadersInit = {
@@ -13,6 +23,9 @@ export async function getAuthHeaders(): Promise<HeadersInit> {
   
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+    console.log('✅ Added Authorization header');
+  } else {
+    console.log('❌ No token available for Authorization header');
   }
   
   return headers;
@@ -25,15 +38,23 @@ export async function authenticatedFetch(
   url: string, 
   options: RequestInit = {}
 ): Promise<Response> {
+  console.log('🌐 Making authenticated request to:', url);
+  
   const headers = await getAuthHeaders();
   
-  return fetch(url, {
+  console.log('📤 Request headers:', Object.keys(headers));
+  
+  const response = await fetch(url, {
     ...options,
     headers: {
       ...headers,
       ...options.headers
     }
   });
+  
+  console.log('📥 Response status:', response.status, response.statusText);
+  
+  return response;
 }
 
 /**

@@ -8,19 +8,43 @@ import { SubmissionComment } from '@/lib/types/assignment';
 interface SubmissionCommentsProps {
   submissionId: number;
   onCommentAdded?: () => void;
+  showAddForm?: boolean; // Allow hiding the add comment form
 }
 
-export default function SubmissionComments({ submissionId, onCommentAdded }: SubmissionCommentsProps) {
+export default function SubmissionComments({ submissionId, onCommentAdded, showAddForm = true }: SubmissionCommentsProps) {
   const [comments, setComments] = useState<SubmissionComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
   const [isInternal, setIsInternal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [commentsAvailable, setCommentsAvailable] = useState(true);
+  const [canAddComments, setCanAddComments] = useState(false);
 
   useEffect(() => {
     loadComments();
+    checkPermissions();
   }, [submissionId]);
+
+  const checkPermissions = async () => {
+    try {
+      const { data: { user } } = await rlsSupabase.auth.getUser();
+      if (!user) {
+        setCanAddComments(false);
+        return;
+      }
+
+      const { data: profile } = await rlsSupabase
+        .from('user_profile')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+
+      setCanAddComments((profile as any)?.role === 'admin' || (profile as any)?.role === 'org_admin');
+    } catch (error) {
+      console.error('Error checking permissions:', error);
+      setCanAddComments(false);
+    }
+  };
 
   const loadComments = async () => {
     try {
@@ -41,7 +65,13 @@ export default function SubmissionComments({ submissionId, onCommentAdded }: Sub
           setCommentsAvailable(false);
           return;
         }
-        console.error('Error loading comments:', commentsError);
+        console.error('Error loading comments:', {
+          message: commentsError.message,
+          code: commentsError.code,
+          details: commentsError.details,
+          hint: commentsError.hint,
+          fullError: commentsError
+        });
         return;
       }
 
@@ -50,11 +80,15 @@ export default function SubmissionComments({ submissionId, onCommentAdded }: Sub
         return;
       }
 
-      // Get user profiles for comment authors
+      // Get user profiles for comment authors with organization and group information
       const userIds = [...new Set(commentsData.map((c: any) => c.user_id))];
       const { data: profilesData, error: profilesError } = await rlsSupabase
         .from('user_profile')
-        .select('*')
+        .select(`
+          *,
+          organization:organizations(id, name),
+          group:groups(id, name)
+        `)
         .in('user_id', userIds);
 
       if (profilesError) {
@@ -81,11 +115,38 @@ export default function SubmissionComments({ submissionId, onCommentAdded }: Sub
 
     try {
       setSubmitting(true);
+      
+      // Get current user ID
+      const { data: { user } } = await rlsSupabase.auth.getUser();
+      console.log('Current user:', user?.id);
+      
+      if (!user) {
+        alert('יש להתחבר כדי להוסיף הערה');
+        return;
+      }
+
+      // Check user profile for debugging
+      const { data: profile, error: profileError } = await rlsSupabase
+        .from('user_profile')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      
+      console.log('User profile:', profile);
+      console.log('Profile error:', profileError);
+      
+      console.log('Adding comment:', {
+        submission_id: submissionId,
+        user_id: user.id,
+        comment: newComment.trim(),
+        is_internal: isInternal
+      });
 
       const { data: commentData, error } = await rlsSupabase
         .from('submission_comments')
         .insert({
           submission_id: submissionId,
+          user_id: user.id,
           comment: newComment.trim(),
           is_internal: isInternal
         })
@@ -99,15 +160,36 @@ export default function SubmissionComments({ submissionId, onCommentAdded }: Sub
           setCommentsAvailable(false);
           return;
         }
-        console.error('Error adding comment:', error);
+        
+        // Check for permission errors
+        if (error.code === '42501' || error.message?.includes('permission denied') || error.message?.includes('RLS')) {
+          console.error('Permission denied for adding comment');
+          alert('אין לך הרשאה להוסיף הערות. רק מנהלים ומנהלי ארגון יכולים להוסיף הערות.');
+          return;
+        }
+        
+        console.error('Error adding comment:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+          fullError: error
+        });
+        alert(`שגיאה בהוספת הערה: ${error.message || 'שגיאה לא ידועה'}`);
         return;
       }
 
-      // Get user profile for the new comment
+      console.log('Comment added successfully:', commentData);
+
+      // Get user profile for the new comment with organization and group information
       const { data: profileData } = await rlsSupabase
         .from('user_profile')
-        .select('*')
-        .eq('user_id', (commentData as any).user_id)
+        .select(`
+          *,
+          organization:organizations(id, name),
+          group:groups(id, name)
+        `)
+        .eq('user_id', user.id)
         .single();
 
       const commentWithProfile = {
@@ -124,83 +206,59 @@ export default function SubmissionComments({ submissionId, onCommentAdded }: Sub
       }
     } catch (error) {
       console.error('Error in addComment:', error);
+      alert(`שגיאה בהוספת הערה: ${error instanceof Error ? error.message : 'שגיאה לא ידועה'}`);
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="space-y-4">
-      <h4 className="text-sm font-medium text-slate-700">הערות ומשוב</h4>
+    <div className="space-y-2">
+      <div className="text-xs text-slate-600">הערות</div>
       
       {!commentsAvailable ? (
-        <div className="text-center py-4">
-          <div className="inline-flex items-center gap-2 px-3 py-2 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-            תכונת ההערות תהיה זמינה לאחר הרצת המיגרציות
-          </div>
+        <div className="text-xs text-yellow-600 bg-yellow-50 rounded p-2">
+          תכונת ההערות תהיה זמינה לאחר הרצת המיגרציות
         </div>
       ) : (
         <>
           {/* Comments List */}
-          <div className="space-y-3 max-h-64 overflow-y-auto">
+          <div className="space-y-2 max-h-32 overflow-y-auto">
             {loading ? (
-              <div className="text-center py-4">
-                <div className="inline-flex items-center gap-2 text-slate-600">
-                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  טוען הערות...
-                </div>
-              </div>
+              <div className="text-xs text-slate-500 text-center py-2">טוען...</div>
             ) : comments.length === 0 ? (
-              <div className="text-center py-4 text-slate-500 text-sm">
-                אין הערות עדיין
-              </div>
+              <div className="text-xs text-slate-500 text-center py-2">אין הערות</div>
             ) : (
               comments.map((comment) => (
                 <div
                   key={comment.id}
-                  className={`p-3 rounded-lg border ${
+                  className={`p-2 rounded text-xs ${
                     comment.is_internal 
-                      ? 'bg-yellow-50 border-yellow-200' 
-                      : 'bg-slate-50 border-slate-200'
+                      ? 'bg-yellow-50 border border-yellow-200' 
+                      : 'bg-slate-50 border border-slate-200'
                   }`}
                 >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-slate-900">
-                          {(comment as any).user_profile?.user_name || 'מנהל'}
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-1">
+                      <span className="font-medium text-slate-900">
+                        {(comment as any).user_profile?.user_name || 'מנהל'}
+                      </span>
+                      {comment.is_internal && (
+                        <span className="px-1 py-0.5 rounded text-xs bg-yellow-100 text-yellow-800">
+                          פנימי
                         </span>
-                        {comment.is_internal && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                            פנימי
-                          </span>
-                        )}
-                      </div>
-                      {(comment as any).user_profile && (
-                        <UserGroupDisplay 
-                          user={(comment as any).user_profile}
-                          showOrganization={true}
-                          size="sm"
-                        />
                       )}
                     </div>
-                    <span className="text-xs text-slate-500">
-                      {new Date(comment.created_at).toLocaleString('he-IL', {
+                    <span className="text-slate-500">
+                      {new Date(comment.created_at).toLocaleDateString('he-IL', {
                         day: '2-digit',
                         month: '2-digit',
-                        year: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit'
                       })}
                     </span>
                   </div>
-                  <p className="text-sm text-slate-700 whitespace-pre-wrap">
+                  <p className="text-slate-700 whitespace-pre-wrap">
                     {comment.comment}
                   </p>
                 </div>
@@ -209,52 +267,45 @@ export default function SubmissionComments({ submissionId, onCommentAdded }: Sub
           </div>
 
           {/* Add Comment Form */}
-          <div className="border-t border-slate-200 pt-4">
-            <div className="space-y-3">
-              <textarea
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                placeholder="הוסף הערה או משוב..."
-                rows={3}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none"
-              />
-              
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={isInternal}
-                    onChange={(e) => setIsInternal(e.target.checked)}
-                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-slate-600">הערה פנימית (לא תוצג לתלמיד)</span>
-                </label>
+          {showAddForm && canAddComments && (
+            <div className="border-t border-slate-200 pt-2">
+              <div className="space-y-2">
+                <textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="הוסף הערה..."
+                  rows={2}
+                  className="w-full px-2 py-1 border border-slate-300 rounded text-xs resize-none"
+                />
                 
-                <button
-                  onClick={addComment}
-                  disabled={!newComment.trim() || submitting}
-                  className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
-                >
-                  {submitting ? (
-                    <>
-                      <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      שולח...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                      </svg>
-                      שלח הערה
-                    </>
-                  )}
-                </button>
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-1">
+                    <input
+                      type="checkbox"
+                      checked={isInternal}
+                      onChange={(e) => setIsInternal(e.target.checked)}
+                      className="rounded border-slate-300 text-blue-600"
+                    />
+                    <span className="text-xs text-slate-600">פנימי</span>
+                  </label>
+                  
+                  <button
+                    onClick={addComment}
+                    disabled={!newComment.trim() || submitting}
+                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded disabled:opacity-50 text-xs"
+                  >
+                    {submitting ? 'שולח...' : 'שלח'}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
+
+          {showAddForm && !canAddComments && commentsAvailable && (
+            <div className="text-xs text-gray-600 bg-gray-50 rounded p-2 text-center">
+              רק מנהלים יכולים להוסיף הערות
+            </div>
+          )}
         </>
       )}
     </div>

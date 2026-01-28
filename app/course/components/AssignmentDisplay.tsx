@@ -5,6 +5,7 @@ import { Assignment, AssignmentSubmission, AssignmentDisplayProps } from '../../
 import { assignmentService } from '../../../lib/services/assignmentService';
 import FileUpload from './FileUpload';
 import SubmissionHistory from './SubmissionHistory';
+import SubmissionComments from '../../components/SubmissionComments';
 
 export default function AssignmentDisplay({ 
   assignment, 
@@ -98,14 +99,52 @@ export default function AssignmentDisplay({
           {/* Assignment Status Badge */}
           <div className="flex flex-col items-end gap-2">
             {submission ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-100 text-green-700 border border-green-200 rounded-lg text-sm font-medium">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                הוגש
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-medium border ${
+                submission.status === 'submitted' 
+                  ? 'bg-blue-100 text-blue-700 border-blue-200'
+                  : submission.status === 'reviewed'
+                  ? 'bg-green-100 text-green-700 border-green-200'
+                  : submission.status === 'needs_revision'
+                  ? 'bg-yellow-100 text-yellow-700 border-yellow-200'
+                  : submission.status === 'approved'
+                  ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                  : 'bg-gray-100 text-gray-700 border-gray-200'
+              }`}>
+                {submission.status === 'submitted' && (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    הוגש
+                  </>
+                )}
+                {submission.status === 'reviewed' && (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    נבדק
+                  </>
+                )}
+                {submission.status === 'needs_revision' && (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    דורש תיקון
+                  </>
+                )}
+                {submission.status === 'approved' && (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    אושר
+                  </>
+                )}
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-yellow-100 text-yellow-700 border border-yellow-200 rounded-lg text-sm font-medium">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 text-gray-700 border border-gray-200 rounded-lg text-sm font-medium">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -115,6 +154,53 @@ export default function AssignmentDisplay({
           </div>
         </div>
       </div>
+
+      {/* Status-specific messages */}
+      {submission && (
+        <div className="px-6 pb-4">
+          {submission.status === 'needs_revision' && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <div className="flex items-start gap-2">
+                <svg className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                <div>
+                  <h4 className="text-sm font-medium text-yellow-800 mb-1">נדרש תיקון</h4>
+                  <p className="text-sm text-yellow-700">המטלה נבדקה ונדרשים תיקונים. אנא בדוק את ההערות ועדכן את ההגשה.</p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {submission.status === 'reviewed' && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+              <div className="flex items-start gap-2">
+                <svg className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <div>
+                  <h4 className="text-sm font-medium text-green-800 mb-1">נבדק</h4>
+                  <p className="text-sm text-green-700">המטלה נבדקה על ידי המדריך. בדוק את ההערות למידע נוסף.</p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {submission.status === 'approved' && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+              <div className="flex items-start gap-2">
+                <svg className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <h4 className="text-sm font-medium text-emerald-800 mb-1">אושר</h4>
+                  <p className="text-sm text-emerald-700">כל הכבוד! המטלה אושרה בהצלחה.</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Collapsible Content */}
       {isExpanded && (
@@ -218,9 +304,23 @@ export default function AssignmentDisplay({
 
         {/* File Upload Section */}
         <div className="border-t border-slate-200 pt-4">
-          <h4 className="text-sm font-medium text-slate-900 mb-3">
-            {submission ? 'עדכון הגשה:' : 'הגשת מטלה:'}
-          </h4>
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-medium text-slate-900">
+              {submission ? 'עדכון הגשה:' : 'הגשת מטלה:'}
+            </h4>
+            {submission && (
+              <button
+                onClick={handleUploadComplete}
+                className="inline-flex items-center gap-1.5 px-2 py-1 text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors"
+                title="רענן סטטוס הגשה"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                רענן
+              </button>
+            )}
+          </div>
           <FileUpload
             assignment={assignment}
             submissionId={submission?.id}
@@ -241,6 +341,13 @@ export default function AssignmentDisplay({
                 console.log('Download file:', fileId);
               }}
             />
+          </div>
+        )}
+
+        {/* Comments Section */}
+        {submission && (
+          <div className="border-t border-slate-200 pt-4">
+            <SubmissionComments submissionId={submission.id} showAddForm={false} />
           </div>
         )}
 
