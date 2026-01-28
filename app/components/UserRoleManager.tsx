@@ -37,6 +37,7 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [selectedOrganization, setSelectedOrganization] = useState<string>('all');
+  const [selectedGroup, setSelectedGroup] = useState<string>('all');
   const [collapsedOrgs, setCollapsedOrgs] = useState<Set<string>>(new Set());
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -52,7 +53,7 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
     }
   }, [isAdmin]);
 
-  // Filter users based on search term and organization with debouncing
+  // Filter users based on search term, organization, and group with debouncing
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       let filtered = users;
@@ -63,6 +64,15 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
           filtered = filtered.filter(user => !user.organization_id);
         } else {
           filtered = filtered.filter(user => user.organization_id === selectedOrganization);
+        }
+      }
+      
+      // סינון לפי קבוצה
+      if (selectedGroup !== 'all') {
+        if (selectedGroup === 'no-group') {
+          filtered = filtered.filter(user => !user.group_id);
+        } else {
+          filtered = filtered.filter(user => user.group_id === selectedGroup);
         }
       }
       
@@ -79,7 +89,7 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
     }, 300); // 300ms debounce
 
     return () => clearTimeout(timeoutId);
-  }, [users, searchTerm, selectedOrganization]);
+  }, [users, searchTerm, selectedOrganization, selectedGroup]);
 
   const checkAdminStatus = async () => {
     try {
@@ -426,7 +436,13 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
             
             <select
               value={selectedOrganization}
-              onChange={(e) => setSelectedOrganization(e.target.value)}
+              onChange={(e) => {
+                setSelectedOrganization(e.target.value);
+                // אם בוחרים ארגון ספציפי, נאפס את סינון הקבוצה
+                if (e.target.value !== 'all') {
+                  setSelectedGroup('all');
+                }
+              }}
               className="px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white min-w-[150px]"
             >
               <option value="all">כל הארגונים</option>
@@ -435,6 +451,34 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
                 <option key={org.id} value={org.id}>{org.name}</option>
               ))}
             </select>
+
+            {/* סינון לפי קבוצה - מוצג רק אם נבחר ארגון ספציפי */}
+            {selectedOrganization !== 'all' && selectedOrganization !== 'no-org' && (
+              <select
+                value={selectedGroup}
+                onChange={(e) => setSelectedGroup(e.target.value)}
+                className="px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white min-w-[130px]"
+              >
+                <option value="all">כל הקבוצות</option>
+                <option value="no-group">ללא קבוצה</option>
+                {/* נטען את הקבוצות של הארגון הנבחר */}
+                {(() => {
+                  const orgGroups = users
+                    .filter(user => user.organization_id === selectedOrganization && user.group_id && user.group_name)
+                    .reduce((acc, user) => {
+                      if (user.group_id && user.group_name && !acc.some(g => g.id === user.group_id)) {
+                        acc.push({ id: user.group_id, name: user.group_name });
+                      }
+                      return acc;
+                    }, [] as Array<{ id: string; name: string }>)
+                    .sort((a, b) => a.name.localeCompare(b.name, 'he'));
+                  
+                  return orgGroups.map(group => (
+                    <option key={group.id} value={group.id}>{group.name}</option>
+                  ));
+                })()}
+              </select>
+            )}
             
             <button
               onClick={() => {
@@ -474,12 +518,25 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
               <div className="flex items-center justify-between text-sm">
                 <span className="text-blue-700">
                   סה"כ {users.length} משתמשים
-                  {selectedOrganization !== 'all' && ` • מוצגים ${filteredUsers.length} משתמשים`}
+                  {(selectedOrganization !== 'all' || selectedGroup !== 'all') && ` • מוצגים ${filteredUsers.length} משתמשים`}
                   {searchTerm && ` • תוצאות חיפוש: ${filteredUsers.length}`}
                 </span>
-                <span className="text-blue-600">
-                  {organizations.length} ארגונים במערכת
-                </span>
+                <div className="flex items-center gap-4 text-blue-600">
+                  <span>{organizations.length} ארגונים</span>
+                  <span>
+                    {(() => {
+                      const totalGroups = users
+                        .filter(user => user.group_id && user.group_name)
+                        .reduce((acc, user) => {
+                          if (user.group_id && !acc.has(user.group_id)) {
+                            acc.add(user.group_id);
+                          }
+                          return acc;
+                        }, new Set()).size;
+                      return `${totalGroups} קבוצות`;
+                    })()}
+                  </span>
+                </div>
               </div>
             </div>
           )}
@@ -502,13 +559,21 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
               <p>
-                {searchTerm && selectedOrganization !== 'all' 
-                  ? `לא נמצאו משתמשים המתאימים לחיפוש "${searchTerm}" בארגון הנבחר`
-                  : searchTerm 
-                    ? `לא נמצאו משתמשים המתאימים לחיפוש "${searchTerm}"`
-                    : selectedOrganization !== 'all'
-                      ? 'לא נמצאו משתמשים בארגון הנבחר'
-                      : 'לא נמצאו משתמשים עם פרופילים'
+                {searchTerm && selectedOrganization !== 'all' && selectedGroup !== 'all'
+                  ? `לא נמצאו משתמשים המתאימים לחיפוש "${searchTerm}" בארגון והקבוצה הנבחרים`
+                  : searchTerm && selectedOrganization !== 'all' 
+                    ? `לא נמצאו משתמשים המתאימים לחיפוש "${searchTerm}" בארגון הנבחר`
+                    : searchTerm && selectedGroup !== 'all'
+                      ? `לא נמצאו משתמשים המתאימים לחיפוש "${searchTerm}" בקבוצה הנבחרת`
+                      : searchTerm 
+                        ? `לא נמצאו משתמשים המתאימים לחיפוש "${searchTerm}"`
+                        : selectedOrganization !== 'all' && selectedGroup !== 'all'
+                          ? 'לא נמצאו משתמשים בארגון והקבוצה הנבחרים'
+                          : selectedOrganization !== 'all'
+                            ? 'לא נמצאו משתמשים בארגון הנבחר'
+                            : selectedGroup !== 'all'
+                              ? 'לא נמצאו משתמשים בקבוצה הנבחרת'
+                              : 'לא נמצאו משתמשים עם פרופילים'
                 }
               </p>
             </div>
@@ -540,6 +605,28 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
                 return sortedOrgs.map(([orgKey, org]) => {
                   const isCollapsed = collapsedOrgs.has(orgKey);
                   
+                  // קיבוץ המשתמשים בארגון לפי קבוצות
+                  const usersByGroup = org.users.reduce((acc, user) => {
+                    const groupKey = user.group_id || 'no-group';
+                    const groupName = user.group_name || 'ללא קבוצה';
+                    
+                    if (!acc[groupKey]) {
+                      acc[groupKey] = {
+                        name: groupName,
+                        users: []
+                      };
+                    }
+                    acc[groupKey].users.push(user);
+                    return acc;
+                  }, {} as Record<string, { name: string; users: User[] }>);
+
+                  // מיון הקבוצות - ללא קבוצה בסוף
+                  const sortedGroups = Object.entries(usersByGroup).sort(([keyA, groupA], [keyB, groupB]) => {
+                    if (keyA === 'no-group') return 1;
+                    if (keyB === 'no-group') return -1;
+                    return groupA.name.localeCompare(groupB.name, 'he');
+                  });
+                  
                   return (
                     <div key={orgKey}>
                       {/* כותרת ארגון מינימלית עם אפשרות כיווץ */}
@@ -569,94 +656,103 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
                         <span className="text-xs text-slate-500">{org.users.length} משתמשים</span>
                       </div>
                       
-                      {/* רשימת המשתמשים בארגון - מוצגת רק אם לא מכווץ */}
+                      {/* קבוצות בארגון - מוצגות רק אם הארגון לא מכווץ */}
                       {!isCollapsed && (
-                        <div className="space-y-2 mb-4">
-                          {org.users.map(user => (
-                            <div key={user.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center">
-                                  <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                  </svg>
-                                </div>
-                                <div>
-                                  <p className="font-medium text-slate-900">{user.user_name || user.email}</p>
-                                  <div className="flex items-center gap-2 text-xs text-slate-500">
-                                    <span>{user.user_email}</span>
-                                    <span>•</span>
-                                    <span>ID: {user.id.slice(0, 8)}...</span>
-                                    {user.group_name && (
-                                      <>
-                                        <span>•</span>
-                                        <span>קבוצה: {user.group_name}</span>
-                                      </>
-                                    )}
-                                  </div>
-                                </div>
+                        <div className="mr-4 space-y-3 mb-4">
+                          {sortedGroups.map(([groupKey, group]) => (
+                            <div key={`${orgKey}-${groupKey}`}>
+                              {/* כותרת קבוצה מינימלית */}
+                              <div className="flex items-center gap-2 mb-1 px-1">
+                                <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+                                <h5 className="text-xs font-medium text-slate-600">{group.name}</h5>
+                                <div className="flex-1 h-px bg-slate-100"></div>
+                                <span className="text-xs text-slate-400">{group.users.length}</span>
                               </div>
+                              
+                              {/* רשימת המשתמשים בקבוצה */}
+                              <div className="space-y-2">
+                                {group.users.map(user => (
+                                  <div key={user.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border-r-2 border-green-200">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-7 h-7 bg-slate-200 rounded-full flex items-center justify-center">
+                                        <svg className="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                        </svg>
+                                      </div>
+                                      <div>
+                                        <p className="font-medium text-slate-900 text-sm">{user.user_name || user.email}</p>
+                                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                                          <span>{user.user_email}</span>
+                                          <span>•</span>
+                                          <span>ID: {user.id.slice(0, 8)}...</span>
+                                        </div>
+                                      </div>
+                                    </div>
 
-                              <div className="flex items-center gap-3">
-                                <UserRoleBadge role={user.role} size="sm" />
-                                
-                                <select
-                                  value={user.role || 'student'}
-                                  onChange={(e) => updateUserRole(user.id, e.target.value as RoleType, user.organization_id || undefined)}
-                                  disabled={updatingUserId === user.id}
-                                  className="text-sm border border-slate-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-                                  title={updatingUserId === user.id ? "מעדכן תפקיד..." : "בחר תפקיד"}
-                                >
-                                  <option value="student">סטודנט</option>
-                                  <option value="instructor">מרצה</option>
-                                  <option value="moderator">מנחה</option>
-                                  <option value="org_admin">מנהל ארגון</option>
-                                  <option value="admin">מנהל</option>
-                                </select>
+                                    <div className="flex items-center gap-2">
+                                      <UserRoleBadge role={user.role} size="sm" />
+                                      
+                                      <select
+                                        value={user.role || 'student'}
+                                        onChange={(e) => updateUserRole(user.id, e.target.value as RoleType, user.organization_id || undefined)}
+                                        disabled={updatingUserId === user.id}
+                                        className="text-xs border border-slate-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                                        title={updatingUserId === user.id ? "מעדכן תפקיד..." : "בחר תפקיד"}
+                                      >
+                                        <option value="student">סטודנט</option>
+                                        <option value="instructor">מרצה</option>
+                                        <option value="moderator">מנחה</option>
+                                        <option value="org_admin">מנהל ארגון</option>
+                                        <option value="admin">מנהל</option>
+                                      </select>
 
-                                <select
-                                  value={user.organization_id || ''}
-                                  onChange={(e) => {
-                                    const newOrgId = e.target.value || undefined;
-                                    // אם משנים ארגון, נאפס את הקבוצה
-                                    if (newOrgId !== user.organization_id) {
-                                      updateUserRole(user.id, user.role!, newOrgId);
-                                    }
-                                  }}
-                                  disabled={updatingUserId === user.id}
-                                  className="text-sm border border-slate-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-                                  title={updatingUserId === user.id ? "מעדכן ארגון..." : "בחר ארגון"}
-                                >
-                                  <option value="">ללא ארגון</option>
-                                  {organizations.map(org => (
-                                    <option key={org.id} value={org.id}>{org.name}</option>
-                                  ))}
-                                </select>
+                                      <select
+                                        value={user.organization_id || ''}
+                                        onChange={(e) => {
+                                          const newOrgId = e.target.value || undefined;
+                                          // אם משנים ארגון, נאפס את הקבוצה
+                                          if (newOrgId !== user.organization_id) {
+                                            updateUserRole(user.id, user.role!, newOrgId);
+                                          }
+                                        }}
+                                        disabled={updatingUserId === user.id}
+                                        className="text-xs border border-slate-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                                        title={updatingUserId === user.id ? "מעדכן ארגון..." : "בחר ארגון"}
+                                      >
+                                        <option value="">ללא ארגון</option>
+                                        {organizations.map(org => (
+                                          <option key={org.id} value={org.id}>{org.name}</option>
+                                        ))}
+                                      </select>
 
-                                {user.organization_id ? (
-                                  <div className="min-w-[150px]">
-                                    <GroupSelector
-                                      organizationId={user.organization_id}
-                                      value={user.group_id || ''}
-                                      onChange={(groupId) => updateUserGroup(user.id, groupId)}
-                                      disabled={updatingUserId === user.id || !isAdmin}
-                                      placeholder={updatingUserId === user.id ? "מעדכן..." : "בחר קבוצה..."}
-                                      className="text-sm"
-                                    />
+                                      {user.organization_id ? (
+                                        <div className="min-w-[120px]">
+                                          <GroupSelector
+                                            organizationId={user.organization_id}
+                                            value={user.group_id || ''}
+                                            onChange={(groupId) => updateUserGroup(user.id, groupId)}
+                                            disabled={updatingUserId === user.id || !isAdmin}
+                                            placeholder={updatingUserId === user.id ? "מעדכן..." : "בחר קבוצה..."}
+                                            className="text-xs"
+                                          />
+                                        </div>
+                                      ) : (
+                                        <div className="min-w-[120px] text-xs text-gray-500">
+                                          בחר ארגון תחילה
+                                        </div>
+                                      )}
+
+                                      {updatingUserId === user.id && (
+                                        <div className="w-4 h-4">
+                                          <svg className="animate-spin w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                          </svg>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
-                                ) : (
-                                  <div className="min-w-[150px] text-sm text-gray-500">
-                                    בחר ארגון תחילה
-                                  </div>
-                                )}
-
-                                {updatingUserId === user.id && (
-                                  <div className="w-4 h-4">
-                                    <svg className="animate-spin w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24">
-                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                  </div>
-                                )}
+                                ))}
                               </div>
                             </div>
                           ))}
