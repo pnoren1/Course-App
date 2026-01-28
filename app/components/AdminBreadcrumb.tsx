@@ -29,8 +29,14 @@ export default function AdminBreadcrumb({ items }: AdminBreadcrumbProps) {
         case 'users':
           breadcrumbs.push({ name: 'ניהול משתמשים' });
           break;
+        case 'groups':
+          breadcrumbs.push({ name: 'ארגונים וקבוצות' });
+          break;
         case 'assignments':
           breadcrumbs.push({ name: 'ניהול מטלות' });
+          break;
+        case 'student-progress':
+          breadcrumbs.push({ name: 'התקדמות תלמידים' });
           break;
         case 'units':
           breadcrumbs.push({ name: 'ניהול יחידות' });

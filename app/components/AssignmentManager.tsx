@@ -5,8 +5,8 @@ import { Assignment } from '@/lib/types/assignment';
 import { BaseUnit } from '@/app/course/types';
 import { rlsSupabase } from '@/lib/supabase';
 import AssignmentForm from './AssignmentForm';
-import AssignmentList from './AssignmentList';
-import UnitManager from './UnitManager';
+import AssignmentList from '@/app/components/AssignmentList';
+import UnitManager from '@/app/components/UnitManager';
 
 export default function AssignmentManager() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -15,11 +15,57 @@ export default function AssignmentManager() {
   const [showForm, setShowForm] = useState(false);
   const [showUnitManager, setShowUnitManager] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     console.log('🚀 AssignmentManager mounted');
-    loadData();
+    checkAdminStatus();
   }, []);
+
+  useEffect(() => {
+    if (isAdmin === true) {
+      loadData();
+    }
+  }, [isAdmin]);
+
+  const checkAdminStatus = async () => {
+    try {
+      const { isAdmin: adminStatus } = await rlsSupabase.isAdmin();
+      
+      // בדיקה נוספת אם המשתמש הוא מנהל ארגון - מנהלי ארגון לא יכולים לנהל מטלות
+      let hasAdminAccess = adminStatus;
+      if (!adminStatus) {
+        const { user: currentUser } = await rlsSupabase.getCurrentUser();
+        if (currentUser) {
+          try {
+            const { data: profile, error } = await rlsSupabase.from('user_profile')
+              .select('*')
+              .eq('user_id', currentUser.id)
+              .single();
+            
+            if (error) {
+              console.error('Error fetching user profile:', error);
+            } else {
+              // מנהלי ארגון לא יכולים לנהל מטלות - רק מנהלי מערכת
+              hasAdminAccess = false;
+            }
+          } catch (error) {
+            console.error('Error checking user role:', error);
+          }
+        }
+      }
+      
+      setIsAdmin(hasAdminAccess);
+      
+      if (!hasAdminAccess) {
+        setError('אין לך הרשאות מנהל מערכת לצפות בדף זה');
+      }
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+      setError('שגיאה בבדיקת הרשאות');
+    }
+  };
 
   // Handle Escape key to close modal
   useEffect(() => {
@@ -333,7 +379,21 @@ export default function AssignmentManager() {
     setEditingAssignment(null);
   };
 
-  if (loading) {
+  if (isAdmin === false) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="flex items-center gap-2 text-red-700">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
+          <span className="font-medium">אין הרשאה</span>
+        </div>
+        <p className="text-sm text-red-600 mt-1">רק מנהלי מערכת יכולים לנהל מטלות. מנהלי ארגון יכולים לצפות בהתקדמות התלמידים באירגון שלהם.</p>
+      </div>
+    );
+  }
+
+  if (loading || isAdmin === null) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="flex items-center gap-3 text-slate-600">

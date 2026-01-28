@@ -89,7 +89,7 @@ export default function OrganizationGroupsManagement({ className = '' }: Organiz
     try {
       const { isAdmin: adminStatus } = await rlsSupabase.isAdmin();
       
-      // בדיקה נוספת אם המשתמש הוא מנהל ארגון
+      // בדיקה נוספת אם המשתמש הוא מנהל ארגון - מנהלי ארגון לא יכולים לנהל ארגונים וקבוצות
       let hasAdminAccess = adminStatus;
       if (!adminStatus) {
         const { user: currentUser } = await rlsSupabase.getCurrentUser();
@@ -103,7 +103,8 @@ export default function OrganizationGroupsManagement({ className = '' }: Organiz
             if (error) {
               console.error('Error fetching user profile:', error);
             } else {
-              hasAdminAccess = (profile as any)?.role === 'org_admin';
+              // מנהלי ארגון לא יכולים לנהל ארגונים וקבוצות - רק מנהלי מערכת
+              hasAdminAccess = false;
             }
           } catch (error) {
             console.error('Error checking user role:', error);
@@ -114,7 +115,7 @@ export default function OrganizationGroupsManagement({ className = '' }: Organiz
       setIsAdmin(hasAdminAccess);
       
       if (!hasAdminAccess) {
-        setError('אין לך הרשאות מנהל לצפות בדף זה');
+        setError('אין לך הרשאות מנהל מערכת לצפות בדף זה');
       }
     } catch (error) {
       console.error('Error checking admin status:', error);
@@ -358,7 +359,7 @@ export default function OrganizationGroupsManagement({ className = '' }: Organiz
           </svg>
           <span className="font-medium">אין הרשאה</span>
         </div>
-        <p className="text-sm text-red-600 mt-1">רק מנהלים יכולים לנהל ארגונים וקבוצות</p>
+        <p className="text-sm text-red-600 mt-1">רק מנהלי מערכת יכולים לנהל ארגונים וקבוצות. מנהלי ארגון יכולים לצפות בהתקדמות התלמידים באירגון שלהם.</p>
       </div>
     );
   }

@@ -72,7 +72,7 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
     try {
       const { isAdmin: adminStatus } = await rlsSupabase.isAdmin();
       
-      // בדיקה נוספת אם המשתמש הוא מנהל ארגון
+      // בדיקה נוספת אם המשתמש הוא מנהל ארגון - מנהלי ארגון לא יכולים לנהל משתמשים
       let hasAdminAccess = adminStatus;
       if (!adminStatus) {
         const { user: currentUser } = await rlsSupabase.getCurrentUser();
@@ -86,7 +86,8 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
             if (error) {
               console.error('Error fetching user profile:', error);
             } else {
-              hasAdminAccess = (profile as any)?.role === 'org_admin';
+              // מנהלי ארגון לא יכולים לנהל משתמשים - רק מנהלי מערכת
+              hasAdminAccess = false;
             }
           } catch (error) {
             console.error('Error checking user role:', error);
@@ -97,7 +98,7 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
       setIsAdmin(hasAdminAccess);
       
       if (!hasAdminAccess) {
-        setError('אין לך הרשאות מנהל לצפות בדף זה');
+        setError('אין לך הרשאות מנהל מערכת לצפות בדף זה');
       }
     } catch (error) {
       console.error('Error checking admin status:', error);
@@ -330,7 +331,7 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
           </svg>
           <span className="font-medium">אין הרשאה</span>
         </div>
-        <p className="text-sm text-red-600 mt-1">רק מנהלים יכולים לנהל פרופילי משתמשים</p>
+        <p className="text-sm text-red-600 mt-1">רק מנהלי מערכת יכולים לנהל פרופילי משתמשים. מנהלי ארגון יכולים לצפות בהתקדמות התלמידים באירגון שלהם.</p>
       </div>
     );
   }

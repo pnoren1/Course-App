@@ -8,7 +8,7 @@ import UserGroupDisplay from '../../components/UserGroupDisplay';
 import { useRouter } from 'next/navigation';
 
 export default function StudentProgressPage() {
-  const { role, isLoading: roleLoading } = useUserRole();
+  const { role, organizationId, isLoading: roleLoading } = useUserRole();
   const router = useRouter();
   const [allUserStats, setAllUserStats] = useState<UserSubmissionStats[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserSubmissionStats | null>(null);
@@ -20,9 +20,9 @@ export default function StudentProgressPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Redirect if not admin
+  // Redirect if not admin or org_admin
   useEffect(() => {
-    if (!roleLoading && role !== 'admin') {
+    if (!roleLoading && role !== 'admin' && role !== 'org_admin') {
       router.push('/course');
     }
   }, [role, roleLoading, router]);
@@ -33,7 +33,25 @@ export default function StudentProgressPage() {
       try {
         setLoading(true);
         setError(null);
-        const stats = await submissionStatsService.getAllUsersSubmissionStats();
+        
+        console.log('🔍 Loading user stats - role:', role, 'organizationId:', organizationId);
+        
+        let stats: UserSubmissionStats[];
+        
+        if (role === 'admin') {
+          // Admin can see all users
+          console.log('📊 Loading all users stats (admin)');
+          stats = await submissionStatsService.getAllUsersSubmissionStats();
+        } else if (role === 'org_admin' && organizationId) {
+          // Org admin can only see users in their organization
+          console.log('📊 Loading organization users stats for org:', organizationId);
+          stats = await submissionStatsService.getOrganizationUsersSubmissionStats(organizationId);
+        } else {
+          console.log('❌ No valid role/organizationId combination');
+          stats = [];
+        }
+        
+        console.log('📈 Loaded stats:', stats.length, 'users');
         setAllUserStats(stats);
       } catch (err: any) {
         console.error('Error loading user stats:', err);
@@ -43,10 +61,12 @@ export default function StudentProgressPage() {
       }
     };
 
-    if (role === 'admin' || role === 'org_admin') {
+    if ((role === 'admin') || (role === 'org_admin' && organizationId)) {
       loadAllUsersStats();
+    } else {
+      console.log('⏸️ Not loading stats - conditions not met. Role:', role, 'OrgId:', organizationId);
     }
-  }, [role]);
+  }, [role, organizationId]);
 
   // Load detailed status for selected user
   const loadUserDetails = async (userId: string) => {
@@ -139,14 +159,14 @@ export default function StudentProgressPage() {
     );
   }
 
-  if (role !== 'admin') {
+  if (role !== 'admin' && role !== 'org_admin') {
     return null; // Will redirect
   }
 
   return (
     <AdminLayout 
-      title="מעקב התקדמות תלמידים"
-      description="צפייה בסטטוס הגשות המטלות של כל התלמידים"
+      title={role === 'org_admin' ? "מעקב התקדמות תלמידים באירגון" : "מעקב התקדמות תלמידים"}
+      description={role === 'org_admin' ? "צפייה בסטטוס הגשות המטלות של תלמידי הארגון" : "צפייה בסטטוס הגשות המטלות של כל התלמידים"}
       icon={
         <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -154,6 +174,25 @@ export default function StudentProgressPage() {
       }
     >
       <div className="space-y-6">
+        {/* Info message for org admins */}
+        {role === 'org_admin' && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <div className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 rounded-lg">
+                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-blue-900">מידע למנהל אירגון</h3>
+                <p className="text-sm text-blue-700 mt-1">
+                  אתה רואה רק את התלמידים השייכים לארגון שלך. מנהלי מערכת רואים את כל התלמידים.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Search and Sort Controls */}
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <div className="flex flex-col sm:flex-row gap-4">

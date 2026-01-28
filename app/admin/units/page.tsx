@@ -13,6 +13,8 @@ export default function UnitsManagementPage() {
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingUnit, setEditingUnit] = useState<BaseUnit | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -21,8 +23,52 @@ export default function UnitsManagementPage() {
   const { toast, showSuccess, showError, hideToast } = useToast();
 
   useEffect(() => {
-    loadUnits();
+    checkAdminStatus();
   }, []);
+
+  useEffect(() => {
+    if (isAdmin === true) {
+      loadUnits();
+    }
+  }, [isAdmin]);
+
+  const checkAdminStatus = async () => {
+    try {
+      const { isAdmin: adminStatus } = await rlsSupabase.isAdmin();
+      
+      // בדיקה נוספת אם המשתמש הוא מנהל ארגון - מנהלי ארגון לא יכולים לנהל יחידות
+      let hasAdminAccess = adminStatus;
+      if (!adminStatus) {
+        const { user: currentUser } = await rlsSupabase.getCurrentUser();
+        if (currentUser) {
+          try {
+            const { data: profile, error } = await rlsSupabase.from('user_profile')
+              .select('*')
+              .eq('user_id', currentUser.id)
+              .single();
+            
+            if (error) {
+              console.error('Error fetching user profile:', error);
+            } else {
+              // מנהלי ארגון לא יכולים לנהל יחידות - רק מנהלי מערכת
+              hasAdminAccess = false;
+            }
+          } catch (error) {
+            console.error('Error checking user role:', error);
+          }
+        }
+      }
+      
+      setIsAdmin(hasAdminAccess);
+      
+      if (!hasAdminAccess) {
+        setError('אין לך הרשאות מנהל מערכת לצפות בדף זה');
+      }
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+      setError('שגיאה בבדיקת הרשאות');
+    }
+  };
 
   const loadUnits = async () => {
     try {
@@ -153,7 +199,31 @@ export default function UnitsManagementPage() {
     setEditingUnit(null);
   };
 
-  if (loading) {
+  if (isAdmin === false) {
+    return (
+      <AdminLayout 
+        title="ניהול יחידות" 
+        description="ניהול יחידות הקורס והתוכן"
+        icon={
+          <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+        }
+      >
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center gap-2 text-red-700">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+            <span className="font-medium">אין הרשאה</span>
+          </div>
+          <p className="text-sm text-red-600 mt-1">רק מנהלי מערכת יכולים לנהל יחידות. מנהלי ארגון יכולים לצפות בהתקדמות התלמידים באירגון שלהם.</p>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (loading || isAdmin === null) {
     return (
       <AdminLayout 
         title="ניהול יחידות" 

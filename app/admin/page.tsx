@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import AdminLayout from '@/app/components/AdminLayout';
 import { rlsSupabase } from '@/lib/supabase';
+import { useUserRole } from '@/lib/hooks/useUserRole';
 
 interface Stats {
   totalUsers: number;
@@ -14,6 +15,7 @@ interface Stats {
 
 export default function AdminPage() {
   const router = useRouter();
+  const { role } = useUserRole();
   const [stats, setStats] = useState<Stats>({
     totalUsers: 0,
     totalAssignments: 0,
@@ -74,6 +76,25 @@ export default function AdminPage() {
       }
     >
       <div className="space-y-8">
+        {/* Info message for org admins */}
+        {role === 'org_admin' && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <div className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 rounded-lg">
+                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-blue-900">מידע למנהל אירגון</h3>
+                <p className="text-sm text-blue-700 mt-1">
+                  כמנהל אירגון, אתה יכול לצפות בהגשות ובהתקדמות התלמידים באירגון שלך. ניהול מטלות, יחידות, משתמשים וארגונים זמין רק למנהלי מערכת.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Welcome Section */}
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
           <div className="flex items-center gap-4">
@@ -184,10 +205,20 @@ export default function AdminPage() {
               </div>
               <h3 className="font-semibold text-slate-900">ניהול משתמשים</h3>
             </div>
-            <p className="text-sm text-slate-600 mb-4">הוספה, עריכה וניהול משתמשים ותפקידים</p>
+            <p className="text-sm text-slate-600 mb-4">
+              {role === 'org_admin' 
+                ? 'רק מנהלי מערכת יכולים לנהל משתמשים'
+                : 'הוספה, עריכה וניהול משתמשים ותפקידים'
+              }
+            </p>
             <button 
-              onClick={() => router.push('/admin/users')}
-              className="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium py-2 px-4 rounded-lg transition-colors"
+              onClick={() => role === 'admin' && router.push('/admin/users')}
+              disabled={role === 'org_admin'}
+              className={`w-full font-medium py-2 px-4 rounded-lg transition-colors ${
+                role === 'org_admin'
+                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  : 'bg-blue-50 hover:bg-blue-100 text-blue-700'
+              }`}
             >
               ניהול משתמשים
             </button>
@@ -202,10 +233,20 @@ export default function AdminPage() {
               </div>
               <h3 className="font-semibold text-slate-900">ניהול מטלות</h3>
             </div>
-            <p className="text-sm text-slate-600 mb-4">יצירה ועריכה של מטלות ליחידות הקורס</p>
+            <p className="text-sm text-slate-600 mb-4">
+              {role === 'org_admin' 
+                ? 'רק מנהלי מערכת יכולים לנהל מטלות'
+                : 'יצירה ועריכה של מטלות ליחידות הקורס'
+              }
+            </p>
             <button 
-              onClick={() => router.push('/admin/assignments')}
-              className="w-full bg-green-50 hover:bg-green-100 text-green-700 font-medium py-2 px-4 rounded-lg transition-colors"
+              onClick={() => role === 'admin' && router.push('/admin/assignments')}
+              disabled={role === 'org_admin'}
+              className={`w-full font-medium py-2 px-4 rounded-lg transition-colors ${
+                role === 'org_admin'
+                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  : 'bg-green-50 hover:bg-green-100 text-green-700'
+              }`}
             >
               ניהול מטלות
             </button>
@@ -220,10 +261,20 @@ export default function AdminPage() {
               </div>
               <h3 className="font-semibold text-slate-900">ניהול יחידות</h3>
             </div>
-            <p className="text-sm text-slate-600 mb-4">ניהול יחידות הקורס והתוכן</p>
+            <p className="text-sm text-slate-600 mb-4">
+              {role === 'org_admin' 
+                ? 'רק מנהלי מערכת יכולים לנהל יחידות'
+                : 'ניהול יחידות הקורס והתוכן'
+              }
+            </p>
             <button 
-              onClick={() => router.push('/admin/units')}
-              className="w-full bg-purple-50 hover:bg-purple-100 text-purple-700 font-medium py-2 px-4 rounded-lg transition-colors"
+              onClick={() => role === 'admin' && router.push('/admin/units')}
+              disabled={role === 'org_admin'}
+              className={`w-full font-medium py-2 px-4 rounded-lg transition-colors ${
+                role === 'org_admin'
+                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  : 'bg-purple-50 hover:bg-purple-100 text-purple-700'
+              }`}
             >
               ניהול יחידות
             </button>
@@ -257,12 +308,41 @@ export default function AdminPage() {
               </div>
               <h3 className="font-semibold text-slate-900">ארגונים וקבוצות</h3>
             </div>
-            <p className="text-sm text-slate-600 mb-4">יצירה וניהול ארגונים וקבוצות במקום אחד</p>
+            <p className="text-sm text-slate-600 mb-4">
+              {role === 'org_admin' 
+                ? 'רק מנהלי מערכת יכולים לנהל ארגונים וקבוצות'
+                : 'יצירה וניהול ארגונים וקבוצות במקום אחד'
+              }
+            </p>
             <button 
-              onClick={() => router.push('/admin/groups')}
-              className="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium py-2 px-4 rounded-lg transition-colors"
+              onClick={() => role === 'admin' && router.push('/admin/groups')}
+              disabled={role === 'org_admin'}
+              className={`w-full font-medium py-2 px-4 rounded-lg transition-colors ${
+                role === 'org_admin'
+                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700'
+              }`}
             >
               ניהול ארגונים וקבוצות
+            </button>
+          </div>
+
+          <div className="bg-white rounded-lg border border-slate-200 p-6 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="inline-flex items-center justify-center w-10 h-10 bg-teal-100 rounded-lg">
+                <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <h3 className="font-semibold text-slate-900">התקדמות תלמידים</h3>
+            </div>
+            <p className="text-sm text-slate-600 mb-4">מעקב אחר סטטוס הגשות וצפייה בסרטונים</p>
+            <button 
+              onClick={() => router.push('/admin/student-progress')}
+              className="w-full bg-teal-50 hover:bg-teal-100 text-teal-700 font-medium py-2 px-4 rounded-lg transition-colors"
+            >
+              צפייה בהתקדמות
             </button>
           </div>
 

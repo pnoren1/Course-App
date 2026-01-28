@@ -1,5 +1,6 @@
 import { rlsSupabase } from '../supabase';
 import { Assignment, AssignmentSubmission } from '../types/assignment';
+import { authenticatedFetch } from '../utils/api-helpers';
 
 export interface UserSubmissionStats {
   userId: string;
@@ -231,6 +232,167 @@ export class SubmissionStatsService {
       return detailedStatus;
     } catch (error) {
       console.error('Error in getUserDetailedSubmissionStatus:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get submission statistics for users in a specific organization (org admin view)
+   */
+  async getOrganizationUsersSubmissionStats(organizationId: string): Promise<UserSubmissionStats[]> {
+    try {
+      console.log('🔍 getOrganizationUsersSubmissionStats called with organizationId:', organizationId);
+      
+      // Use API endpoint to get students (bypasses RLS issues)
+      const response = await authenticatedFetch('/api/admin/organization-students');
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ API error response:', errorData);
+        throw new Error(errorData.error || 'Failed to fetch organization students');
+      }
+      
+      const { students, organizationId: userOrgId } = await response.json();
+      
+      console.log('👥 API response - students:', students?.length || 0);
+      console.log('📋 Students details:', students?.map((s: any) => ({ 
+        id: s.user_id, 
+        name: s.user_name, 
+        role: s.role,
+        orgId: s.organization_id 
+      })));
+
+      if (!students || students.length === 0) {
+        console.log('📊 No students found for organization');
+        return [];
+      }
+
+      // Get organization name
+      const { data: organization, error: orgError } = await rlsSupabase
+        .from('organizations')
+        .select('name')
+        .eq('id', organizationId)
+        .single() as {
+          data: { name: string } | null;
+          error: any;
+        };
+
+      if (orgError) {
+        console.warn('Error fetching organization:', orgError.message);
+      }
+
+      // Get all groups in this organization
+      const { data: groups, error: groupsError } = await rlsSupabase
+        .from('groups')
+        .select('id, name')
+        .eq('organization_id', organizationId) as {
+          data: Array<{ id: string; name: string }> | null;
+          error: any;
+        };
+
+      if (groupsError) {
+        console.warn('Error fetching groups:', groupsError.message);
+      }
+
+      // Create lookup map for groups
+      const groupMap = new Map((groups || []).map(group => [group.id, group.name]));
+
+      // Get all assignments count
+      const { data: assignments, error: assignmentsError } = await rlsSupabase
+        .from('assignments')
+        .select('id') as { 
+          data: Array<{ id: number }> | null;
+          error: any;
+        };
+
+      if (assignmentsError) {
+        throw new Error(`Error fetching assignments: ${assignmentsError.message}`);
+      }
+
+      const totalAssignments = assignments?.length || 0;
+
+      // Get all submissions for users in this organization
+      const userIds = students.map((user: any) => user.user_id);
+      
+      let allSubmissions: Array<{
+        user_id: string;
+        assignment_id: number;
+        submission_date: string;
+        status: string;
+      }> = [];
+
+      if (userIds.length > 0) {
+        const { data: submissions, error: submissionsError } = await rlsSupabase
+          .from('assignment_submissions')
+          .select('user_id, assignment_id, submission_date, status')
+          .in('user_id', userIds) as { 
+            data: Array<{
+              user_id: string;
+              assignment_id: number;
+              submission_date: string;
+              status: string;
+            }> | null;
+            error: any;
+          };
+
+        if (submissionsError) {
+          throw new Error(`Error fetching submissions: ${submissionsError.message}`);
+        }
+
+        allSubmissions = submissions || [];
+      }
+
+      // Group submissions by user
+      const submissionsByUser = new Map<string, Array<{
+        user_id: string;
+        assignment_id: number;
+        submission_date: string;
+        status: string;
+      }>>();
+      allSubmissions.forEach(submission => {
+        if (!submissionsByUser.has(submission.user_id)) {
+          submissionsByUser.set(submission.user_id, []);
+        }
+        submissionsByUser.get(submission.user_id)!.push(submission);
+      });
+
+      // Build stats for each user
+      const userStats: UserSubmissionStats[] = students.map((user: any) => {
+        const userSubmissions = submissionsByUser.get(user.user_id) || [];
+        const submittedAssignments = userSubmissions.length;
+        const pendingAssignments = totalAssignments - submittedAssignments;
+        const submissionRate = totalAssignments > 0 ? (submittedAssignments / totalAssignments) * 100 : 0;
+
+        // Find last submission date
+        let lastSubmissionDate: string | undefined;
+        if (userSubmissions.length > 0) {
+          const sortedSubmissions = [...userSubmissions].sort((a, b) => {
+            const dateA = new Date(a.submission_date).getTime();
+            const dateB = new Date(b.submission_date).getTime();
+            return dateB - dateA;
+          });
+          lastSubmissionDate = sortedSubmissions[0].submission_date;
+        }
+
+        return {
+          userId: user.user_id,
+          userName: user.user_name || 'Unknown',
+          userEmail: user.email || 'Unknown',
+          organizationId: user.organization_id,
+          organizationName: organization?.name,
+          groupId: user.group_id,
+          groupName: user.group_id ? groupMap.get(user.group_id) : undefined,
+          totalAssignments,
+          submittedAssignments,
+          pendingAssignments,
+          submissionRate,
+          lastSubmissionDate
+        };
+      });
+
+      return userStats;
+    } catch (error) {
+      console.error('Error in getOrganizationUsersSubmissionStats:', error);
       throw error;
     }
   }
