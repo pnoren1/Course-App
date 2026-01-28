@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/supabase-server';
 import { getSupabaseAdmin } from '@/lib/supabase';
+import { UserProfile } from '@/lib/types/database.types';
 
 /**
  * GET /api/admin/organization-students
@@ -41,7 +42,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    let students;
+    // Define the type for students array based on the select query
+    type StudentData = Pick<UserProfile, 'user_id' | 'user_name' | 'email' | 'role' | 'organization_id' | 'group_id'>;
+    let students: StudentData[];
     
     if (userProfile.role === 'admin') {
       // Admin can see all students
