@@ -8,13 +8,16 @@ interface SubmissionHistoryProps {
   submissions: AssignmentSubmission[];
   onFileDownload: (fileId: number) => void;
   onRefresh?: () => void;
+  showAutoRefreshMessage?: boolean;
 }
 
-export default function SubmissionHistory({ submissions, onFileDownload, onRefresh }: SubmissionHistoryProps) {
+export default function SubmissionHistory({ submissions, onFileDownload, onRefresh, showAutoRefreshMessage = false }: SubmissionHistoryProps) {
   const [submissionFiles, setSubmissionFiles] = useState<Map<number, SubmissionFile[]>>(new Map());
   const [loading, setLoading] = useState(true);
   const [loadingSubmissions, setLoadingSubmissions] = useState<Set<number>>(new Set());
   const [downloadingFiles, setDownloadingFiles] = useState<Set<number>>(new Set());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadFiles = async () => {
@@ -67,6 +70,7 @@ export default function SubmissionHistory({ submissions, onFileDownload, onRefre
         
       } catch (error) {
         console.error('Error loading submission files:', error);
+        setError('שגיאה בטעינת הקבצים. נסה לרענן.');
       } finally {
         setLoading(false);
       }
@@ -78,7 +82,7 @@ export default function SubmissionHistory({ submissions, onFileDownload, onRefre
       setLoading(false);
       setSubmissionFiles(new Map());
     }
-  }, [submissions.map(s => s.id).join(','), submissionFiles, loadingSubmissions]);
+  }, [submissions.map(s => `${s.id}-${s.submission_date}`).join(','), submissionFiles, loadingSubmissions]);
 
   // נקה קבצים של הגשות שכבר לא קיימות
   useEffect(() => {
@@ -95,41 +99,51 @@ export default function SubmissionHistory({ submissions, onFileDownload, onRefre
   }, [submissions]);
 
   const refreshFiles = async () => {
+    setIsRefreshing(true);
+    setError(null);
+    
     // נקה cache ורענן
     fileService.clearAllCache();
     setSubmissionFiles(new Map());
     setLoadingSubmissions(new Set());
     
-    // טען מחדש
-    const submissionsToLoad = submissions;
-    if (submissionsToLoad.length > 0) {
-      setLoading(true);
-      
-      const filePromises = submissionsToLoad.map(async (submission) => {
-        try {
-          const files = await fileService.getFilesBySubmission(submission.id, true); // force refresh
-          return { submissionId: submission.id, files };
-        } catch (error) {
-          console.error(`Error loading files for submission ${submission.id}:`, error);
-          return { submissionId: submission.id, files: [] };
-        }
-      });
-      
-      const results = await Promise.all(filePromises);
-      
-      setSubmissionFiles(prevMap => {
-        const newMap = new Map();
-        results.forEach(({ submissionId, files }) => {
-          newMap.set(submissionId, files);
+    try {
+      // טען מחדש
+      const submissionsToLoad = submissions;
+      if (submissionsToLoad.length > 0) {
+        setLoading(true);
+        
+        const filePromises = submissionsToLoad.map(async (submission) => {
+          try {
+            const files = await fileService.getFilesBySubmission(submission.id, true); // force refresh
+            return { submissionId: submission.id, files };
+          } catch (error) {
+            console.error(`Error loading files for submission ${submission.id}:`, error);
+            return { submissionId: submission.id, files: [] };
+          }
         });
-        return newMap;
-      });
+        
+        const results = await Promise.all(filePromises);
+        
+        setSubmissionFiles(prevMap => {
+          const newMap = new Map();
+          results.forEach(({ submissionId, files }) => {
+            newMap.set(submissionId, files);
+          });
+          return newMap;
+        });
+        
+        setLoading(false);
+      }
       
-      setLoading(false);
-    }
-    
-    if (onRefresh) {
-      onRefresh();
+      if (onRefresh) {
+        onRefresh();
+      }
+    } catch (error) {
+      console.error('Error refreshing files:', error);
+      setError('שגיאה ברענון הקבצים. נסה שוב.');
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -213,11 +227,16 @@ export default function SubmissionHistory({ submissions, onFileDownload, onRefre
     }
   };
 
-  if (loading) {
+  if (loading && submissions.length > 0) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 border-t-blue-600"></div>
-        <span className="mr-2 text-sm text-gray-600">טוען...</span>
+        <div className="flex items-center gap-3 text-slate-600">
+          <svg className="animate-spin w-6 h-6" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span className="text-sm font-medium">טוען קבצים...</span>
+        </div>
       </div>
     );
   }
@@ -225,28 +244,70 @@ export default function SubmissionHistory({ submissions, onFileDownload, onRefre
   if (submissions.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
-        <p className="text-sm">אין הגשות עדיין</p>
+        <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <p className="text-sm font-medium text-gray-600 mb-1">אין הגשות עדיין</p>
+        <p className="text-xs text-gray-400">כשתגיש מטלה, היא תופיע כאן</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
+      {/* Error message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+          <div className="flex items-start gap-2">
+            <svg className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div className="flex-1">
+              <h4 className="text-sm font-medium text-red-800 mb-1">שגיאה</h4>
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+            <button
+              onClick={() => setError(null)}
+              className="text-red-400 hover:text-red-600"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Auto-refresh message */}
+      {showAutoRefreshMessage && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div className="flex items-center gap-2">
+            <svg className="animate-spin w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span className="text-sm font-medium text-blue-800">
+              מרענן את רשימת הקבצים...
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* כפתור רענון */}
       {submissions.length > 0 && (
         <div className="flex justify-end mb-2">
           <button
             onClick={refreshFiles}
-            disabled={loading}
+            disabled={loading || isRefreshing}
             className="inline-flex items-center gap-2 px-3 py-1 text-sm bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? (
+            {loading || isRefreshing ? (
               <>
                 <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                טוען...
+                מרענן...
               </>
             ) : (
               <>
@@ -301,18 +362,38 @@ export default function SubmissionHistory({ submissions, onFileDownload, onRefre
             </div>
 
             {/* Files */}
-            {files.length > 0 && (
+            {loadingSubmissions.has(submission.id) && (
+              <div className="flex items-center justify-center py-4 text-sm text-gray-500">
+                <svg className="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                טוען קבצים...
+              </div>
+            )}
+            
+            {!loadingSubmissions.has(submission.id) && files.length > 0 && (
               <div className="space-y-2">
-                {files.map((file) => (
+                {files.map((file, index) => (
                   <div 
                     key={file.id} 
-                    className="flex items-center justify-between p-2 bg-gray-50 rounded border"
+                    className={`flex items-center justify-between p-2 bg-gray-50 rounded border transition-all duration-500 ${
+                      showAutoRefreshMessage ? 'animate-pulse bg-green-50 border-green-200' : ''
+                    }`}
                   >
                     <div className="flex items-center space-x-2 flex-1 min-w-0">
                       {getFileIcon(file.original_filename)}
                       <div className="flex-1 min-w-0">
                         <div className="text-sm text-gray-900 truncate">
                           {file.original_filename || 'קובץ ללא שם'}
+                          {showAutoRefreshMessage && index === 0 && (
+                            <span className="inline-flex items-center gap-1 mr-2 px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              חדש
+                            </span>
+                          )}
                         </div>
                         <div className="text-xs text-gray-500">
                           {formatFileSize(file.file_size_bytes)} • הועלה: {formatDate(file.uploaded_at)}
@@ -332,9 +413,13 @@ export default function SubmissionHistory({ submissions, onFileDownload, onRefre
               </div>
             )}
 
-            {files.length === 0 && (
-              <div className="text-center py-4 text-gray-400 text-sm">
-                אין קבצים מוגשים
+            {!loadingSubmissions.has(submission.id) && files.length === 0 && (
+              <div className="text-center py-6 text-gray-400">
+                <svg className="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p className="text-sm font-medium text-gray-500 mb-1">אין קבצים מוגשים עדיין</p>
+                <p className="text-xs text-gray-400">העלה קבצים באמצעות הטופס למעלה</p>
               </div>
             )}
           </div>

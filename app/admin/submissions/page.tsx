@@ -795,144 +795,112 @@ export default function SubmissionsPage() {
               לא נמצאו הגשות להצגה
             </div>
           ) : (
-            <div className="divide-y divide-slate-200">
+            <div className="p-6 space-y-4">
               {Object.entries(groupedSubmissions).map(([orgName, groups]) => (
-                <div key={orgName} className="p-6">
-                  {/* Organization Header */}
+                <div key={orgName}>
+                  {/* כותרת ארגון מינימלית עם אפשרות כיווץ */}
                   <div 
-                    className="flex items-center gap-3 mb-4 cursor-pointer hover:bg-slate-50 p-2 rounded-lg transition-colors"
+                    className="flex items-center gap-2 mb-2 px-1 cursor-pointer hover:bg-slate-50 rounded py-1"
                     onClick={() => toggleOrganization(orgName)}
                   >
-                    <div className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 rounded-lg">
-                      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h3M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="text-lg font-semibold text-slate-900">{orgName}</h4>
-                      <div className="flex items-center gap-4 text-sm text-slate-500">
-                        <span>{Object.values(groups).reduce((total, groupSubmissions) => total + groupSubmissions.length, 0)} הגשות</span>
-                        {(() => {
-                          const orgStats = getGroupStats(Object.values(groups).flat());
-                          return (
-                            <>
-                              <span className="text-orange-600">{orgStats.submitted} ממתינות</span>
-                              <span className="text-green-600">{orgStats.approved} אושרו</span>
-                              <span className="text-yellow-600">{orgStats.needs_revision} דורשות תיקון</span>
-                            </>
-                          );
-                        })()}
-                      </div>
-                    </div>
                     <svg 
-                      className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${
-                        expandedOrganizations.has(orgName) ? 'rotate-180' : ''
-                      }`} 
+                      className={`w-4 h-4 text-slate-400 transition-transform ${expandedOrganizations.has(orgName) ? '' : 'rotate-90'}`} 
                       fill="none" 
                       stroke="currentColor" 
                       viewBox="0 0 24 24"
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
                     </svg>
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <h4 className="text-sm font-medium text-slate-700">{orgName}</h4>
+                    <div className="flex-1 h-px bg-slate-200"></div>
+                    <span className="text-xs text-slate-500">
+                      {Object.values(groups).reduce((total, groupSubmissions) => total + groupSubmissions.length, 0)} הגשות
+                    </span>
+                    {(() => {
+                      const orgStats = getGroupStats(Object.values(groups).flat());
+                      return (
+                        <div className="flex items-center gap-2 text-xs">
+                          {orgStats.submitted > 0 && <span className="text-orange-600">{orgStats.submitted} ממתינות</span>}
+                          {orgStats.approved > 0 && <span className="text-green-600">{orgStats.approved} אושרו</span>}
+                          {orgStats.needs_revision > 0 && <span className="text-yellow-600">{orgStats.needs_revision} תיקון</span>}
+                        </div>
+                      );
+                    })()}
                   </div>
-
-                  {/* Groups within Organization */}
+                  
+                  {/* קבוצות בארגון - מוצגות רק אם הארגון לא מכווץ */}
                   {expandedOrganizations.has(orgName) && (
-                    <div className="space-y-4 mr-6">
+                    <div className="mr-4 space-y-3 mb-4">
                       {Object.entries(groups).map(([groupName, groupSubmissions]) => {
                         const groupKey = `${orgName}-${groupName}`;
                         return (
-                          <div key={groupName} className="border border-slate-200 rounded-lg">
-                            {/* Group Header */}
+                          <div key={groupName}>
+                            {/* כותרת קבוצה מינימלית */}
                             <div 
-                              className="flex items-center gap-3 px-4 py-3 bg-slate-50 border-b border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors"
+                              className="flex items-center gap-2 mb-1 px-1 cursor-pointer hover:bg-slate-50 rounded py-1"
                               onClick={() => toggleGroup(groupKey)}
                             >
-                              <div className="inline-flex items-center justify-center w-6 h-6 bg-green-100 rounded-md">
-                                <svg className="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                </svg>
-                              </div>
-                              <div className="flex-1">
-                                <h5 className="font-medium text-slate-900">{groupName}</h5>
-                                <div className="flex items-center gap-3 text-xs text-slate-500">
-                                  <span>{groupSubmissions.length} הגשות</span>
-                                  {(() => {
-                                    const groupStats = getGroupStats(groupSubmissions);
-                                    return (
-                                      <>
-                                        {groupStats.submitted > 0 && <span className="text-orange-600">{groupStats.submitted} ממתינות</span>}
-                                        {groupStats.approved > 0 && <span className="text-green-600">{groupStats.approved} אושרו</span>}
-                                        {groupStats.needs_revision > 0 && <span className="text-yellow-600">{groupStats.needs_revision} דורשות תיקון</span>}
-                                      </>
-                                    );
-                                  })()}
-                                </div>
-                              </div>
                               <svg 
-                                className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
-                                  expandedGroups.has(groupKey) ? 'rotate-180' : ''
-                                }`} 
+                                className={`w-3 h-3 text-slate-400 transition-transform ${expandedGroups.has(groupKey) ? '' : 'rotate-90'}`} 
                                 fill="none" 
                                 stroke="currentColor" 
                                 viewBox="0 0 24 24"
                               >
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
                               </svg>
+                              <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+                              <h5 className="text-xs font-medium text-slate-600">{groupName}</h5>
+                              <div className="flex-1 h-px bg-slate-100"></div>
+                              <span className="text-xs text-slate-400">{groupSubmissions.length}</span>
+                              {(() => {
+                                const groupStats = getGroupStats(groupSubmissions);
+                                return (
+                                  <div className="flex items-center gap-1 text-xs">
+                                    {groupStats.submitted > 0 && <span className="text-orange-600">{groupStats.submitted}</span>}
+                                    {groupStats.approved > 0 && <span className="text-green-600">{groupStats.approved}</span>}
+                                    {groupStats.needs_revision > 0 && <span className="text-yellow-600">{groupStats.needs_revision}</span>}
+                                  </div>
+                                );
+                              })()}
                             </div>
-
-                            {/* Submissions in Group */}
+                            
+                            {/* רשימת ההגשות בקבוצה */}
                             {expandedGroups.has(groupKey) && (
-                              <div className="divide-y divide-slate-100">
+                              <div className="space-y-2">
                                 {groupSubmissions.map((submission) => (
                                   <div
                                     key={submission.id}
-                                    className="p-4 hover:bg-slate-50 cursor-pointer transition-colors"
+                                    className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border-r-2 border-green-200 hover:bg-slate-100 cursor-pointer transition-colors"
                                     onClick={() => setSelectedSubmission(submission)}
                                   >
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex-1">
-                                        <div className="flex items-center gap-3 mb-2">
-                                          <h6 className="font-medium text-slate-900">
-                                            {submission.assignment.title}
-                                          </h6>
-                                          {getStatusBadge(submission.status)}
-                                        </div>
-                                        
-                                        <div className="flex items-center gap-4 text-sm text-slate-600">
-                                          <span className="flex items-center gap-1">
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                            </svg>
-                                            {submission.user_profile?.user_name || 'משתמש לא ידוע'}
-                                          </span>
-                                          
-                                          <span className="flex items-center gap-1">
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            {new Date(submission.submission_date).toLocaleDateString('he-IL')}
-                                          </span>
-                                          
-                                          <span className="flex items-center gap-1">
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                                            </svg>
-                                            {submission.files_count} קבצים
-                                          </span>
-
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-7 h-7 bg-slate-200 rounded-full flex items-center justify-center">
+                                        <svg className="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                      </div>
+                                      <div>
+                                        <p className="font-medium text-slate-900 text-sm">{submission.assignment.title}</p>
+                                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                                          <span>{submission.user_profile?.user_name || 'משתמש לא ידוע'}</span>
+                                          <span>•</span>
+                                          <span>{new Date(submission.submission_date).toLocaleDateString('he-IL')}</span>
+                                          <span>•</span>
+                                          <span>{submission.files_count} קבצים</span>
                                           {(submission.comments_count || 0) > 0 && (
-                                            <span className="flex items-center gap-1">
-                                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                                              </svg>
-                                              {submission.comments_count} הערות
-                                            </span>
+                                            <>
+                                              <span>•</span>
+                                              <span>{submission.comments_count} הערות</span>
+                                            </>
                                           )}
                                         </div>
                                       </div>
-                                      
-                                      <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                      {getStatusBadge(submission.status)}
+                                      <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
                                       </svg>
                                     </div>

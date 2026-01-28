@@ -30,6 +30,7 @@ type Props = {
   setOpenUnit: (id: number | string | null) => void;
   userId?: string;
   userSubmissions?: Map<number, any>;
+  onRefreshSubmissions?: () => Promise<void>;
 };
 
 export default function UnitSection({ 
@@ -40,7 +41,8 @@ export default function UnitSection({
   setOpenLesson, 
   setOpenUnit,
   userId,
-  userSubmissions: propUserSubmissions
+  userSubmissions: propUserSubmissions,
+  onRefreshSubmissions
 }: Props) {
   console.log('UnitSection unit:', unit);
   console.log('UnitSection assignments:', unit.assignments);
@@ -55,9 +57,14 @@ export default function UnitSection({
     }
   }, [propUserSubmissions]);
 
-  const handleSubmissionComplete = (submission: AssignmentSubmission) => {
+  const handleSubmissionComplete = async (submission: AssignmentSubmission) => {
     // Update the submissions map
     setUserSubmissions(prev => new Map(prev.set(submission.assignment_id, submission)));
+    
+    // Also refresh the parent component's submissions
+    if (onRefreshSubmissions) {
+      await onRefreshSubmissions();
+    }
   };
 
   // Calculate total duration for the unit

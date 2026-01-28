@@ -373,6 +373,7 @@ function CourseContent({ userRoleData }: { userRoleData: any }) {
                       setOpenUnit={(id) => setOpenUnit(id)}
                       userId={user?.id}
                       userSubmissions={userSubmissions}
+                      onRefreshSubmissions={refreshUserSubmissions}
                     />
                   );
                 })}
