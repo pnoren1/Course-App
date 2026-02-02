@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Group } from '@/lib/types/database.types';
 import { supabase } from '@/lib/supabase';
 
@@ -31,8 +31,10 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 דקות
 export const clearGroupsCache = (organizationId?: string) => {
   if (organizationId) {
     groupsCache.delete(organizationId);
+    console.log('🧹 GroupSelector: Cache cleared for organization:', organizationId);
   } else {
     groupsCache.clear();
+    console.log('🧹 GroupSelector: All cache cleared');
   }
 };
 
@@ -49,9 +51,15 @@ export default function GroupSelector({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadedOrgId, setLoadedOrgId] = useState<string | null>(null);
+  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load groups when organization changes
   useEffect(() => {
+    // ניקוי timeout קודם
+    if (fetchTimeoutRef.current) {
+      clearTimeout(fetchTimeoutRef.current);
+    }
+
     if (!organizationId) {
       setGroups([]);
       setError(null);
@@ -60,90 +68,103 @@ export default function GroupSelector({
     }
 
     // אם כבר טענו קבוצות לארגון הזה, לא צריך לטעון שוב
-    if (loadedOrgId === organizationId) {
+    if (loadedOrgId === organizationId && groups.length >= 0) {
       return;
     }
 
-    const fetchGroups = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+    // בדיקת מטמון תחילה
+    const cached = groupsCache.get(organizationId);
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      setGroups(cached.groups);
+      setLoadedOrgId(organizationId);
+      setLoading(false);
+      
+      // בדיקה אם הערך הנוכחי תקף
+      if (value && !cached.groups.some(group => group.id === value)) {
+        onChange('');
+      }
+      return;
+    }
 
-        // בדיקת מטמון
-        const cached = groupsCache.get(organizationId);
-        if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-          setGroups(cached.groups);
-          setLoadedOrgId(organizationId);
+    // Debounce the fetch - המתן 300ms לפני הקריאה
+    fetchTimeoutRef.current = setTimeout(() => {
+      console.log('🔍 GroupSelector: Starting fetch for organization:', organizationId);
+      
+      const fetchGroups = async () => {
+        try {
+          setLoading(true);
+          setError(null);
+
+          // קבלת הטוקן מ-Supabase client
+          const { data: { session } } = await supabase.auth.getSession();
+          const token = session?.access_token;
           
-          // בדיקה אם הערך הנוכחי תקף
-          if (value && !cached.groups.some(group => group.id === value)) {
+          const headers: HeadersInit = {
+            'Content-Type': 'application/json'
+          };
+          
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+          }
+          
+          const url = `/api/admin/groups/by-organization/${organizationId}`;
+          const response = await fetch(url, { headers });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            
+            if (response.status === 401 || response.status === 403) {
+              // אין הרשאות - לא מציגים שגיאה, פשוט לא טוענים קבוצות
+              setGroups([]);
+              setError(null);
+              setLoadedOrgId(organizationId);
+              return;
+            }
+            
+            console.error('GroupSelector: API error:', errorData);
+            throw new Error(errorData.error || 'שגיאה בטעינת קבוצות');
+          }
+
+          const data: GroupsResponse = await response.json();
+          const groups = data.groups || [];
+          
+          // שמירה במטמון
+          groupsCache.set(organizationId, {
+            groups,
+            timestamp: Date.now()
+          });
+          
+          setGroups(groups);
+          setLoadedOrgId(organizationId);
+
+          // If current value is not in the new groups list, clear it
+          if (value && !groups.some(group => group.id === value)) {
             onChange('');
           }
-          return;
-        }
 
-        // קבלת הטוקן מ-Supabase client
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
-        
-        const headers: HeadersInit = {
-          'Content-Type': 'application/json'
-        };
-        
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
-        }
-        
-        const url = `/api/admin/groups/by-organization/${organizationId}`;
-        const response = await fetch(url, { headers });
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          
-          if (response.status === 401 || response.status === 403) {
-            // אין הרשאות - לא מציגים שגיאה, פשוט לא טוענים קבוצות
-            setGroups([]);
-            setError(null);
-            setLoadedOrgId(organizationId);
-            return;
+        } catch (error) {
+          console.error('GroupSelector: Error fetching groups:', error);
+          // רק מציגים שגיאה אם זה לא קשור להרשאות
+          if (error instanceof Error && !error.message.includes('הרשאה')) {
+            setError(error.message);
           }
-          
-          console.error('GroupSelector: API error:', errorData);
-          throw new Error(errorData.error || 'שגיאה בטעינת קבוצות');
+          setGroups([]);
+          setLoadedOrgId(null);
+        } finally {
+          setLoading(false);
         }
+      };
 
-        const data: GroupsResponse = await response.json();
-        const groups = data.groups || [];
-        
-        // שמירה במטמון
-        groupsCache.set(organizationId, {
-          groups,
-          timestamp: Date.now()
-        });
-        
-        setGroups(groups);
-        setLoadedOrgId(organizationId);
+      fetchGroups();
+    }, 300);
 
-        // If current value is not in the new groups list, clear it
-        if (value && !groups.some(group => group.id === value)) {
-          onChange('');
-        }
-
-      } catch (error) {
-        console.error('GroupSelector: Error fetching groups:', error);
-        // רק מציגים שגיאה אם זה לא קשור להרשאות
-        if (error instanceof Error && !error.message.includes('הרשאה')) {
-          setError(error.message);
-        }
-        setGroups([]);
-        setLoadedOrgId(null);
-      } finally {
-        setLoading(false);
+    // Cleanup function
+    return () => {
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
       }
     };
-
-    fetchGroups();
-  }, [organizationId, loadedOrgId]);
+  }, [organizationId]); // הסרנו את loadedOrgId מה-dependencies
 
   // בדיקה אם הערך הנוכחי עדיין תקף
   useEffect(() => {

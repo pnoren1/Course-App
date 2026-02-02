@@ -8,6 +8,7 @@ import AddUserForm from './AddUserForm';
 import BulkUserImport from './BulkUserImport';
 import ExportUsersCSV from './ExportUsersCSV';
 import GroupSelector from './GroupSelector';
+import EmailTestPanel from './EmailTestPanel';
 import { clearGroupsCache } from './GroupSelector';
 
 interface User {
@@ -388,6 +389,7 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
               <p className="text-sm text-slate-600 mt-1">עריכת תפקידים וארגונים של משתמשים במערכת</p>
             </div>
             <div className="flex items-center gap-3">
+              <EmailTestPanel />
               <AddUserForm 
                 organizations={organizations} 
                 onUserAdded={refreshUsers}

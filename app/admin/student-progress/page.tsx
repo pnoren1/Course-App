@@ -7,8 +7,25 @@ import AdminLayout from '../../components/AdminLayout';
 import UserGroupDisplay from '../../components/UserGroupDisplay';
 import { useRouter } from 'next/navigation';
 
-export default function StudentProgressPage() {
-  const { role, organizationId, isLoading: roleLoading } = useUserRole();
+interface StudentProgressPageProps {
+  userRoleData?: {
+    role: string | null;
+    userName: string | null;
+    userEmail: string | null;
+    organizationName: string | null;
+    organizationId: string | null;
+    groupName: string | null;
+    groupId: string | null;
+    userId: string | null;
+    isLoading: boolean;
+    error: string | null;
+  };
+}
+
+export default function StudentProgressPage({ userRoleData }: StudentProgressPageProps) {
+  // השתמש ב-props אם קיים, אחרת ב-hook
+  const hookData = useUserRole();
+  const { role, organizationId, isLoading: roleLoading } = userRoleData || hookData;
   const router = useRouter();
   const [allUserStats, setAllUserStats] = useState<UserSubmissionStats[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserSubmissionStats | null>(null);

@@ -13,6 +13,8 @@ export const supabase = createClient<Database>(
       persistSession: true, // שמירת סשן בלוקל סטורג'
       detectSessionInUrl: true, // זיהוי סשן מ-URL
       // flowType: 'pkce' // אבטחה משופרת
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      storageKey: `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL?.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1] || 'lzedeawtmzfenyrewhmo'}-auth-token`
     }
   }
 );

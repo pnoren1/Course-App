@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/supabase-server';
+import { emailService, WelcomeEmailData } from '@/lib/services/emailService';
+import { getOrganizationById, getGroupById } from '@/lib/services/organizationService';
 
 export async function POST(request: NextRequest) {
   try {
@@ -124,9 +126,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // שליחת מייל ברוכים הבאים
+    try {
+      // קבלת פרטי הארגון והקבוצה לשליחת המייל
+      const organizationDetails = organizationId ? await getOrganizationById(organizationId) : null;
+      const groupDetails = groupId ? await getGroupById(groupId) : null;
+
+      const emailData: WelcomeEmailData = {
+        email: email.trim(),
+        userName: finalUserName,
+        role: role,
+        organizationName: organizationDetails?.name,
+        groupName: groupDetails?.name,
+        loginUrl: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+        password: password, // שליחת הסיסמה במייל (רק ליצירה ישירה)
+        isInvitation: false
+      };
+
+      const emailSent = await emailService.sendWelcomeEmail(emailData);
+      
+      if (emailSent) {
+        console.log(`Welcome email sent successfully to ${email}`);
+      } else {
+        console.warn(`Failed to send welcome email to ${email}`);
+      }
+    } catch (emailError) {
+      console.error('Error sending welcome email:', emailError);
+      // לא נכשיל את כל התהליך בגלל שגיאת מייל
+    }
+
     return NextResponse.json({
       success: true,
-      message: `משתמש ${finalUserName} נוצר בהצלחה`,
+      message: `משתמש ${finalUserName} נוצר בהצלחה ומייל ברוכים הבאים נשלח`,
       userData: {
         id: newUser.user.id,
         email: email.trim(),

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { rlsSupabase, supabaseUtils } from "@/lib/supabase";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import UserRoleBadge from "./UserRoleBadge";
+import { clearUserRoleCache } from "@/lib/hooks/useUserRole";
+import { clearGroupsCache } from "./GroupSelector";
 
 export default function AuthGuard({ 
   children, 
@@ -89,6 +91,9 @@ export default function AuthGuard({
       
       if (event === 'SIGNED_OUT' && pathname !== '/login') {
         console.log('User signed out, redirecting to login');
+        // ניקוי cache כשהמשתמש מתנתק
+        clearUserRoleCache();
+        clearGroupsCache();
         router.replace('/login');
       }
     });

@@ -15,45 +15,68 @@ interface UserRoleData {
   error: string | null;
 }
 
-export function useUserRole(): UserRoleData {
-  const [roleData, setRoleData] = useState<UserRoleData>({
-    role: null,
-    userName: null,
-    userEmail: null,
-    organizationName: null,
-    organizationId: null,
-    groupName: null,
-    groupId: null,
-    userId: null,
-    isLoading: true,
-    error: null
-  });
+// Global cache for user role data
+let globalUserRoleCache: UserRoleData | null = null;
+let globalUserRoleCacheTimestamp = 0;
+const CACHE_DURATION = 2 * 60 * 1000; // 2 דקות
+let isCurrentlyFetching = false;
+let fetchPromise: Promise<UserRoleData> | null = null;
 
-  const [hasAttempted, setHasAttempted] = useState(false); // למניעת קריאות חוזרות
+export function useUserRole(): UserRoleData {
+  const [roleData, setRoleData] = useState<UserRoleData>(() => {
+    // אם יש cache תקף, נתחיל איתו
+    if (globalUserRoleCache && Date.now() - globalUserRoleCacheTimestamp < CACHE_DURATION) {
+      return globalUserRoleCache;
+    }
+    return {
+      role: null,
+      userName: null,
+      userEmail: null,
+      organizationName: null,
+      organizationId: null,
+      groupName: null,
+      groupId: null,
+      userId: null,
+      isLoading: true,
+      error: null
+    };
+  });
 
   useEffect(() => {
     let isMounted = true;
     
-    // אם כבר ניסינו פעם, לא ננסה שוב
-    if (hasAttempted) {
+    // אם יש cache תקף, נשתמש בו
+    if (globalUserRoleCache && Date.now() - globalUserRoleCacheTimestamp < CACHE_DURATION) {
+      if (isMounted) {
+        setRoleData(globalUserRoleCache);
+      }
+      return;
+    }
+
+    // אם כבר יש fetch בתהליך, נחכה לו
+    if (isCurrentlyFetching && fetchPromise) {
+      fetchPromise.then(data => {
+        if (isMounted) {
+          setRoleData(data);
+        }
+      }).catch(error => {
+        if (isMounted) {
+          setRoleData(prev => ({ ...prev, isLoading: false, error: error.message }));
+        }
+      });
       return;
     }
     
-    const fetchUserRole = async () => {
+    const fetchUserRole = async (): Promise<UserRoleData> => {
       try {
-        setRoleData(prev => ({ ...prev, isLoading: true, error: null }));
-        setHasAttempted(true);
-
         console.log('🔍 useUserRole: Starting fetch');
 
         // בדיקה אם המשתמש מחובר
-        const { user, error: userError } = await rlsSupabase.getCurrentUser();
-        
-        if (!isMounted) return;
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
         
         if (userError || !user) {
           console.log('❌ useUserRole: No user found');
-          setRoleData({
+          const errorData = {
             role: null,
             userName: null,
             userEmail: null,
@@ -64,8 +87,10 @@ export function useUserRole(): UserRoleData {
             userId: null,
             isLoading: false,
             error: (userError as any)?.message || 'משתמש לא מחובר'
-          });
-          return;
+          };
+          globalUserRoleCache = errorData;
+          globalUserRoleCacheTimestamp = Date.now();
+          return errorData;
         }
 
         console.log('✅ useUserRole: User found:', user.id);
@@ -76,7 +101,7 @@ export function useUserRole(): UserRoleData {
 
         if (!token) {
           console.log('❌ useUserRole: No token found');
-          setRoleData({
+          const errorData = {
             role: null,
             userName: null,
             userEmail: null,
@@ -87,8 +112,10 @@ export function useUserRole(): UserRoleData {
             userId: null,
             isLoading: false,
             error: 'לא נמצא טוקן אימות'
-          });
-          return;
+          };
+          globalUserRoleCache = errorData;
+          globalUserRoleCacheTimestamp = Date.now();
+          return errorData;
         }
 
         console.log('🔑 useUserRole: Token found');
@@ -107,6 +134,13 @@ export function useUserRole(): UserRoleData {
         if (!response.ok) {
           const errorText = await response.text();
           console.error('❌ useUserRole: API error:', errorText);
+          
+          // אם יש שגיאת אימות, נקה את ה-cache
+          if (response.status === 401 || response.status === 403) {
+            globalUserRoleCache = null;
+            globalUserRoleCacheTimestamp = 0;
+          }
+          
           throw new Error('שגיאה בקבלת פרופיל משתמש');
         }
 
@@ -119,10 +153,8 @@ export function useUserRole(): UserRoleData {
 
         const profile = data.profile;
 
-        if (!isMounted) return;
-
         console.log('🎉 useUserRole: Setting role data');
-        setRoleData({
+        const successData = {
           role: profile.role as RoleType || null,
           userName: profile.user_name || null,
           userEmail: profile.email || null,
@@ -133,13 +165,17 @@ export function useUserRole(): UserRoleData {
           userId: profile.user_id || null,
           isLoading: false,
           error: null
-        });
+        };
+
+        // שמירה ב-cache גלובלי
+        globalUserRoleCache = successData;
+        globalUserRoleCacheTimestamp = Date.now();
+        
+        return successData;
 
       } catch (error) {
         console.error('💥 useUserRole: Error:', error);
-        if (!isMounted) return;
-        
-        setRoleData({
+        const errorData = {
           role: null,
           userName: null,
           userEmail: null,
@@ -150,11 +186,34 @@ export function useUserRole(): UserRoleData {
           userId: null,
           isLoading: false,
           error: error instanceof Error ? error.message : 'שגיאה לא צפויה'
-        });
+        };
+        globalUserRoleCache = errorData;
+        globalUserRoleCacheTimestamp = Date.now();
+        return errorData;
       }
     };
 
-    fetchUserRole();
+    // התחלת fetch
+    isCurrentlyFetching = true;
+    fetchPromise = fetchUserRole();
+    
+    console.log('🚀 useUserRole: Starting new fetch request');
+    
+    fetchPromise.then(data => {
+      console.log('✅ useUserRole: Fetch completed successfully');
+      if (isMounted) {
+        setRoleData(data);
+      }
+    }).catch(error => {
+      console.error('❌ useUserRole: Fetch failed:', error);
+      if (isMounted) {
+        setRoleData(prev => ({ ...prev, isLoading: false, error: error.message }));
+      }
+    }).finally(() => {
+      isCurrentlyFetching = false;
+      fetchPromise = null;
+      console.log('🏁 useUserRole: Fetch process completed');
+    });
     
     return () => {
       isMounted = false;
@@ -162,6 +221,21 @@ export function useUserRole(): UserRoleData {
   }, []); // רק פעם אחת בטעינה
 
   return roleData;
+}
+
+// פונקציה לניקוי cache (לשימוש כשהמשתמש מתנתק או משתנה)
+export function clearUserRoleCache() {
+  globalUserRoleCache = null;
+  globalUserRoleCacheTimestamp = 0;
+  isCurrentlyFetching = false;
+  fetchPromise = null;
+  console.log('🧹 useUserRole: Cache cleared');
+}
+
+// פונקציה לרענון cache (לשימוש כשרוצים לעדכן את הנתונים)
+export function refreshUserRoleCache() {
+  clearUserRoleCache();
+  console.log('🔄 useUserRole: Cache refresh requested');
 }
 
 // פונקציה עזר לקבלת תווית התפקיד בעברית

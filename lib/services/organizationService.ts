@@ -1,139 +1,150 @@
-import { rlsSupabase } from '@/lib/supabase';
-import { Organization, OrganizationInsert } from '@/lib/types/database.types';
+import { getSupabaseAdmin } from '@/lib/supabase';
 
-export interface OrganizationWithStats extends Organization {
-  groupCount: number;
-  userCount: number;
-}
-
-export interface CreateOrganizationData {
+export interface OrganizationDetails {
+  id: string;
   name: string;
 }
 
-export interface UpdateOrganizationData {
-  name?: string;
+export interface GroupDetails {
+  id: string;
+  name: string;
+  organizationId: string;
 }
 
-export const organizationService = {
-  /**
-   * שליפת כל הארגונים עם סטטיסטיקות
-   */
-  async getAllOrganizations(): Promise<OrganizationWithStats[]> {
-    const result = await rlsSupabase.rpc('get_all_organizations');
+export interface OrganizationWithStats extends OrganizationDetails {
+  userCount?: number;
+  groupCount?: number;
+}
+
+export async function getOrganizationById(organizationId: string): Promise<OrganizationDetails | null> {
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
     
-    if (result.error) {
-      throw new Error(`שגיאה בשליפת הארגונים: ${result.error.message}`);
-    }
-
-    // הוספת סטטיסטיקות לכל ארגון
-    const organizations = result.data || [];
-    const organizationsWithStats: OrganizationWithStats[] = [];
-
-    for (const org of organizations) {
-      // ספירת קבוצות
-      const { count: groupCount } = await rlsSupabase.raw
-        .from('groups')
-        .select('*', { count: 'exact', head: true })
-        .eq('organization_id', org.id);
-
-      // ספירת משתמשים
-      const { count: userCount } = await rlsSupabase.raw
-        .from('user_profile')
-        .select('*', { count: 'exact', head: true })
-        .eq('organization_id', org.id);
-
-      organizationsWithStats.push({
-        ...org,
-        groupCount: groupCount || 0,
-        userCount: userCount || 0
-      });
-    }
-
-    return organizationsWithStats;
-  },
-
-  /**
-   * יצירת ארגון חדש
-   */
-  async createOrganization(data: CreateOrganizationData): Promise<string> {
-    const result = await rlsSupabase.rpc('create_organization', {
-      org_name: data.name.trim()
-    });
-
-    if (result.error) {
-      throw new Error(`שגיאה ביצירת הארגון: ${result.error.message}`);
-    }
-
-    return result.data;
-  },
-
-  /**
-   * עדכון ארגון
-   */
-  async updateOrganization(id: string, data: UpdateOrganizationData): Promise<void> {
-    const { error } = await rlsSupabase.raw
+    const { data, error } = await supabaseAdmin
       .from('organizations')
-      .update({
-        name: data.name?.trim(),
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', id);
-
-    if (error) {
-      throw new Error(`שגיאה בעדכון הארגון: ${error.message}`);
-    }
-  },
-
-  /**
-   * מחיקת ארגון
-   */
-  async deleteOrganization(id: string): Promise<void> {
-    // בדיקה שאין קבוצות או משתמשים בארגון
-    const { count: groupCount } = await rlsSupabase.raw
-      .from('groups')
-      .select('*', { count: 'exact', head: true })
-      .eq('organization_id', id);
-
-    const { count: userCount } = await rlsSupabase.raw
-      .from('user_profile')
-      .select('*', { count: 'exact', head: true })
-      .eq('organization_id', id);
-
-    if ((groupCount || 0) > 0) {
-      throw new Error('לא ניתן למחוק ארגון שיש בו קבוצות. יש למחוק תחילה את כל הקבוצות.');
-    }
-
-    if ((userCount || 0) > 0) {
-      throw new Error('לא ניתן למחוק ארגון שיש בו משתמשים. יש להעביר תחילה את כל המשתמשים לארגון אחר.');
-    }
-
-    const { error } = await rlsSupabase.raw
-      .from('organizations')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      throw new Error(`שגיאה במחיקת הארגון: ${error.message}`);
-    }
-  },
-
-  /**
-   * שליפת ארגון לפי ID
-   */
-  async getOrganizationById(id: string): Promise<Organization | null> {
-    const { data, error } = await rlsSupabase.raw
-      .from('organizations')
-      .select('*')
-      .eq('id', id)
+      .select('id, name')
+      .eq('id', organizationId)
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        return null; // לא נמצא
-      }
-      throw new Error(`שגיאה בשליפת הארגון: ${error.message}`);
+      console.error('Error fetching organization:', error);
+      return null;
     }
 
     return data;
+  } catch (error) {
+    console.error('Error in getOrganizationById:', error);
+    return null;
+  }
+}
+
+export async function getGroupById(groupId: string): Promise<GroupDetails | null> {
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
+    
+    const { data, error } = await supabaseAdmin
+      .from('groups')
+      .select('id, name, organization_id')
+      .eq('id', groupId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching group:', error);
+      return null;
+    }
+
+    return {
+      id: data.id,
+      name: data.name,
+      organizationId: data.organization_id
+    };
+  } catch (error) {
+    console.error('Error in getGroupById:', error);
+    return null;
+  }
+}
+
+// organizationService object for compatibility
+export const organizationService = {
+  async getAllOrganizations(): Promise<OrganizationWithStats[]> {
+    try {
+      const supabaseAdmin = getSupabaseAdmin();
+      
+      const { data, error } = await supabaseAdmin
+        .from('organizations')
+        .select('id, name')
+        .order('name');
+
+      if (error) {
+        console.error('Error fetching organizations:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error in getAllOrganizations:', error);
+      return [];
+    }
+  },
+
+  async createOrganization(orgData: { name: string }): Promise<OrganizationDetails> {
+    try {
+      const supabaseAdmin = getSupabaseAdmin();
+      
+      const { data, error } = await supabaseAdmin
+        .from('organizations')
+        .insert({ name: orgData.name })
+        .select('id, name')
+        .single();
+
+      if (error) {
+        throw new Error(`Error creating organization: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in createOrganization:', error);
+      throw error;
+    }
+  },
+
+  async updateOrganization(orgId: string, orgData: { name: string }): Promise<OrganizationDetails> {
+    try {
+      const supabaseAdmin = getSupabaseAdmin();
+      
+      const { data, error } = await supabaseAdmin
+        .from('organizations')
+        .update({ name: orgData.name })
+        .eq('id', orgId)
+        .select('id, name')
+        .single();
+
+      if (error) {
+        throw new Error(`Error updating organization: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in updateOrganization:', error);
+      throw error;
+    }
+  },
+
+  async deleteOrganization(orgId: string): Promise<void> {
+    try {
+      const supabaseAdmin = getSupabaseAdmin();
+      
+      const { error } = await supabaseAdmin
+        .from('organizations')
+        .delete()
+        .eq('id', orgId);
+
+      if (error) {
+        throw new Error(`Error deleting organization: ${error.message}`);
+      }
+    } catch (error) {
+      console.error('Error in deleteOrganization:', error);
+      throw error;
+    }
   }
 };

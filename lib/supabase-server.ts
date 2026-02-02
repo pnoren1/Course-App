@@ -112,16 +112,27 @@ export function createServerSupabaseClient(request: NextRequest) {
 
 // פונקציה עזר לקבלת משתמש מחובר
 export async function getAuthenticatedUser(request: NextRequest) {
+  console.log('🔍 getAuthenticatedUser called');
   const { supabase, token } = createServerSupabaseClient(request);
   
-  console.log('🔑 Token found:', token ? 'Yes' : 'No');
+  console.log('🔑 Token found:', token ? `Yes (${token.substring(0, 20)}...)` : 'No');
   
   if (!token) {
     console.log('❌ No token found in request');
     
     // Try to get token from session cookie as fallback
     const cookies = request.cookies;
-    const sessionCookie = cookies.get('sb-lzedeawtmzfenyrewhmo-auth-token');
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    let projectRef = 'lzedeawtmzfenyrewhmo';
+    
+    if (supabaseUrl) {
+      const match = supabaseUrl.match(/https:\/\/([^.]+)\.supabase\.co/);
+      if (match) {
+        projectRef = match[1];
+      }
+    }
+    
+    const sessionCookie = cookies.get(`sb-${projectRef}-auth-token`);
     
     if (sessionCookie?.value) {
       try {

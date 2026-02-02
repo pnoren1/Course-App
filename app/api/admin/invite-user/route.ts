@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { rlsSupabase } from '@/lib/supabase';
+import { emailService, WelcomeEmailData } from '@/lib/services/emailService';
+import { getOrganizationById, getGroupById } from '@/lib/services/organizationService';
 
 export async function POST(request: NextRequest) {
   try {
@@ -91,12 +93,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // שליחת מייל הזמנה
+    try {
+      // קבלת פרטי הארגון והקבוצה לשליחת המייל
+      const organizationDetails = organizationId ? await getOrganizationById(organizationId) : null;
+      const groupDetails = groupId ? await getGroupById(groupId) : null;
+
+      const emailData: WelcomeEmailData = {
+        email: email.trim(),
+        userName: finalUserName,
+        role: role,
+        organizationName: organizationDetails?.name,
+        groupName: groupDetails?.name,
+        loginUrl: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+        isInvitation: true,
+        invitationToken: invitation.invitation_token
+      };
+
+      const emailSent = await emailService.sendWelcomeEmail(emailData);
+      
+      if (emailSent) {
+        console.log(`Invitation email sent successfully to ${email}`);
+      } else {
+        console.warn(`Failed to send invitation email to ${email}`);
+      }
+    } catch (emailError) {
+      console.error('Error sending invitation email:', emailError);
+      // לא נכשיל את כל התהליך בגלל שגיאת מייל
+    }
+
     // כאן נוכל להוסיף לוגיקה לשליחת מייל עם קישור ההזמנה
     // const invitationLink = `${process.env.NEXT_PUBLIC_SITE_URL}/accept-invitation?token=${invitation.invitation_token}`;
     
     return NextResponse.json({
       success: true,
-      message: `הזמנה נשלחה בהצלחה לכתובת ${email}`,
+      message: `הזמנה נשלחה בהצלחה לכתובת ${email} עם מייל מעוצב`,
       invitationData: {
         id: invitation.invitation_id,
         email,

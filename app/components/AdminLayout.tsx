@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { rlsSupabase } from '@/lib/supabase';
 import { UserInfo } from '@/app/components/UserRoleBadge';
 import AdminNavigation from '@/app/components/AdminNavigation';
 import AdminBreadcrumb from '@/app/components/AdminBreadcrumb';
 import SubmissionNotifications from '@/app/components/SubmissionNotifications';
+import { useUserRole } from '@/lib/hooks/useUserRole';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -16,59 +17,26 @@ interface AdminLayoutProps {
 }
 
 export default function AdminLayout({ children, title, description, icon }: AdminLayoutProps) {
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const router = useRouter();
+  const userRoleData = useUserRole();
+  const { role, isLoading, error, userId } = userRoleData;
 
   useEffect(() => {
-    checkAdminAccess();
-  }, []);
+    if (isLoading) return;
 
-  const checkAdminAccess = async () => {
-    try {
-      const { user } = await rlsSupabase.getCurrentUser();
-      
-      if (!user) {
-        router.push('/login');
-        return;
-      }
-
-      const { isAdmin: adminStatus } = await rlsSupabase.isAdmin();
-      
-      // בדיקה נוספת אם המשתמש הוא מנהל ארגון
-      let hasAdminAccess = adminStatus;
-      if (!adminStatus) {
-        const { user: currentUser } = await rlsSupabase.getCurrentUser();
-        if (currentUser) {
-          try {
-            const { data: profile, error } = await rlsSupabase.from('user_profile')
-              .select('*')
-              .eq('user_id', currentUser.id)
-              .single();
-            
-            if (error) {
-              console.error('Error fetching user profile:', error);
-            } else {
-              hasAdminAccess = (profile as any)?.role === 'org_admin';
-            }
-          } catch (error) {
-            console.error('Error checking user role:', error);
-          }
-        }
-      }
-      
-      setIsAdmin(hasAdminAccess);
-      
-      if (!hasAdminAccess) {
-        router.push('/course');
-      }
-    } catch (error) {
-      console.error('Error checking admin access:', error);
+    if (error || !userId) {
       router.push('/login');
-    } finally {
-      setLoading(false);
+      return;
     }
-  };
+
+    const isAdminRole = role === 'admin' || role === 'org_admin';
+    setHasAccess(isAdminRole);
+
+    if (!isAdminRole) {
+      router.push('/course');
+    }
+  }, [role, isLoading, error, userId, router]);
 
   const handleSignOut = async () => {
     try {
@@ -79,7 +47,7 @@ export default function AdminLayout({ children, title, description, icon }: Admi
     }
   };
 
-  if (loading) {
+  if (isLoading || hasAccess === null) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="flex items-center gap-3 text-slate-600">
@@ -93,7 +61,7 @@ export default function AdminLayout({ children, title, description, icon }: Admi
     );
   }
 
-  if (!isAdmin) {
+  if (!hasAccess) {
     return null;
   }
 
@@ -146,7 +114,7 @@ export default function AdminLayout({ children, title, description, icon }: Admi
       </header>
 
       {/* Navigation */}
-      <AdminNavigation />
+      <AdminNavigation userRole={role} />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

@@ -183,13 +183,16 @@ interface NavigationItem {
 
 interface AdminNavigationProps {
   className?: string;
+  userRole?: string | null; // הוספת prop לתפקיד
 }
 
-export default function AdminNavigation({ className = '' }: AdminNavigationProps) {
+export default function AdminNavigation({ className = '', userRole }: AdminNavigationProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { role } = useUserRole();
+  // השתמש ב-prop אם קיים, אחרת ב-hook
+  const { role: hookRole } = useUserRole();
+  const role = userRole || hookRole;
 
   const isActive = (href: string) => {
     if (href === '/admin') {

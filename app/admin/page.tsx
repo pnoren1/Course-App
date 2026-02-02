@@ -15,7 +15,7 @@ interface Stats {
 
 export default function AdminPage() {
   const router = useRouter();
-  const { role } = useUserRole();
+  const { role, isLoading: roleLoading } = useUserRole();
   const [stats, setStats] = useState<Stats>({
     totalUsers: 0,
     totalAssignments: 0,
@@ -63,6 +63,27 @@ export default function AdminPage() {
       setLoadingStats(false);
     }
   };
+
+  // Show loading state while role is being fetched
+  if (roleLoading) {
+    return (
+      <AdminLayout 
+        title="לוח בקרה" 
+        description="סקירה כללית של המערכת"
+        icon={
+          <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v0a2 2 0 01-2 2H10a2 2 0 01-2-2v0z" />
+          </svg>
+        }
+      >
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="mr-3 text-slate-600">טוען...</span>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout 
