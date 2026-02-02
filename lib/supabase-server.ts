@@ -7,13 +7,6 @@ export function createServerSupabaseClient(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
   
-  const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  });
-
   // קבלת הטוקן מה-Authorization header או מ-cookies
   const authHeader = request.headers.get('authorization');
   let token = authHeader?.replace('Bearer ', '');
@@ -100,6 +93,20 @@ export function createServerSupabaseClient(request: NextRequest) {
   }
 
   console.log('🔍 Final token status:', token ? `Found (${token.substring(0, 20)}...)` : 'Not found');
+  
+  // יצירת הלקוח עם הטוקן
+  const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    },
+    global: {
+      headers: token ? {
+        Authorization: `Bearer ${token}`
+      } : {}
+    }
+  });
+  
   return { supabase, token };
 }
 
@@ -150,4 +157,24 @@ export async function getAuthenticatedUser(request: NextRequest) {
     console.error('❌ Error in getAuthenticatedUser:', error);
     return { user: null, error, supabase };
   }
+}
+
+// Helper function to authenticate user with proper token handling
+export async function authenticateRequest(request: NextRequest) {
+  const { supabase, token } = createServerSupabaseClient(request);
+  
+  console.log('🔐 Authenticating request with token:', token ? 'Present' : 'Missing');
+  
+  // Use token if available, otherwise fall back to default auth
+  const { data: { user }, error: authError } = token 
+    ? await supabase.auth.getUser(token)
+    : await supabase.auth.getUser();
+    
+  if (authError || !user) {
+    console.error('❌ Authentication failed:', authError?.message || 'No user found');
+    return { user: null, error: authError, supabase };
+  }
+  
+  console.log('✅ User authenticated successfully:', { id: user.id, email: user.email });
+  return { user, error: null, supabase };
 }

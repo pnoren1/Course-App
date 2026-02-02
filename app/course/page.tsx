@@ -1,6 +1,7 @@
 "use client";
 
 import AuthGuard from "../components/AuthGuardClient";
+import VideoSyncAlert from "../components/VideoSyncAlert";
 import { rlsSupabase, supabaseUtils } from "@/lib/supabase";
 import { courseAcknowledgmentService } from "../../lib/services/courseAcknowledgmentService";
 import { useRouter } from "next/navigation";
@@ -11,6 +12,7 @@ import WelcomePopup from "./components/WelcomePopup";
 import CourseHeader from "./components/CourseHeader";
 import UnitSection from "./components/UnitSection";
 import SubmissionStatusIndicator from "./components/SubmissionStatusIndicator";
+import VideoGradingSummary from "./components/VideoGradingSummary";
 import type { Lesson, Unit } from "./types";
 import { useUserRole } from "@/lib/hooks/useUserRole";
 
@@ -262,6 +264,9 @@ function CourseContent({ userRoleData }: { userRoleData: any }) {
 
   return (
     <div className="bg-slate-50">
+      {/* Video Sync Alert for Admins */}
+      <VideoSyncAlert />
+      
       {/* Welcome Popup - Requirements 3.1, 3.2 */}
       {user && (
         <WelcomePopup
@@ -320,6 +325,13 @@ function CourseContent({ userRoleData }: { userRoleData: any }) {
         {/* Show course content only after acknowledgment */}
         {!acknowledgmentLoading && hasAcknowledged && (
           <>
+            {/* Video Grading Summary - Always visible for students */}
+            {user?.id && (
+              <div className="mb-6">
+                <VideoGradingSummary userId={user.id} />
+              </div>
+            )}
+
             {/* Submission Status Indicator - Only show when toggled */}
             {user?.id && showSubmissionDetails && (
               <div className="mb-6">

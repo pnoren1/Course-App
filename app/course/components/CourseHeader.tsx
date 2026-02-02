@@ -2,6 +2,7 @@
 
 import { UserInfo } from "@/app/components/UserRoleBadge";
 import MiniSubmissionStatus from "./MiniSubmissionStatus";
+import VideoGradeDisplay from "@/app/components/VideoGradeDisplay";
 import Link from "next/link";
 
 type Props = {
@@ -110,6 +111,17 @@ export default function CourseHeader({ onSignOut, userRoleData, onToggleSubmissi
               </a>
             </div>
             <div className="flex items-center gap-6">
+              {/* Video Grading Summary - visible for all users */}
+              {userRoleData.userId && (
+                <div className="bg-white rounded-lg border border-slate-200 p-3">
+                  <VideoGradeDisplay 
+                    userId={userRoleData.userId}
+                    showDetails={false}
+                    isAdmin={role === 'admin' || role === 'org_admin'}
+                  />
+                </div>
+              )}
+              
               {/* Mini Submission Status - visible for all users */}
               {userRoleData.userId && (
                 <MiniSubmissionStatus 

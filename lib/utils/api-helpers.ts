@@ -12,7 +12,8 @@ export async function getAuthHeaders(): Promise<HeadersInit> {
     hasSession: !!session, 
     hasAccessToken: !!session?.access_token,
     error: error?.message,
-    expiresAt: session?.expires_at ? new Date(session.expires_at * 1000).toISOString() : 'N/A'
+    expiresAt: session?.expires_at ? new Date(session.expires_at * 1000).toISOString() : 'N/A',
+    tokenStart: session?.access_token ? session.access_token.substring(0, 20) + '...' : 'N/A'
   });
   
   const token = session?.access_token;
@@ -23,7 +24,7 @@ export async function getAuthHeaders(): Promise<HeadersInit> {
   
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
-    console.log('✅ Added Authorization header');
+    console.log('✅ Added Authorization header with token:', token.substring(0, 20) + '...');
   } else {
     console.log('❌ No token available for Authorization header');
   }
@@ -43,6 +44,8 @@ export async function authenticatedFetch(
   const headers = await getAuthHeaders();
   
   console.log('📤 Request headers:', Object.keys(headers));
+  console.log('📤 Request method:', options.method || 'GET');
+  console.log('📤 Request body:', options.body ? 'Present' : 'None');
   
   const response = await fetch(url, {
     ...options,
@@ -53,6 +56,7 @@ export async function authenticatedFetch(
   });
   
   console.log('📥 Response status:', response.status, response.statusText);
+  console.log('📥 Response ok:', response.ok);
   
   return response;
 }

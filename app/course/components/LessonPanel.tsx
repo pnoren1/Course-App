@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import type { Lesson, LessonFile } from "../types";
 import { supabase } from "@/lib/supabase";
 import AudioHelpLink from "./AudioHelpLink";
+import VideoPlayerWithTracking from "./VideoPlayerWithTracking";
+import VideoProgress from "./VideoProgress";
 
 type Props = {
   lesson: Lesson;
@@ -14,10 +16,28 @@ type Props = {
 export default function LessonPanel({ lesson, isOpen, userId }: Props) {
   const [files, setFiles] = useState<LessonFile[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
+  const [videoProgress, setVideoProgress] = useState(0);
 
   const isLab = lesson.is_lab;
   const hasVideo = !!lesson.embedUrl;
   const hasDescription = !!lesson.description;
+
+  // Extract Spotlightr video ID from embed URL
+  const getSpotlightrVideoId = (embedUrl: string): string | null => {
+    try {
+      const url = new URL(embedUrl);
+      const pathParts = url.pathname.split('/');
+      const watchIndex = pathParts.indexOf('watch');
+      if (watchIndex !== -1 && pathParts[watchIndex + 1]) {
+        return pathParts[watchIndex + 1];
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  const spotlightrVideoId = hasVideo ? getSpotlightrVideoId(lesson.embedUrl) : null;
 
   // Load lesson files
   useEffect(() => {
@@ -71,7 +91,48 @@ export default function LessonPanel({ lesson, isOpen, userId }: Props) {
       {/* Content Layout - Stack video and description */}
       <div className="space-y-6">
         {/* Video Content */}
-        {hasVideo && (
+        {hasVideo && spotlightrVideoId && (
+          <div>
+            <div className="relative">
+              <VideoPlayerWithTracking
+                videoLessonId={lesson.id.toString()}
+                spotlightrVideoId={spotlightrVideoId}
+                onProgressUpdate={setVideoProgress}
+                onSessionStart={(token) => console.log('Video session started:', token)}
+                onSessionEnd={() => console.log('Video session ended')}
+              />
+            </div>
+            
+            <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                </svg>
+                <span className="font-medium">{isLab ? "צפה בהדגמה" : "צפה בשיעור"}</span>
+              </div>
+              <div className="text-xs text-slate-500">
+                <span>לחץ על מסך מלא לחוויה טובה יותר</span>
+              </div>
+            </div>
+
+            {/* Video Progress */}
+            {userId && (
+              <div className="mt-4 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+                <VideoProgress
+                  userId={userId}
+                  videoLessonId={lesson.id.toString()}
+                  showDetails={true}
+                />
+              </div>
+            )}
+
+            {/* Audio Help Link */}
+            <AudioHelpLink />
+          </div>
+        )}
+
+        {/* Fallback for non-Spotlightr videos */}
+        {hasVideo && !spotlightrVideoId && (
           <div>
             <div className="relative">
               <div className="w-full aspect-video rounded-xl overflow-hidden shadow-lg bg-black border border-slate-200">

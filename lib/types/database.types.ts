@@ -591,6 +591,213 @@ export interface Database {
           }
         ];
       };
+      video_lessons: {
+        Row: {
+          id: string;
+          lesson_id: string;
+          title: string;
+          spotlightr_video_id: string;
+          duration_seconds: number;
+          required_completion_percentage: number;
+          grade_weight: number;
+          suspicious_activity_penalty: number;
+          completion_bonus: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          lesson_id: string;
+          title: string;
+          spotlightr_video_id: string;
+          duration_seconds: number;
+          required_completion_percentage?: number;
+          grade_weight?: number;
+          suspicious_activity_penalty?: number;
+          completion_bonus?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          lesson_id?: string;
+          title?: string;
+          spotlightr_video_id?: string;
+          duration_seconds?: number;
+          required_completion_percentage?: number;
+          grade_weight?: number;
+          suspicious_activity_penalty?: number;
+          completion_bonus?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      video_viewing_sessions: {
+        Row: {
+          id: string;
+          user_id: string;
+          video_lesson_id: string;
+          session_token: string;
+          started_at: string;
+          last_heartbeat: string;
+          is_active: boolean;
+          browser_tab_id: string | null;
+          user_agent: string | null;
+          ip_address: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          video_lesson_id: string;
+          session_token: string;
+          started_at?: string;
+          last_heartbeat?: string;
+          is_active?: boolean;
+          browser_tab_id?: string | null;
+          user_agent?: string | null;
+          ip_address?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          video_lesson_id?: string;
+          session_token?: string;
+          started_at?: string;
+          last_heartbeat?: string;
+          is_active?: boolean;
+          browser_tab_id?: string | null;
+          user_agent?: string | null;
+          ip_address?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "video_viewing_sessions_user_id_fkey";
+            columns: ["user_id"];
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "video_viewing_sessions_video_lesson_id_fkey";
+            columns: ["video_lesson_id"];
+            referencedRelation: "video_lessons";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      video_viewing_events: {
+        Row: {
+          id: string;
+          session_id: string;
+          event_type: string;
+          timestamp_in_video: number;
+          client_timestamp: string;
+          server_timestamp: string;
+          is_tab_visible: boolean | null;
+          playback_rate: number | null;
+          volume_level: number | null;
+          additional_data: any | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          session_id: string;
+          event_type: string;
+          timestamp_in_video: number;
+          client_timestamp: string;
+          server_timestamp?: string;
+          is_tab_visible?: boolean | null;
+          playback_rate?: number | null;
+          volume_level?: number | null;
+          additional_data?: any | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          session_id?: string;
+          event_type?: string;
+          timestamp_in_video?: number;
+          client_timestamp?: string;
+          server_timestamp?: string;
+          is_tab_visible?: boolean | null;
+          playback_rate?: number | null;
+          volume_level?: number | null;
+          additional_data?: any | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "video_viewing_events_session_id_fkey";
+            columns: ["session_id"];
+            referencedRelation: "video_viewing_sessions";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      video_progress: {
+        Row: {
+          id: string;
+          user_id: string;
+          video_lesson_id: string;
+          total_watched_seconds: number;
+          completion_percentage: number;
+          is_completed: boolean;
+          first_watch_started: string | null;
+          last_watch_updated: string;
+          suspicious_activity_count: number;
+          grade_contribution: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          video_lesson_id: string;
+          total_watched_seconds?: number;
+          completion_percentage?: number;
+          is_completed?: boolean;
+          first_watch_started?: string | null;
+          last_watch_updated?: string;
+          suspicious_activity_count?: number;
+          grade_contribution?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          video_lesson_id?: string;
+          total_watched_seconds?: number;
+          completion_percentage?: number;
+          is_completed?: boolean;
+          first_watch_started?: string | null;
+          last_watch_updated?: string;
+          suspicious_activity_count?: number;
+          grade_contribution?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "video_progress_user_id_fkey";
+            columns: ["user_id"];
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "video_progress_video_lesson_id_fkey";
+            columns: ["video_lesson_id"];
+            referencedRelation: "video_lessons";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -848,6 +1055,22 @@ export type UserInvitation = Database['public']['Tables']['user_invitations']['R
 export type UserInvitationInsert = Database['public']['Tables']['user_invitations']['Insert'];
 export type UserInvitationUpdate = Database['public']['Tables']['user_invitations']['Update'];
 
+export type VideoLesson = Database['public']['Tables']['video_lessons']['Row'];
+export type VideoLessonInsert = Database['public']['Tables']['video_lessons']['Insert'];
+export type VideoLessonUpdate = Database['public']['Tables']['video_lessons']['Update'];
+
+export type VideoViewingSession = Database['public']['Tables']['video_viewing_sessions']['Row'];
+export type VideoViewingSessionInsert = Database['public']['Tables']['video_viewing_sessions']['Insert'];
+export type VideoViewingSessionUpdate = Database['public']['Tables']['video_viewing_sessions']['Update'];
+
+export type VideoViewingEvent = Database['public']['Tables']['video_viewing_events']['Row'];
+export type VideoViewingEventInsert = Database['public']['Tables']['video_viewing_events']['Insert'];
+export type VideoViewingEventUpdate = Database['public']['Tables']['video_viewing_events']['Update'];
+
+export type VideoProgress = Database['public']['Tables']['video_progress']['Row'];
+export type VideoProgressInsert = Database['public']['Tables']['video_progress']['Insert'];
+export type VideoProgressUpdate = Database['public']['Tables']['video_progress']['Update'];
+
 // Role types for type safety
 export type RoleType = 'student' | 'admin' | 'instructor' | 'moderator' | 'org_admin';
 
@@ -856,6 +1079,9 @@ export type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'cancelled';
 
 // Audit operation types for type safety
 export type AuditOperation = 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE';
+
+// Video event types for type safety
+export type VideoEventType = 'play' | 'pause' | 'seek' | 'heartbeat' | 'end';
 
 // Submission file type
 export type SubmissionFile = Database['public']['Tables']['submission_files']['Row'];

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import lessonsData from '../../../course/lessons.json';
+import { createServerSupabaseClient } from '@/lib/supabase-server';
 
 // Helper function to parse duration string to seconds
 function parseDuration(duration: string): number {
@@ -13,13 +13,24 @@ function parseDuration(duration: string): number {
   return 0;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    // For now, return JSON data as fallback
-    // The main data loading is now done client-side for better RLS support
-    return NextResponse.json(lessonsData);
+    const { supabase, token } = createServerSupabaseClient(request as any);
+    
+    // Get lessons from database
+    const { data: lessons, error } = await supabase
+      .from('lessons')
+      .select('*')
+      .order('order_index');
+    
+    if (error) {
+      console.error('Error loading lessons from database:', error);
+      return NextResponse.json({ error: 'Failed to load lessons' }, { status: 500 });
+    }
+    
+    return NextResponse.json(lessons || []);
   } catch (error) {
     console.error('Error loading lessons:', error);
-    return NextResponse.json(lessonsData);
+    return NextResponse.json({ error: 'Failed to load lessons' }, { status: 500 });
   }
 }
