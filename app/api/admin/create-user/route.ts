@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/supabase-server';
+import { emailService } from '@/lib/services/emailService';
 
 export async function POST(request: NextRequest) {
   try {
@@ -124,9 +125,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // שליחת מייל ברוכים הבאים למשתמש החדש
+    let emailSent = false;
+    try {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+      emailSent = await emailService.sendWelcomeEmail({
+        email: email.trim(),
+        userName: finalUserName || email.trim(),
+        siteUrl: siteUrl
+      });
+
+      if (!emailSent) {
+        console.warn('Failed to send welcome email to:', email.trim());
+        // לא נכשיל את כל התהליך אם המייל לא נשלח
+      }
+    } catch (emailError) {
+      console.error('Error sending welcome email:', emailError);
+      // לא נכשיל את כל התהליך אם המייל לא נשלח
+    }
+
     return NextResponse.json({
       success: true,
       message: `משתמש ${finalUserName} נוצר בהצלחה`,
+      emailSent: emailSent,
       userData: {
         id: newUser.user.id,
         email: email.trim(),

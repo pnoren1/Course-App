@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { rlsSupabase } from '@/lib/supabase';
 import { RoleType, Organization } from '@/lib/types/database.types';
-import { fetchWithAuth, debugAuthStorage } from '@/lib/auth-utils';
+import { authenticatedFetch } from '@/lib/utils/api-helpers';
 import GroupSelector from './GroupSelector';
 
 interface AddUserFormProps {
@@ -22,6 +22,7 @@ export default function AddUserForm({ organizations, onUserAdded, className = ''
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [emailStatus, setEmailStatus] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     email: '',
@@ -36,9 +37,6 @@ export default function AddUserForm({ organizations, onUserAdded, className = ''
   useEffect(() => {
     const checkDirectCreationAvailability = async () => {
       try {
-        // דיבוג - מה יש ב-storage
-        debugAuthStorage();
-        
         // קבלת המשתמש הנוכחי מ-Supabase client
         const { user } = await rlsSupabase.getCurrentUser();
         
@@ -51,11 +49,8 @@ export default function AddUserForm({ organizations, onUserAdded, className = ''
         console.log('Current user:', user.id);
 
         // שליחת בקשה עם מזהה המשתמש
-        const response = await fetch('/api/admin/simple-check', {
+        const response = await authenticatedFetch('/api/admin/simple-check', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
           body: JSON.stringify({ userId: user.id })
         });
         
@@ -157,11 +152,8 @@ export default function AddUserForm({ organizations, onUserAdded, className = ''
             groupId: formData.groupId || null
           };
 
-      const response = await fetch(endpoint, {
+      const response = await authenticatedFetch(endpoint, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify(requestBody)
       });
 
@@ -183,6 +175,15 @@ export default function AddUserForm({ organizations, onUserAdded, className = ''
 
       setSuccess(result.message || `משתמש ${mode === 'create' ? 'נוצר' : 'הוזמן'} בהצלחה`);
       
+      // הצגת סטטוס המייל אם זמין
+      if (mode === 'create' && result.emailSent !== undefined) {
+        if (result.emailSent) {
+          setEmailStatus('✅ מייל ברוכים הבאים נשלח בהצלחה');
+        } else {
+          setEmailStatus('⚠️ המשתמש נוצר אך המייל לא נשלח');
+        }
+      }
+      
       // איפוס הטופס
       setFormData({
         email: '',
@@ -196,11 +197,12 @@ export default function AddUserForm({ organizations, onUserAdded, className = ''
       // קריאה לפונקציה להתעדכנות
       onUserAdded();
       
-      // סגירת הטופס אחרי 2 שניות
+      // סגירת הטופס אחרי 3 שניות
       setTimeout(() => {
         setIsOpen(false);
         setSuccess(null);
-      }, 2000);
+        setEmailStatus(null);
+      }, 3000);
 
     } catch (error) {
       console.error('Error adding user:', error);
@@ -214,6 +216,7 @@ export default function AddUserForm({ organizations, onUserAdded, className = ''
     setFormData(prev => ({ ...prev, [field]: value }));
     setError(null);
     setSuccess(null);
+    setEmailStatus(null);
   };
 
   if (!isOpen) {
@@ -334,6 +337,12 @@ export default function AddUserForm({ organizations, onUserAdded, className = ''
       {success && (
         <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
           {success}
+        </div>
+      )}
+
+      {emailStatus && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-sm">
+          {emailStatus}
         </div>
       )}
 

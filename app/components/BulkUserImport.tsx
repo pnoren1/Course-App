@@ -25,6 +25,8 @@ interface ImportResult {
   success: number;
   failed: number;
   errors: Array<{ row: number; email: string; error: string }>;
+  emailsSent?: number;
+  emailsFailed?: number;
 }
 
 export default function BulkUserImport({ organizations, onUsersAdded, className = '' }: BulkUserImportProps) {
@@ -213,6 +215,8 @@ export default function BulkUserImport({ organizations, onUsersAdded, className 
       setImportResult({
         success: result.result.success,
         failed: result.result.failed,
+        emailsSent: result.result.emailsSent || 0,
+        emailsFailed: result.result.emailsFailed || 0,
         errors: result.result.errors.map((err: any, idx: number) => ({
           row: idx + 2, // +2 כי אנחנו מתחילים משורה 1 (כותרות) ו-idx מתחיל מ-0
           email: err.email,
@@ -417,6 +421,32 @@ export default function BulkUserImport({ organizations, onUsersAdded, className 
                       <span className="font-medium">
                         {importResult.success} משתמשים {mode === 'create' ? 'נוצרו' : 'הוזמנו'} בהצלחה
                       </span>
+                    </div>
+                  )}
+                  
+                  {/* הצגת סטטוס מיילים רק במצב יצירה ישירה */}
+                  {mode === 'create' && importResult.success > 0 && (
+                    <div className="space-y-1">
+                      {importResult.emailsSent && importResult.emailsSent > 0 && (
+                        <div className="flex items-center gap-2 text-blue-700">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                          <span className="text-sm">
+                            ✅ {importResult.emailsSent} מיילי ברוכים הבאים נשלחו
+                          </span>
+                        </div>
+                      )}
+                      {importResult.emailsFailed && importResult.emailsFailed > 0 && (
+                        <div className="flex items-center gap-2 text-amber-700">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126c-.77.833.192 2.5 1.732 2.5z" />
+                          </svg>
+                          <span className="text-sm">
+                            ⚠️ {importResult.emailsFailed} מיילים לא נשלחו
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
                   {importResult.failed > 0 && (

@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import AdminLayout from '@/app/components/AdminLayout';
 import { rlsSupabase } from '@/lib/supabase';
 import { useUserRole } from '@/lib/hooks/useUserRole';
+import { authenticatedFetch } from '@/lib/utils/api-helpers';
 
 interface Stats {
   totalUsers: number;
@@ -369,6 +370,139 @@ export default function AdminPage() {
             </button>
           </div>
         </div>
+
+        {/* Debug Section - Only for admins */}
+        {role === 'admin' && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="inline-flex items-center justify-center w-8 h-8 bg-yellow-100 rounded-lg">
+                  <svg className="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-yellow-900">כלי Debug</h3>
+                  <p className="text-sm text-yellow-700">בדיקת authentication ומידע טכני</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={async () => {
+                    try {
+                      const response = await authenticatedFetch('/api/admin/debug-auth');
+                      const data = await response.json();
+                      console.log('Debug Auth Info:', data);
+                      alert('מידע Debug נשמר ב-Console. פתח את Developer Tools (F12) כדי לראות.');
+                    } catch (error) {
+                      console.error('Debug error:', error);
+                      alert('שגיאה בבדיקת Debug');
+                    }
+                  }}
+                  className="px-3 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  בדיקת Authentication
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      const response = await authenticatedFetch('/api/admin/simple-auth-test');
+                      const data = await response.json();
+                      console.log('Simple Auth Test:', data);
+                      if (data.success) {
+                        alert(`✅ Authentication עובד! משתמש: ${data.user.email}`);
+                      } else {
+                        alert(`❌ Authentication נכשל: ${data.message}`);
+                      }
+                    } catch (error) {
+                      console.error('Simple auth test error:', error);
+                      alert('שגיאה בבדיקת Authentication פשוטה');
+                    }
+                  }}
+                  className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  בדיקה פשוטה
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      const response = await authenticatedFetch('/api/admin/check-role');
+                      const data = await response.json();
+                      console.log('Role Check:', data);
+                      if (data.success) {
+                        alert(`✅ תפקיד: ${data.profile.role}\n📧 מייל: ${data.profile.email}\n🔑 מנהל: ${data.isAdmin ? 'כן' : 'לא'}`);
+                      } else {
+                        alert(`❌ בדיקת תפקיד נכשלה: ${data.message}`);
+                      }
+                    } catch (error) {
+                      console.error('Role check error:', error);
+                      alert('שגיאה בבדיקת תפקיד');
+                    }
+                  }}
+                  className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  בדיקת תפקיד
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      const response = await authenticatedFetch('/api/admin/debug-env');
+                      const data = await response.json();
+                      console.log('Environment Check:', data);
+                      if (data.success) {
+                        const env = data.environment;
+                        const missing = Object.entries(env).filter(([key, value]) => 
+                          typeof value === 'boolean' && !value
+                        ).map(([key]) => key);
+                        
+                        if (missing.length > 0) {
+                          alert(`⚠️ משתני סביבה חסרים:\n${missing.join('\n')}\n\nפרטים ב-Console`);
+                        } else {
+                          alert('✅ כל משתני הסביבה מוגדרים נכון');
+                        }
+                      } else {
+                        alert(`❌ בדיקת סביבה נכשלה: ${data.message}`);
+                      }
+                    } catch (error) {
+                      console.error('Environment check error:', error);
+                      alert('שגיאה בבדיקת סביבה');
+                    }
+                  }}
+                  className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  בדיקת סביבה
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!confirm('האם אתה בטוח שברצונך לוודא שהמשתמש הנוכחי הוא מנהל? זה יעדכן את הפרופיל במסד הנתונים.')) {
+                      return;
+                    }
+                    try {
+                      const response = await authenticatedFetch('/api/admin/ensure-admin', {
+                        method: 'POST'
+                      });
+                      const data = await response.json();
+                      console.log('Ensure Admin:', data);
+                      if (data.success) {
+                        alert(`✅ ${data.message}\nפעולה: ${data.action === 'created' ? 'נוצר פרופיל חדש' : 'עודכן פרופיל קיים'}\nתפקיד: ${data.profile.role}`);
+                        // רענן את הדף כדי לעדכן את התפקיד
+                        window.location.reload();
+                      } else {
+                        alert(`❌ שגיאה: ${data.message}`);
+                      }
+                    } catch (error) {
+                      console.error('Ensure admin error:', error);
+                      alert('שגיאה בוידוא הרשאות מנהל');
+                    }
+                  }}
+                  className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  וודא הרשאות מנהל
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </AdminLayout>
   );

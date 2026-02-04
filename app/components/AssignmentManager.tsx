@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Assignment } from '@/lib/types/assignment';
 import { BaseUnit } from '@/app/course/types';
 import { rlsSupabase } from '@/lib/supabase';
+import { authenticatedFetch } from '@/lib/utils/api-helpers';
 import AssignmentForm from './AssignmentForm';
 import AssignmentList from '@/app/components/AssignmentList';
 import UnitManager from '@/app/components/UnitManager';
@@ -93,7 +94,7 @@ export default function AssignmentManager() {
       
       // Debug: Check units table status
       try {
-        const debugResponse = await fetch('/api/admin/debug-units');
+        const debugResponse = await authenticatedFetch('/api/admin/debug-units');
         if (debugResponse.ok) {
           const debugData = await debugResponse.json();
           console.log('🐛 Units debug info:', debugData);
