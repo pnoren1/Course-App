@@ -16,10 +16,12 @@ export async function GET(
     
     // בדיקה נוספת אם המשתמש הוא מנהל ארגון
     let hasAdminAccess = isAdmin;
+    let userOrgId: string | null = null;
+    
     if (!isAdmin) {
       try {
         const { data: profile, error } = await rlsSupabase.from('user_profile')
-          .select('*')
+          .select('role, organization_id')
           .eq('user_id', user.id)
           .single();
         
@@ -27,6 +29,7 @@ export async function GET(
           console.error('Error fetching user profile:', error);
         } else {
           hasAdminAccess = (profile as any)?.role === 'org_admin';
+          userOrgId = (profile as any)?.organization_id || null;
         }
       } catch (error) {
         console.error('Error checking user role:', error);
@@ -43,15 +46,33 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid submission ID' }, { status: 400 });
     }
 
-    // Verify submission exists
-    const { data: submission, error: submissionError } = await rlsSupabase
+    // Verify submission exists and check organization access for org_admin
+    const submissionResult = await rlsSupabase
       .from('assignment_submissions')
-      .select('id')
+      .select(`
+        id,
+        user_id,
+        user_profile!assignment_submissions_user_id_fkey(organization_id)
+      `)
       .eq('id', submissionId)
       .single();
 
-    if (submissionError || !submission) {
+    if (submissionResult.error || !submissionResult.data) {
       return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
+    }
+
+    // אם זה org_admin, ודא שההגשה שייכת לארגון שלו
+    if (!isAdmin && userOrgId) {
+      // Type-safe access to nested data
+      const submissionData = submissionResult.data as any;
+      const userProfile = submissionData?.user_profile;
+      const submissionOrgId = userProfile?.organization_id;
+      
+      if (submissionOrgId && submissionOrgId !== userOrgId) {
+        return NextResponse.json({ 
+          error: 'אין הרשאה לגשת להגשה זו - ההגשה שייכת לארגון אחר' 
+        }, { status: 403 });
+      }
     }
 
     // Get files for this submission

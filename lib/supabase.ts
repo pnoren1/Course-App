@@ -22,27 +22,13 @@ export const supabase = createClient<Database>(
 function createAdminClient() {
   // Don't create admin client on client side
   if (typeof window !== 'undefined') {
-    console.log('Skipping admin client creation on client side');
     return null;
   }
   
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   
-  console.log('Creating admin client:', {
-    hasUrl: !!supabaseUrl,
-    hasServiceKey: !!serviceRoleKey,
-    urlLength: supabaseUrl?.length,
-    keyLength: serviceRoleKey?.length
-  });
-  
   if (!supabaseUrl || !serviceRoleKey) {
-    console.error('Missing environment variables for admin client:', {
-      NEXT_PUBLIC_SUPABASE_URL: !!supabaseUrl,
-      SUPABASE_SERVICE_ROLE_KEY: !!serviceRoleKey,
-      urlValue: supabaseUrl || 'undefined',
-      keyValue: serviceRoleKey ? 'defined' : 'undefined'
-    });
     return null;
   }
   
@@ -71,22 +57,9 @@ export function getSupabaseAdmin(): SupabaseClient<Database> {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     
-    console.log('Creating admin client at runtime:', {
-      hasUrl: !!supabaseUrl,
-      hasServiceKey: !!serviceRoleKey,
-      isServer: typeof window === 'undefined',
-      urlValue: supabaseUrl ? `${supabaseUrl.substring(0, 20)}...` : 'undefined',
-      keyValue: serviceRoleKey ? `${serviceRoleKey.substring(0, 20)}...` : 'undefined'
-    });
-    
     if (!supabaseUrl || !serviceRoleKey) {
-      console.error('Missing environment variables for admin client:', {
-        NEXT_PUBLIC_SUPABASE_URL: !!supabaseUrl,
-        SUPABASE_SERVICE_ROLE_KEY: !!serviceRoleKey,
-        urlValue: supabaseUrl || 'undefined',
-        keyValue: serviceRoleKey ? 'defined' : 'undefined'
-      });
-      throw new Error(`Missing environment variables for admin client: URL=${!!supabaseUrl}, ServiceKey=${!!serviceRoleKey}`);
+      console.error('Missing environment variables for admin client');
+      throw new Error('Missing environment variables for admin client');
     }
     
     return createClient<Database>(supabaseUrl, serviceRoleKey, {

@@ -76,7 +76,6 @@ export function createAuthHeaders(): HeadersInit {
   
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
-    console.log('Adding auth token to headers:', token.substring(0, 20) + '...');
   } else {
     console.log('No auth token found');
   }
@@ -117,14 +116,14 @@ export function debugAuthStorage() {
     const sessionValue = sessionStorage.getItem(key);
     
     if (localValue) {
-      console.log(`localStorage[${key}]:`, localValue.substring(0, 100) + '...');
+      console.log(`localStorage[${key}]: Found (${localValue.length} chars)`);
     }
     if (sessionValue) {
-      console.log(`sessionStorage[${key}]:`, sessionValue.substring(0, 100) + '...');
+      console.log(`sessionStorage[${key}]: Found (${sessionValue.length} chars)`);
     }
   });
   
   const token = getSupabaseToken();
-  console.log('Extracted token:', token ? token.substring(0, 20) + '...' : 'null');
+  console.log('Extracted token:', token ? 'Found' : 'null');
   console.log('=== End Debug ===');
 }
