@@ -211,16 +211,17 @@ class EmailService {
         .cta-button {
             display: inline-block;
             background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-            color: white;
+            color: #ffffff !important;
             text-decoration: none;
             padding: 16px 32px;
             border-radius: 12px;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 16px;
             box-shadow: 0 8px 25px rgba(79, 70, 229, 0.3);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
         
         .cta-button::before {
@@ -262,17 +263,19 @@ class EmailService {
             align-items: center;
             gap: 8px;
             justify-content: flex-start;
+            text-align: right;
         }
         
         .info-row {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start;
             align-items: center;
             padding: 12px 0;
             font-size: 15px;
             text-align: right;
             direction: rtl;
             border-bottom: 1px solid #e2e8f0;
+            gap: 24px;
         }
         
         .info-row:last-child {
@@ -282,6 +285,12 @@ class EmailService {
         .info-label {
             color: #6b7280;
             font-weight: 500;
+            font-size: 14px;
+            padding: 6px 0;
+            display: flex;
+            align-items: center;
+            min-height: 32px;
+            margin: 0 12px;
         }
         
         .info-value {
@@ -293,6 +302,9 @@ class EmailService {
             border: 1px solid #e5e7eb;
             font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
             font-size: 14px;
+            display: flex;
+            align-items: center;
+            min-height: 32px;
         }
         
         .footer {
@@ -339,12 +351,12 @@ class EmailService {
         }
     </style>
 </head>
-<body>
+<body style="direction: rtl;">
     <div class="email-container">
         <div class="header">
             <div class="header-content">
                 <h1>פורטל הקורסים</h1>
-                <span class="header-icon">🎓</span>
+                <span class="header-icon" style="margin-right: 10px">🎓</span>
             </div>
         </div>
         
@@ -367,7 +379,7 @@ class EmailService {
             
             <div class="login-card">
                 <div class="login-title">
-                    🔑 פרטי ההתחברות שלך
+                    <span style="margin-left: 10px">🔑</span>פרטי ההתחברות שלך
                 </div>
                 <div class="info-row">
                     <span class="info-label">כתובת מייל</span>
