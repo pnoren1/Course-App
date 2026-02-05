@@ -6,6 +6,7 @@ interface BulkUserData {
   userName: string;
   role: string;
   organizationId: string | null;
+  groupId: string | null;
 }
 
 interface BulkInviteResult {
@@ -85,7 +86,8 @@ export async function POST(request: NextRequest) {
           p_email: userData.email.trim(),
           p_user_name: finalUserName,
           p_role: userData.role,
-          p_organization_id: userData.organizationId || null
+          p_organization_id: userData.organizationId || null,
+          p_group_id: userData.groupId || null
         });
 
         if (invitationResult.error) {

@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
-import { RoleType, Organization } from '@/lib/types/database.types';
+import { RoleType, Organization, Group } from '@/lib/types/database.types';
 import { rlsSupabase } from '@/lib/supabase';
 
 interface BulkUserImportProps {
   organizations: Organization[];
+  groups: Group[];
   onUsersAdded: () => void;
   className?: string;
 }
@@ -16,7 +17,9 @@ interface UserRow {
   password?: string;
   role: RoleType;
   organizationId: string;
+  groupId: string;
   organizationName?: string;
+  groupName?: string;
   isValid: boolean;
   errors: string[];
 }
@@ -29,7 +32,7 @@ interface ImportResult {
   emailsFailed?: number;
 }
 
-export default function BulkUserImport({ organizations, onUsersAdded, className = '' }: BulkUserImportProps) {
+export default function BulkUserImport({ organizations, groups, onUsersAdded, className = '' }: BulkUserImportProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [parsedData, setParsedData] = useState<UserRow[]>([]);
@@ -48,7 +51,7 @@ export default function BulkUserImport({ organizations, onUsersAdded, className 
 
     const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
     const requiredHeaders = ['email'];
-    const optionalHeaders = ['username', 'password', 'role', 'organization_id'];
+    const optionalHeaders = ['username', 'password', 'role', 'organization_id', 'group_id'];
 
     // בדיקת כותרות נדרשות
     const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
@@ -61,6 +64,7 @@ export default function BulkUserImport({ organizations, onUsersAdded, className 
     const passwordIndex = headers.indexOf('password');
     const roleIndex = headers.indexOf('role');
     const organizationIndex = headers.indexOf('organization_id');
+    const groupIndex = headers.indexOf('group_id');
 
     const users: UserRow[] = [];
 
@@ -73,6 +77,7 @@ export default function BulkUserImport({ organizations, onUsersAdded, className 
       const password = values[passwordIndex] || '';
       const roleStr = values[roleIndex] || 'student';
       const organizationId = values[organizationIndex] || '';
+      const groupId = values[groupIndex] || '';
 
       // ולידציה של מייל
       if (!email) {
@@ -107,6 +112,30 @@ export default function BulkUserImport({ organizations, onUsersAdded, className 
         }
       }
 
+      // ולידציה של קבוצה (UUID)
+      let validGroupId = '';
+      let groupName = '';
+      if (groupId) {
+        // בדיקה שזה UUID תקין
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (uuidRegex.test(groupId)) {
+          const group = groups.find(g => g.id === groupId);
+          if (group) {
+            validGroupId = groupId;
+            groupName = group.name;
+            
+            // בדיקה שהקבוצה שייכת לארגון הנכון (אם צוין ארגון)
+            if (validOrganizationId && group.organization_id !== validOrganizationId) {
+              errors.push(`הקבוצה ${group.name} לא שייכת לארגון שצוין`);
+            }
+          } else {
+            errors.push(`קבוצה עם ID ${groupId} לא נמצאה`);
+          }
+        } else {
+          errors.push(`ID קבוצה לא תקין: ${groupId} (חייב להיות UUID)`);
+        }
+      }
+
       // ולידציה של סיסמה (רק במצב יצירה ישירה)
       if (mode === 'create' && (!password || password.length < 6)) {
         errors.push('סיסמה נדרשת באורך של לפחות 6 תווים');
@@ -118,7 +147,9 @@ export default function BulkUserImport({ organizations, onUsersAdded, className 
         password: mode === 'create' ? password : undefined,
         role,
         organizationId: validOrganizationId,
+        groupId: validGroupId,
         organizationName,
+        groupName,
         isValid: errors.length === 0,
         errors
       });
@@ -185,7 +216,8 @@ export default function BulkUserImport({ organizations, onUsersAdded, className 
         userName: userData.userName,
         password: userData.password,
         role: userData.role,
-        organizationId: userData.organizationId || null
+        organizationId: userData.organizationId || null,
+        groupId: userData.groupId || null
       }));
 
       const requestBody = mode === 'create' 
@@ -520,7 +552,8 @@ export default function BulkUserImport({ organizations, onUsersAdded, className 
                         <th className="px-3 py-2 text-right">מייל</th>
                         <th className="px-3 py-2 text-right">שם משתמש</th>
                         <th className="px-3 py-2 text-right">תפקיד</th>
-                        <th className="px-3 py-2 text-right">ארגון ID</th>
+                        <th className="px-3 py-2 text-right">ארגון</th>
+                        <th className="px-3 py-2 text-right">קבוצה</th>
                         {mode === 'create' && <th className="px-3 py-2 text-right">סיסמה</th>}
                       </tr>
                     </thead>
@@ -546,7 +579,8 @@ export default function BulkUserImport({ organizations, onUsersAdded, className 
                           <td className="px-3 py-2">{user.email}</td>
                           <td className="px-3 py-2">{user.userName}</td>
                           <td className="px-3 py-2">{user.role}</td>
-                          <td className="px-3 py-2">{user.organizationId || 'ללא ארגון'}</td>
+                          <td className="px-3 py-2">{user.organizationName || 'ללא ארגון'}</td>
+                          <td className="px-3 py-2">{user.groupName || 'ללא קבוצה'}</td>
                           {mode === 'create' && (
                             <td className="px-3 py-2">
                               {user.password ? '••••••' : 'חסרה'}
@@ -616,7 +650,8 @@ export default function BulkUserImport({ organizations, onUsersAdded, className 
                     <li>• מלא את הנתונים בקובץ (email נדרש, שאר השדות אופציונליים)</li>
                     <li>• <strong>חשוב:</strong> שמור את הקובץ עם encoding UTF-8 (בExcel: "CSV UTF-8")</li>
                     <li>• תפקידים תקינים: student, instructor, moderator, org_admin, admin</li>
-                    <li>• organization_id חייב להיות UUID תקין של ארגון קיים במערכת</li>
+                    <li>• organization_id וגם group_id חייבים להיות UUID תקינים של ארגון/קבוצה קיימים במערכת</li>
+                    <li>• אם מציינים קבוצה, היא חייבת להיות שייכת לארגון שצוין (אם צוין)</li>
                     {mode === 'create' && <li>• במצב יצירה ישירה, סיסמה נדרשת (לפחות 6 תווים)</li>}
                   </ul>
                 </div>
@@ -639,6 +674,34 @@ export default function BulkUserImport({ organizations, onUsersAdded, className 
                           <code className="text-xs bg-slate-100 px-2 py-1 rounded font-mono">{org.id}</code>
                         </div>
                       ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Groups List */}
+            {groups.length > 0 && (
+              <div className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-slate-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  <div className="text-xs text-slate-700 flex-1">
+                    <p className="font-medium mb-2">קבוצות זמינות:</p>
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {groups.map(group => {
+                        const org = organizations.find(o => o.id === group.organization_id);
+                        return (
+                          <div key={group.id} className="flex items-center justify-between p-2 bg-white rounded border">
+                            <div className="flex flex-col">
+                              <span className="font-medium">{group.name}</span>
+                              <span className="text-xs text-slate-500">{org?.name || 'ארגון לא ידוע'}</span>
+                            </div>
+                            <code className="text-xs bg-slate-100 px-2 py-1 rounded font-mono">{group.id}</code>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>

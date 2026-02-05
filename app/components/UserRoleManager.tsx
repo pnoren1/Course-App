@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { rlsSupabase } from '@/lib/supabase';
-import { RoleType, Organization } from '@/lib/types/database.types';
+import { RoleType, Organization, Group } from '@/lib/types/database.types';
 import UserRoleBadge from './UserRoleBadge';
 import AddUserForm from './AddUserForm';
 import BulkUserImport from './BulkUserImport';
@@ -31,6 +31,7 @@ interface UserRoleManagerProps {
 export default function UserRoleManager({ className = '' }: UserRoleManagerProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -51,6 +52,7 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
     if (isAdmin) {
       fetchUsers();
       fetchOrganizations();
+      fetchGroups();
     }
   }, [isAdmin]);
 
@@ -142,6 +144,24 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
     } catch (error) {
       console.error('Error fetching organizations:', error);
       setError('שגיאה בשליפת רשימת הארגונים');
+    }
+  };
+
+  const fetchGroups = async () => {
+    try {
+      const { data, error } = await rlsSupabase
+        .from('groups')
+        .select('*')
+        .order('name', { ascending: true });
+      
+      if (error) {
+        throw error;
+      }
+
+      setGroups((data as Group[]) || []);
+    } catch (error) {
+      console.error('Error fetching groups:', error);
+      setError('שגיאה בשליפת רשימת הקבוצות');
     }
   };
 
@@ -396,6 +416,7 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
               />
               <BulkUserImport
                 organizations={organizations}
+                groups={groups}
                 onUsersAdded={refreshUsers}
               />
               <ExportUsersCSV organizations={organizations} />

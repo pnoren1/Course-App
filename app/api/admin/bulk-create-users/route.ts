@@ -8,6 +8,7 @@ interface BulkUserData {
   password: string;
   role: string;
   organizationId: string | null;
+  groupId: string | null;
 }
 
 interface BulkCreateResult {
@@ -134,6 +135,7 @@ export async function POST(request: NextRequest) {
           email: userData.email.trim(),
           role: userData.role,
           organization_id: userData.organizationId || null,
+          group_id: userData.groupId || null,
           granted_by: currentUserId
         }).select().single();
 
