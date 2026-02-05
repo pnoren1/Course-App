@@ -12,7 +12,9 @@ export default function StudentProgressPage() {
   const router = useRouter();
   const [allUserStats, setAllUserStats] = useState<UserSubmissionStats[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserSubmissionStats | null>(null);
+  const [selectedUserFullStats, setSelectedUserFullStats] = useState<UserSubmissionStats | null>(null);
   const [userDetailedStatus, setUserDetailedStatus] = useState<DetailedSubmissionStatus[]>([]);
+  const [usersWhoLoggedIn, setUsersWhoLoggedIn] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,51 +47,66 @@ export default function StudentProgressPage() {
 
   // Load all users stats
   useEffect(() => {
-    const loadAllUsersStats = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        console.log('🔍 Loading user stats - role:', role, 'organizationId:', organizationId);
-        
-        let stats: UserSubmissionStats[];
-        
-        if (role === 'admin') {
-          // Admin can see all users
-          console.log('📊 Loading all users stats (admin)');
-          stats = await submissionStatsService.getAllUsersSubmissionStats();
-        } else if (role === 'org_admin' && organizationId) {
-          // Org admin can only see users in their organization
-          console.log('📊 Loading organization users stats for org:', organizationId);
-          stats = await submissionStatsService.getOrganizationUsersSubmissionStats(organizationId);
-        } else {
-          console.log('❌ No valid role/organizationId combination');
-          stats = [];
-        }
-        
-        console.log('📈 Loaded stats:', stats.length, 'users');
-        setAllUserStats(stats);
-      } catch (err: any) {
-        console.error('Error loading user stats:', err);
-        setError('שגיאה בטעינת נתוני התלמידים');
-      } finally {
-        setLoading(false);
-      }
-    };
+    loadAllUsersStats();
+  }, [role, organizationId]);
 
+  const loadAllUsersStats = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      console.log('🔍 Loading user stats - role:', role, 'organizationId:', organizationId);
+      
+      let stats: UserSubmissionStats[];
+      
+      if (role === 'admin') {
+        // Admin can see all users
+        console.log('📊 Loading all users stats (admin)');
+        stats = await submissionStatsService.getAllUsersSubmissionStats();
+      } else if (role === 'org_admin' && organizationId) {
+        // Org admin can only see users in their organization
+        console.log('📊 Loading organization users stats for org:', organizationId);
+        stats = await submissionStatsService.getOrganizationUsersSubmissionStats(organizationId);
+      } else {
+        console.log('❌ No valid role/organizationId combination');
+        stats = [];
+      }
+      
+      console.log('📈 Loaded stats:', stats.length, 'users');
+      setAllUserStats(stats);
+
+      // Load users who have logged in
+      const loggedInUsers = await submissionStatsService.getUsersWhoLoggedIn();
+      console.log('👥 Users who logged in:', loggedInUsers.size);
+      setUsersWhoLoggedIn(loggedInUsers);
+    } catch (err: any) {
+      console.error('Error loading user stats:', err);
+      setError('שגיאה בטעינת נתוני התלמידים');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRefresh = () => {
     if ((role === 'admin') || (role === 'org_admin' && organizationId)) {
       loadAllUsersStats();
-    } else {
-      console.log('⏸️ Not loading stats - conditions not met. Role:', role, 'OrgId:', organizationId);
+      // Clear selected user to force reload when clicked again
+      setSelectedUser(null);
+      setSelectedUserFullStats(null);
+      setUserDetailedStatus([]);
     }
-  }, [role, organizationId]);
+  };
 
   // Load detailed status for selected user
   const loadUserDetails = async (userId: string) => {
     try {
       setDetailsLoading(true);
-      const detailedStatus = await submissionStatsService.getUserDetailedSubmissionStatus(userId);
+      const [detailedStatus, fullStats] = await Promise.all([
+        submissionStatsService.getUserDetailedSubmissionStatus(userId),
+        submissionStatsService.getUserSubmissionStats(userId)
+      ]);
       setUserDetailedStatus(detailedStatus);
+      setSelectedUserFullStats(fullStats);
     } catch (err: any) {
       console.error('Error loading user details:', err);
       setError('שגיאה בטעינת פרטי התלמיד');
@@ -273,6 +290,28 @@ export default function StudentProgressPage() {
         <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
         </svg>
+      }
+      breadcrumbActions={
+        <button
+          onClick={handleRefresh}
+          disabled={loading}
+          className="inline-flex items-center gap-2 px-3 py-1.5 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <svg 
+            className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={1.5} 
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
+            />
+          </svg>
+          {loading ? 'מרענן...' : 'רענן'}
+        </button>
       }
     >
       <div className="space-y-6">
@@ -647,6 +686,14 @@ export default function StudentProgressPage() {
                                         </div>
 
                                         <div className="flex items-center gap-2">
+                                          {!usersWhoLoggedIn.has(user.userId) && (
+                                            <div 
+                                              className="inline-flex items-center justify-center w-6 h-6 bg-orange-100 rounded-full"
+                                              title="התלמיד לא נכנס למערכת"
+                                            >
+                                              <span className="text-sm">⚠️</span>
+                                            </div>
+                                          )}
                                           <div className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${getStatusColor(user.submissionRate)}`}>
                                             {Math.round(user.submissionRate)}%
                                           </div>
@@ -690,6 +737,30 @@ export default function StudentProgressPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
+                  {/* Login Status */}
+                  {selectedUserFullStats && (
+                    <div className={`rounded-lg p-3 ${
+                      selectedUserFullStats.hasLoggedIn 
+                        ? 'bg-green-50 border border-green-200' 
+                        : 'bg-red-50 border border-red-200'
+                    }`}>
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">
+                          {selectedUserFullStats.hasLoggedIn ? '✅' : '❌'}
+                        </span>
+                        <span className={`font-medium ${
+                          selectedUserFullStats.hasLoggedIn 
+                            ? 'text-green-800' 
+                            : 'text-red-800'
+                        }`}>
+                          {selectedUserFullStats.hasLoggedIn 
+                            ? 'התלמיד נכנס למערכת' 
+                            : 'התלמיד לא נכנס למערכת'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Summary Stats */}
                   <div className={`rounded-lg p-3 ${getStatusColor(selectedUser.submissionRate)}`}>
                     <div className="flex items-center justify-between">

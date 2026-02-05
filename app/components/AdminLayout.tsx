@@ -13,9 +13,10 @@ interface AdminLayoutProps {
   title: string;
   description?: string;
   icon?: React.ReactNode;
+  breadcrumbActions?: React.ReactNode;
 }
 
-export default function AdminLayout({ children, title, description, icon }: AdminLayoutProps) {
+export default function AdminLayout({ children, title, description, icon, breadcrumbActions }: AdminLayoutProps) {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -150,7 +151,7 @@ export default function AdminLayout({ children, title, description, icon }: Admi
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <AdminBreadcrumb />
+        <AdminBreadcrumb actions={breadcrumbActions} />
         {children}
       </main>
     </div>

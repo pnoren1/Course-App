@@ -15,6 +15,7 @@ export interface UserSubmissionStats {
   pendingAssignments: number;
   submissionRate: number;
   lastSubmissionDate?: string;
+  hasLoggedIn?: boolean; // Whether user has a record in course_acknowledgments
   // Future: video viewing stats
   totalLessons?: number;
   watchedLessons?: number;
@@ -62,6 +63,18 @@ export class SubmissionStatsService {
       if (userError) {
         throw new Error(`Error fetching user profile: ${userError.message}`);
       }
+
+      // Check if user has logged in (has record in course_acknowledgments)
+      const { data: acknowledgments, error: ackError } = await rlsSupabase
+        .from('course_acknowledgments')
+        .select('id')
+        .eq('user_id', userId)
+        .limit(1) as {
+          data: Array<{ id: number }> | null;
+          error: any;
+        };
+
+      const hasLoggedIn = !ackError && acknowledgments && acknowledgments.length > 0;
 
       // Get organization name if user has one
       let organizationName: string | undefined;
@@ -147,7 +160,8 @@ export class SubmissionStatsService {
         submittedAssignments,
         pendingAssignments,
         submissionRate,
-        lastSubmissionDate
+        lastSubmissionDate,
+        hasLoggedIn
       };
     } catch (error) {
       console.error('Error in getUserSubmissionStats:', error);
@@ -541,6 +555,30 @@ export class SubmissionStatsService {
     } catch (error) {
       console.error('Error in getAllUsersSubmissionStats:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Get set of user IDs who have logged in (have record in course_acknowledgments)
+   */
+  async getUsersWhoLoggedIn(): Promise<Set<string>> {
+    try {
+      const { data: acknowledgments, error } = await rlsSupabase
+        .from('course_acknowledgments')
+        .select('user_id') as {
+          data: Array<{ user_id: string }> | null;
+          error: any;
+        };
+
+      if (error) {
+        console.error('Error fetching logged in users:', error);
+        return new Set();
+      }
+
+      return new Set((acknowledgments || []).map(ack => ack.user_id));
+    } catch (error) {
+      console.error('Error in getUsersWhoLoggedIn:', error);
+      return new Set();
     }
   }
 
