@@ -327,9 +327,19 @@ export default function SubmissionManager({
                         <p className="text-sm font-medium text-slate-900 truncate">
                           {file.original_filename}
                         </p>
-                        <p className="text-xs text-slate-500">
-                          {formatFileSize(file.file_size_bytes)}
-                        </p>
+                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                          <span>{formatFileSize(file.file_size_bytes)}</span>
+                          <span className="text-slate-400">•</span>
+                          <span>
+                            {new Date(file.uploaded_at).toLocaleDateString('he-IL', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
+                        </div>
                       </div>
                       <button
                         onClick={(e) => {

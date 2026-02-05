@@ -41,14 +41,11 @@ export async function GET(
       .single();
 
     if (profileError || !userProfile) {
-      console.log('API: Profile error for current user:', profileError);
       return NextResponse.json(
         { error: 'לא נמצא פרופיל משתמש' },
         { status: 404 }
       );
     }
-
-    console.log('API: User profile:', userProfile);
 
     // Validate that the organization exists first
     const { data: organization, error: orgError } = await supabaseAdmin

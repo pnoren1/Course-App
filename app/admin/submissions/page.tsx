@@ -886,8 +886,8 @@ export default function SubmissionsPage() {
                                           <span>{submission.user_profile?.user_name || 'משתמש לא ידוע'}</span>
                                           <span>•</span>
                                           <span>{new Date(submission.submission_date).toLocaleDateString('he-IL')}</span>
-                                          <span>•</span>
-                                          <span>{submission.files_count} קבצים</span>
+                                          {/* <span>•</span> */}
+                                          {/* <span>{submission.files_count} קבצים</span> */}
                                           {(submission.comments_count || 0) > 0 && (
                                             <>
                                               <span>•</span>

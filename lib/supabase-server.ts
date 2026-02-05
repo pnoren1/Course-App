@@ -18,8 +18,6 @@ export function createServerSupabaseClient(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
   let token = authHeader?.replace('Bearer ', '');
   
-  console.log('🔍 Auth header:', authHeader ? 'Present' : 'Not found');
-  
   if (!token) {
     // נסה למצוא טוקן ב-cookies
     const cookies = request.cookies;
@@ -52,14 +50,12 @@ export function createServerSupabaseClient(request: NextRequest) {
           const parsed = JSON.parse(cookieValue);
           if (parsed.access_token) {
             token = parsed.access_token;
-            console.log('✅ Found access_token in JSON cookie');
             break;
           }
         } catch {
           // אם זה לא JSON, אולי זה הטוקן עצמו
           if (cookieValue.startsWith('eyJ')) { // JWT token starts with eyJ
             token = cookieValue;
-            console.log('✅ Found JWT token directly in cookie');
             break;
           }
         }
@@ -75,7 +71,6 @@ export function createServerSupabaseClient(request: NextRequest) {
             const parsed = JSON.parse(cookie.value);
             if (parsed.access_token) {
               token = parsed.access_token;
-              console.log('🎯 Found token in sb- cookie');
               break;
             }
           } catch {
@@ -86,8 +81,6 @@ export function createServerSupabaseClient(request: NextRequest) {
     }
   }
 
-  console.log('🔍 Final token status:', token ? 'Found' : 'Not found');
-
   return { supabase, token };
 }
 
@@ -95,11 +88,7 @@ export function createServerSupabaseClient(request: NextRequest) {
 export async function getAuthenticatedUser(request: NextRequest) {
   const { supabase, token } = createServerSupabaseClient(request);
   
-  console.log('🔑 Token found:', token ? 'Yes' : 'No');
-  
   if (!token) {
-    console.log('❌ No token found in request');
-    
     // Try to get token from session cookie as fallback
     const cookies = request.cookies;
     const sessionCookie = cookies.get('sb-lzedeawtmzfenyrewhmo-auth-token');
@@ -108,16 +97,14 @@ export async function getAuthenticatedUser(request: NextRequest) {
       try {
         const sessionData = JSON.parse(sessionCookie.value);
         if (sessionData.access_token) {
-          console.log('🔄 Found token in session cookie');
           const { data: { user }, error } = await supabase.auth.getUser(sessionData.access_token);
           
           if (user && !error) {
-            console.log('✅ User authenticated via session cookie');
             return { user, error: null, supabase };
           }
         }
       } catch (parseError) {
-        console.log('❌ Error parsing session cookie');
+        // Ignore parsing errors
       }
     }
     
@@ -128,14 +115,8 @@ export async function getAuthenticatedUser(request: NextRequest) {
     // הגדרת הטוקן
     const { data: { user }, error } = await supabase.auth.getUser(token);
     
-    console.log('👤 User from auth:', user ? 'Found' : 'No user');
-    if (error) {
-      console.error('❌ Auth error:', error.message);
-    }
-    
     return { user, error, supabase };
   } catch (error) {
-    console.error('❌ Error in getAuthenticatedUser');
     return { user: null, error, supabase };
   }
 }
