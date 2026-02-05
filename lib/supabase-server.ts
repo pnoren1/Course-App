@@ -24,12 +24,6 @@ export function createServerSupabaseClient(request: NextRequest) {
     // נסה למצוא טוקן ב-cookies
     const cookies = request.cookies;
     
-    console.log('🍪 Available cookies:', Array.from(cookies.getAll()).map(c => ({ 
-      name: c.name, 
-      hasValue: !!c.value,
-      valueStart: c.value ? c.value.substring(0, 20) + '...' : 'empty'
-    })));
-    
     // Get the actual project reference from environment
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     let projectRef = 'lzedeawtmzfenyrewhmo'; // default fallback
@@ -38,7 +32,6 @@ export function createServerSupabaseClient(request: NextRequest) {
       const match = supabaseUrl.match(/https:\/\/([^.]+)\.supabase\.co/);
       if (match) {
         projectRef = match[1];
-        console.log('🎯 Detected project ref:', projectRef);
       }
     }
     
@@ -51,25 +44,22 @@ export function createServerSupabaseClient(request: NextRequest) {
       'supabase.auth.token'
     ];
     
-    console.log('🔍 Looking for cookies:', possibleCookieNames);
-    
     for (const cookieName of possibleCookieNames) {
       const cookieValue = cookies.get(cookieName)?.value;
       if (cookieValue) {
-        console.log(`🎯 Checking cookie ${cookieName}:`, cookieValue.substring(0, 50) + '...');
         try {
           // אם זה JSON, נסה לחלץ את הטוקן
           const parsed = JSON.parse(cookieValue);
           if (parsed.access_token) {
             token = parsed.access_token;
-            console.log('✅ Found access_token in JSON cookie:', cookieName);
+            console.log('✅ Found access_token in JSON cookie');
             break;
           }
         } catch {
           // אם זה לא JSON, אולי זה הטוקן עצמו
           if (cookieValue.startsWith('eyJ')) { // JWT token starts with eyJ
             token = cookieValue;
-            console.log('✅ Found JWT token directly in cookie:', cookieName);
+            console.log('✅ Found JWT token directly in cookie');
             break;
           }
         }
@@ -78,17 +68,14 @@ export function createServerSupabaseClient(request: NextRequest) {
     
     // אם עדיין לא מצאנו, נסה לחפש בכל ה-cookies שמתחילים ב-sb-
     if (!token) {
-      console.log('🔍 Searching all sb- cookies...');
-      
       // חיפוש בכל ה-cookies שמתחילים ב-sb-
       for (const cookie of cookies.getAll()) {
         if (cookie.name.startsWith('sb-') && cookie.value) {
-          console.log(`🔍 Checking sb- cookie ${cookie.name}:`, cookie.value.substring(0, 50) + '...');
           try {
             const parsed = JSON.parse(cookie.value);
             if (parsed.access_token) {
               token = parsed.access_token;
-              console.log('🎯 Found token in cookie:', cookie.name);
+              console.log('🎯 Found token in sb- cookie');
               break;
             }
           } catch {
@@ -99,7 +86,8 @@ export function createServerSupabaseClient(request: NextRequest) {
     }
   }
 
-  console.log('🔍 Final token status:', token ? `Found (${token.substring(0, 20)}...)` : 'Not found');
+  console.log('🔍 Final token status:', token ? 'Found' : 'Not found');
+
   return { supabase, token };
 }
 
@@ -124,12 +112,12 @@ export async function getAuthenticatedUser(request: NextRequest) {
           const { data: { user }, error } = await supabase.auth.getUser(sessionData.access_token);
           
           if (user && !error) {
-            console.log('✅ User authenticated via session cookie:', { id: user.id, email: user.email });
+            console.log('✅ User authenticated via session cookie');
             return { user, error: null, supabase };
           }
         }
       } catch (parseError) {
-        console.log('❌ Error parsing session cookie:', parseError);
+        console.log('❌ Error parsing session cookie');
       }
     }
     
@@ -140,14 +128,14 @@ export async function getAuthenticatedUser(request: NextRequest) {
     // הגדרת הטוקן
     const { data: { user }, error } = await supabase.auth.getUser(token);
     
-    console.log('👤 User from auth:', user ? { id: user.id, email: user.email } : 'No user');
+    console.log('👤 User from auth:', user ? 'Found' : 'No user');
     if (error) {
-      console.error('❌ Auth error:', error);
+      console.error('❌ Auth error:', error.message);
     }
     
     return { user, error, supabase };
   } catch (error) {
-    console.error('❌ Error in getAuthenticatedUser:', error);
+    console.error('❌ Error in getAuthenticatedUser');
     return { user: null, error, supabase };
   }
 }

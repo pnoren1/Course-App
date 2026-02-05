@@ -1,10 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/supabase-server';
+import { rateLimiters, getRequestIdentifier } from '@/lib/middleware/rate-limit';
 import { emailService } from '@/lib/services/emailService';
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting - 10 יצירות משתמש בשעה
+    const identifier = getRequestIdentifier(request);
+    const rateLimitResult = await rateLimiters.createUser(identifier);
+    
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: rateLimitResult.error },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': '10',
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': new Date(rateLimitResult.resetTime).toISOString()
+          }
+        }
+      );
+    }
+
     const supabaseAdmin = getSupabaseAdmin();
     
     const body = await request.json();

@@ -1,8 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { rlsSupabase } from '@/lib/supabase';
+import { rateLimiters, getRequestIdentifier } from '@/lib/middleware/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting - 10 הזמנות בשעה
+    const identifier = getRequestIdentifier(request);
+    const rateLimitResult = await rateLimiters.createUser(identifier);
+    
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: rateLimitResult.error },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': '10',
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': new Date(rateLimitResult.resetTime).toISOString()
+          }
+        }
+      );
+    }
+
     // בדיקת הרשאות מנהל
     const { isAdmin } = await rlsSupabase.isAdmin();
     
@@ -105,7 +124,7 @@ export async function POST(request: NextRequest) {
         organizationId: organizationId || null,
         groupId: groupId || null,
         expiresAt: invitation.expires_at,
-        token: invitation.invitation_token // בפרודקשן לא נחזיר את הטוקן
+        // token: invitation.invitation_token // בפרודקשן לא נחזיר את הטוקן
       }
     });
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { rateLimiters, getRequestIdentifier } from '@/lib/middleware/rate-limit';
 import { emailService } from '@/lib/services/emailService';
 
 interface BulkUserData {
@@ -21,6 +22,24 @@ interface BulkCreateResult {
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting - 3 פעולות המוניות בשעה
+    const identifier = getRequestIdentifier(request);
+    const rateLimitResult = await rateLimiters.bulkOperation(identifier);
+    
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: rateLimitResult.error },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': '3',
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': new Date(rateLimitResult.resetTime).toISOString()
+          }
+        }
+      );
+    }
+
     // בדיקה אם Service Role Key זמין
     if (!supabaseAdmin) {
       return NextResponse.json(
