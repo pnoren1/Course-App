@@ -80,7 +80,7 @@ class EmailService {
             border-radius: 20px;
             overflow: hidden;
             box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 2px solid #e5e7eb;
         }
         
         .header {
@@ -127,6 +127,7 @@ class EmailService {
             vertical-align: baseline;
             filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
             margin-top: -2px;
+            margin-right: 10px;
         }
         
         .content {
@@ -356,7 +357,7 @@ class EmailService {
         <div class="header">
             <div class="header-content">
                 <h1>פורטל הקורסים</h1>
-                <span class="header-icon" style="margin-right: 10px">🎓</span>
+                <span class="header-icon">🎓</span>
             </div>
         </div>
         
@@ -373,7 +374,7 @@ class EmailService {
             
             <div class="cta-section">
                 <a href="${data.siteUrl}/login" class="cta-button">
-                    בואו נתחיל ללמוד יחד ←
+                    בואו נתחיל ללמוד ←
                 </a>
             </div>
             
@@ -382,11 +383,11 @@ class EmailService {
                     <span style="margin-left: 10px">🔑</span>פרטי ההתחברות שלך
                 </div>
                 <div class="info-row">
-                    <span class="info-label">כתובת מייל</span>
+                    <span class="info-label">כתובת המייל</span>
                     <span class="info-value">${data.email}</span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">שם משתמש</span>
+                    <span class="info-label">שם המשתמש</span>
                     <span class="info-value">${data.userName}</span>
                 </div>
             </div>
@@ -398,7 +399,7 @@ class EmailService {
             </div>
             <div class="footer-note">
                 מייל זה נשלח אוטומטית ממערכת פורטל הקורסים<br>
-                אנא אל תשיב למייל זה
+                אין להשיב למייל זה
             </div>
         </div>
     </div>
