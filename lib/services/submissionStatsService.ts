@@ -74,7 +74,7 @@ export class SubmissionStatsService {
           error: any;
         };
 
-      const hasLoggedIn = !ackError && acknowledgments && acknowledgments.length > 0;
+      const hasLoggedIn = !ackError && acknowledgments && acknowledgments.length > 0 ? true : false;
 
       // Get organization name if user has one
       let organizationName: string | undefined;

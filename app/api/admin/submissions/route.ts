@@ -154,24 +154,61 @@ export async function PATCH(request: NextRequest) {
     }
 
     // If org_admin, verify they can update this submission
-    if (profile.role === 'org_admin' && profile.organization_id) {
+    if (profile.role === 'org_admin') {
+      if (!profile.organization_id) {
+        console.log('❌ Org admin has no organization_id');
+        return NextResponse.json({ error: 'Organization admin must be assigned to an organization' }, { status: 403 });
+      }
+
+      // First get the submission
       const { data: submission, error: submissionError } = await supabaseAdmin
         .from('assignment_submissions')
-        .select(`
-          user_id,
-          user_profile!assignment_submissions_user_id_fkey(organization_id)
-        `)
+        .select('user_id')
         .eq('id', submissionId)
         .single();
+
+      console.log('📋 Submission check:', { 
+        submission, 
+        submissionError: submissionError?.message 
+      });
 
       if (submissionError || !submission) {
         console.log('❌ Submission not found:', submissionError?.message);
         return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
       }
 
-      const submissionOrgId = (submission.user_profile as any)?.organization_id;
+      // Then get the user's organization separately
+      const { data: submissionUser, error: userError } = await supabaseAdmin
+        .from('user_profile')
+        .select('organization_id')
+        .eq('user_id', submission.user_id)
+        .single();
+
+      console.log('👤 Submission user check:', { 
+        submissionUser, 
+        userError: userError?.message 
+      });
+
+      if (userError || !submissionUser) {
+        console.log('❌ Submission user not found:', userError?.message);
+        return NextResponse.json({ error: 'Submission user not found' }, { status: 404 });
+      }
+
+      const submissionOrgId = submissionUser.organization_id;
+      
+      console.log('🏢 Organization check:', { 
+        submissionOrgId, 
+        userOrgId: profile.organization_id,
+        match: submissionOrgId === profile.organization_id
+      });
+
+      if (!submissionOrgId) {
+        console.log('❌ Submission has no organization');
+        return NextResponse.json({ error: 'Cannot update submission without organization' }, { status: 403 });
+      }
+
       if (submissionOrgId !== profile.organization_id) {
-        console.log('❌ Organization mismatch:', { submissionOrgId, userOrgId: profile.organization_id });
+        console.log('❌ Organization mismatch');
         return NextResponse.json({ error: 'Cannot update submission from different organization' }, { status: 403 });
       }
     }
