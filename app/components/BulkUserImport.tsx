@@ -231,6 +231,7 @@ export default function BulkUserImport({ organizations, groups, onUsersAdded, cl
 
       const response = await fetch(endpoint, {
         method: 'POST',
+        credentials: 'include', // Include cookies for authentication
         headers: {
           'Content-Type': 'application/json'
         },

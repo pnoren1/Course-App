@@ -9,15 +9,49 @@ type Props = {
   lesson: Lesson;
   isOpen: boolean;
   userId?: string;
+  onVideoWatched?: () => void;
 };
 
-export default function LessonPanel({ lesson, isOpen, userId }: Props) {
+export default function LessonPanel({ lesson, isOpen, userId, onVideoWatched }: Props) {
   const [files, setFiles] = useState<LessonFile[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
+  const [hasRecordedView, setHasRecordedView] = useState(false);
 
   const isLab = lesson.is_lab;
   const hasVideo = !!lesson.embedUrl;
   const hasDescription = !!lesson.description;
+
+  // Record video view when panel opens with video
+  useEffect(() => {
+    if (isOpen && hasVideo && lesson.id && !hasRecordedView) {
+      recordVideoView();
+    }
+  }, [isOpen, hasVideo, lesson.id, hasRecordedView]);
+
+  // Function to record video view
+  const recordVideoView = async () => {
+    try {
+      // Use authenticatedFetch to include Authorization header
+      const { authenticatedFetch } = await import('@/lib/utils/api-helpers');
+      
+      const response = await authenticatedFetch('/api/course/video-views', {
+        method: 'POST',
+        body: JSON.stringify({ lessonId: lesson.id }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setHasRecordedView(true);
+        // Notify parent component that video was watched
+        onVideoWatched?.();
+      } else {
+        console.error('Failed to record video view:', data.error);
+      }
+    } catch (error) {
+      console.error('Error recording video view:', error);
+    }
+  };
 
   // Load lesson files
   useEffect(() => {

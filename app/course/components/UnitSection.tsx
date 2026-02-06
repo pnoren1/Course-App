@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import type { Unit } from "../types";
 import { Assignment, AssignmentSubmission } from "../../../lib/types/assignment";
 import { assignmentService } from "../../../lib/services/assignmentService";
+import { VideoView } from "../../../lib/types/videoView";
 import LessonItem from "./LessonItem";
 import dynamic from "next/dynamic";
 
@@ -31,6 +32,7 @@ type Props = {
   userId?: string;
   userSubmissions?: Map<number, any>;
   onRefreshSubmissions?: () => Promise<void>;
+  watchedLessons?: VideoView[];
 };
 
 export default function UnitSection({ 
@@ -42,7 +44,8 @@ export default function UnitSection({
   setOpenUnit,
   userId,
   userSubmissions: propUserSubmissions,
-  onRefreshSubmissions
+  onRefreshSubmissions,
+  watchedLessons = []
 }: Props) {
   console.log('UnitSection unit:', unit);
   console.log('UnitSection assignments:', unit.assignments);
@@ -65,6 +68,11 @@ export default function UnitSection({
     if (onRefreshSubmissions) {
       await onRefreshSubmissions();
     }
+  };
+
+  // Helper function to check if a lesson is watched
+  const isLessonWatched = (lessonId: number): boolean => {
+    return watchedLessons.some(view => view.lesson_id === String(lessonId));
   };
 
   // Calculate total duration for the unit
@@ -192,6 +200,7 @@ export default function UnitSection({
               const isLocked = lesson.locked ?? true;
               const duration = lesson.duration ?? "—";
               const isOpen = openLesson === lesson.id;
+              const isWatched = isLessonWatched(lesson.id);
 
               return (
                 <LessonItem
@@ -204,6 +213,7 @@ export default function UnitSection({
                   onToggleLesson={(next) => setOpenLesson(next)}
                   onSetOpenUnit={(id) => setOpenUnit(id)}
                   userId={userId}
+                  isWatched={isWatched}
                 />
               );
             })}

@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useUserRole } from '../../../lib/hooks/useUserRole';
 import { submissionStatsService, UserSubmissionStats, DetailedSubmissionStatus } from '../../../lib/services/submissionStatsService';
+import { UserProgress } from '../../../lib/types/videoView';
 import AdminLayout from '../../components/AdminLayout';
-import UserGroupDisplay from '../../components/UserGroupDisplay';
 import { useRouter } from 'next/navigation';
 
 export default function StudentProgressPage() {
@@ -14,10 +14,13 @@ export default function StudentProgressPage() {
   const [selectedUser, setSelectedUser] = useState<UserSubmissionStats | null>(null);
   const [selectedUserFullStats, setSelectedUserFullStats] = useState<UserSubmissionStats | null>(null);
   const [userDetailedStatus, setUserDetailedStatus] = useState<DetailedSubmissionStatus[]>([]);
+  const [userVideoProgress, setUserVideoProgress] = useState<UserProgress | null>(null);
   const [usersWhoLoggedIn, setUsersWhoLoggedIn] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [assignmentsExpanded, setAssignmentsExpanded] = useState(false);
+  const [videosExpanded, setVideosExpanded] = useState(false);
   const [sortBy, setSortBy] = useState<'name' | 'rate' | 'submitted' | 'lastSubmission'>('rate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [searchTerm, setSearchTerm] = useState('');
@@ -94,6 +97,9 @@ export default function StudentProgressPage() {
       setSelectedUser(null);
       setSelectedUserFullStats(null);
       setUserDetailedStatus([]);
+      setUserVideoProgress(null);
+      setAssignmentsExpanded(false);
+      setVideosExpanded(false);
     }
   };
 
@@ -101,12 +107,14 @@ export default function StudentProgressPage() {
   const loadUserDetails = async (userId: string) => {
     try {
       setDetailsLoading(true);
-      const [detailedStatus, fullStats] = await Promise.all([
+      const [detailedStatus, fullStats, videoProgress] = await Promise.all([
         submissionStatsService.getUserDetailedSubmissionStatus(userId),
-        submissionStatsService.getUserSubmissionStats(userId)
+        submissionStatsService.getUserSubmissionStats(userId),
+        loadUserVideoProgress(userId)
       ]);
       setUserDetailedStatus(detailedStatus);
       setSelectedUserFullStats(fullStats);
+      setUserVideoProgress(videoProgress);
     } catch (err: any) {
       console.error('Error loading user details:', err);
       setError('שגיאה בטעינת פרטי התלמיד');
@@ -115,9 +123,32 @@ export default function StudentProgressPage() {
     }
   };
 
+  // Load video progress for a specific user
+  const loadUserVideoProgress = async (userId: string): Promise<UserProgress | null> => {
+    try {
+      const { authenticatedFetch } = await import('@/lib/utils/api-helpers');
+      const response = await authenticatedFetch('/api/admin/video-views');
+      
+      if (!response.ok) {
+        console.error('Failed to fetch video progress');
+        return null;
+      }
+
+      const data = await response.json();
+      const userProgress = data.users?.find((u: UserProgress) => u.user_id === userId);
+      return userProgress || null;
+    } catch (err: any) {
+      console.error('Error loading video progress:', err);
+      return null;
+    }
+  };
+
   // Handle user selection
   const handleUserSelect = (user: UserSubmissionStats) => {
     setSelectedUser(user);
+    setUserVideoProgress(null); // Clear previous video progress
+    setAssignmentsExpanded(false); // Reset collapse state
+    setVideosExpanded(false); // Reset collapse state
     loadUserDetails(user.userId);
   };
 
@@ -265,6 +296,17 @@ export default function StudentProgressPage() {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
+    });
+  };
+
+  // Format date with time for video views
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('he-IL', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
@@ -666,9 +708,6 @@ export default function StudentProgressPage() {
                                         }`}
                                       >
                                         <div className="flex items-center gap-3">
-                                          <div className="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center">
-                                            <span className="text-lg">{getStatusIcon(user.submissionRate)}</span>
-                                          </div>
                                           <div>
                                             <h3 className="font-medium text-gray-900 text-sm">{user.userName}</h3>
                                             <div className="flex items-center gap-2 text-xs text-gray-500">
@@ -761,69 +800,144 @@ export default function StudentProgressPage() {
                     </div>
                   )}
 
-                  {/* Summary Stats */}
-                  <div className={`rounded-lg p-3 ${getStatusColor(selectedUser.submissionRate)}`}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">{getStatusIcon(selectedUser.submissionRate)}</span>
-                        <span className="font-medium">{Math.round(selectedUser.submissionRate)}% השלמה</span>
-                      </div>
-                      <div className="text-sm">
-                        {selectedUser.submittedAssignments}/{selectedUser.totalAssignments} מטלות
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Detailed Assignment Status */}
+                  {/* Assignments Section with Collapse */}
                   <div>
-                    <h3 className="font-medium text-gray-900 mb-2">סטטוס מטלות לפי יחידות</h3>
-                    <div className="space-y-2">
-                      {userDetailedStatus.map((assignment) => (
-                        <div
-                          key={assignment.assignmentId}
-                          className={`p-3 rounded-lg border ${
-                            assignment.isSubmitted 
-                              ? 'bg-green-50 border-green-200' 
-                              : 'bg-gray-50 border-gray-200'
-                          }`}
+                    <button
+                      onClick={() => setAssignmentsExpanded(!assignmentsExpanded)}
+                      className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <svg 
+                          className={`w-4 h-4 text-gray-600 transition-transform ${assignmentsExpanded ? 'rotate-180' : ''}`} 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
                         >
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <div className="text-sm font-medium text-gray-900">
-                                {assignment.assignmentTitle}
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
+                        </svg>
+                        <h3 className="font-medium text-gray-900">סטטוס מטלות לפי יחידות</h3>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600">
+                          {selectedUser.submittedAssignments}/{selectedUser.totalAssignments} מטלות
+                        </span>
+                        <div className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedUser.submissionRate)}`}>
+                          {Math.round(selectedUser.submissionRate)}%
+                        </div>
+                      </div>
+                    </button>
+
+                    {assignmentsExpanded && (
+                      <div className="mt-3 space-y-2">
+                        {userDetailedStatus.map((assignment) => (
+                          <div
+                            key={assignment.assignmentId}
+                            className={`p-3 rounded-lg border ${
+                              assignment.isSubmitted 
+                                ? 'bg-green-50 border-green-200' 
+                                : 'bg-gray-50 border-gray-200'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <div className="text-sm font-medium text-gray-900">
+                                  {assignment.assignmentTitle}
+                                </div>
+                                <div className="text-xs text-gray-600">
+                                  {assignment.unitTitle}
+                                </div>
                               </div>
-                              <div className="text-xs text-gray-600">
-                                {assignment.unitTitle}
+                              <div className="text-left">
+                                {assignment.isSubmitted ? (
+                                  <div className="text-green-600 text-sm font-medium">
+                                    ✅ הוגש
+                                  </div>
+                                ) : (
+                                  <div className="text-gray-500 text-sm">
+                                    ⏳ ממתין
+                                  </div>
+                                )}
+                                {assignment.submissionDate && (
+                                  <div className="text-xs text-gray-500">
+                                    {formatDate(assignment.submissionDate)}
+                                  </div>
+                                )}
                               </div>
-                            </div>
-                            <div className="text-left">
-                              {assignment.isSubmitted ? (
-                                <div className="text-green-600 text-sm font-medium">
-                                  ✅ הוגש
-                                </div>
-                              ) : (
-                                <div className="text-gray-500 text-sm">
-                                  ⏳ ממתין
-                                </div>
-                              )}
-                              {assignment.submissionDate && (
-                                <div className="text-xs text-gray-500">
-                                  {formatDate(assignment.submissionDate)}
-                                </div>
-                              )}
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
-                  {/* Future: Video Viewing Stats Placeholder */}
+                  {/* Video Viewing Section with Collapse */}
                   <div className="border-t pt-4">
-                    <h3 className="font-medium text-gray-900 mb-2">צפייה בסרטונים</h3>
-                    <div className="bg-gray-50 rounded-lg p-3 text-center text-gray-500 text-sm">
-                      🎥 בעתיד: מעקב אחר צפייה בסרטונים
-                    </div>
+                    <button
+                      onClick={() => setVideosExpanded(!videosExpanded)}
+                      className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <svg 
+                          className={`w-4 h-4 text-gray-600 transition-transform ${videosExpanded ? 'rotate-180' : ''}`} 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
+                        </svg>
+                        <h3 className="font-medium text-gray-900">צפייה בסרטונים</h3>
+                      </div>
+                      {!userVideoProgress ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                      ) : (
+                        <div className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-purple-50 text-purple-700">
+                          {userVideoProgress.watched_lessons.length} סרטונים
+                        </div>
+                      )}
+                    </button>
+
+                    {videosExpanded && (
+                      <div className="mt-3">
+                        {!userVideoProgress ? (
+                          <div className="bg-gray-50 rounded-lg p-3 text-center text-gray-500 text-sm">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                            טוען נתוני צפייה...
+                          </div>
+                        ) : userVideoProgress.watched_lessons.length === 0 ? (
+                          <div className="bg-gray-50 rounded-lg p-3 text-center text-gray-500 text-sm">
+                            <svg className="w-12 h-12 mx-auto text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                            התלמיד עדיין לא צפה בסרטונים
+                          </div>
+                        ) : (
+                          <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                            {userVideoProgress.watched_lessons.map((lesson, index) => (
+                              <div
+                                key={`${lesson.lesson_id}-${index}`}
+                                className="p-3 bg-gray-50 rounded-lg border border-gray-200"
+                              >
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                      </svg>
+                                      <span className="text-sm font-medium text-gray-900">
+                                        {lesson.lesson_title}
+                                      </span>
+                                    </div>
+                                    <div className="text-xs text-gray-500 mt-1 mr-6">
+                                      נצפה ב: {formatDateTime(lesson.watched_at)}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

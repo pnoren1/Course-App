@@ -14,6 +14,7 @@ import UnitSection from "./components/UnitSection";
 import SubmissionStatusIndicator from "./components/SubmissionStatusIndicator";
 import type { Lesson, Unit } from "./types";
 import { useUserRole } from "@/lib/hooks/useUserRole";
+import type { VideoView } from "@/lib/types/videoView";
 
 function CourseContent({ userRoleData }: { userRoleData: any }) {
   const router = useRouter();
@@ -28,6 +29,9 @@ function CourseContent({ userRoleData }: { userRoleData: any }) {
   const [hasAcknowledged, setHasAcknowledged] = useState(false);
   const [userSubmissions, setUserSubmissions] = useState<Map<number, any>>(new Map());
   const [showSubmissionDetails, setShowSubmissionDetails] = useState(false);
+  const [videoViews, setVideoViews] = useState<VideoView[]>([]);
+  const [videoViewsLoading, setVideoViewsLoading] = useState(false);
+  const [videoViewsError, setVideoViewsError] = useState<string | null>(null);
 
   // Get user from userRoleData instead of separate API call
   useEffect(() => {
@@ -78,6 +82,39 @@ function CourseContent({ userRoleData }: { userRoleData: any }) {
     };
 
     loadUserSubmissions();
+  }, [user?.id]);
+
+  // Fetch video views when user is available
+  useEffect(() => {
+    const fetchVideoViews = async () => {
+      if (!user?.id) return;
+      
+      try {
+        setVideoViewsLoading(true);
+        setVideoViewsError(null);
+        
+        // Use authenticatedFetch to include Authorization header
+        const { authenticatedFetch } = await import('@/lib/utils/api-helpers');
+        const response = await authenticatedFetch('/api/course/video-views');
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+          throw new Error(errorData.error || 'Failed to fetch video views');
+        }
+        
+        const data = await response.json();
+        setVideoViews(data.views || []);
+      } catch (error) {
+        console.error('Error fetching video views:', error);
+        setVideoViewsError(error instanceof Error ? error.message : 'Failed to load video views');
+        // Don't block the UI if video views fail to load
+        setVideoViews([]);
+      } finally {
+        setVideoViewsLoading(false);
+      }
+    };
+
+    fetchVideoViews();
   }, [user?.id]);
 
   // Function to refresh user submissions
@@ -261,6 +298,11 @@ function CourseContent({ userRoleData }: { userRoleData: any }) {
     console.log('Welcome popup acknowledged');
   };
 
+  // Helper function to check if a lesson is watched
+  const isLessonWatched = (lessonId: number): boolean => {
+    return videoViews.some(view => view.lesson_id === String(lessonId));
+  };
+
   return (
     <div className="bg-slate-50">
       {/* Welcome Popup - Requirements 3.1, 3.2 */}
@@ -375,6 +417,7 @@ function CourseContent({ userRoleData }: { userRoleData: any }) {
                       userId={user?.id}
                       userSubmissions={userSubmissions}
                       onRefreshSubmissions={refreshUserSubmissions}
+                      watchedLessons={videoViews}
                     />
                   );
                 })}

@@ -13,6 +13,7 @@ type Props = {
   onToggleLesson: (next: number | null) => void;
   onSetOpenUnit: (id: number | string) => void;
   userId?: string;
+  isWatched?: boolean;
 };
 
 export default function LessonItem({
@@ -24,6 +25,7 @@ export default function LessonItem({
   onToggleLesson,
   onSetOpenUnit,
   userId,
+  isWatched = false,
 }: Props) {
   const handleClick = () => {
     if (isLocked) return;
@@ -76,6 +78,17 @@ export default function LessonItem({
               }`}>
                 {lesson.title}
               </h3>
+              {isWatched && !isLocked && (
+                <span 
+                  className="inline-flex items-center justify-center w-5 h-5 bg-green-500 text-white rounded-full"
+                  title="נצפה"
+                  aria-label="שיעור נצפה"
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </span>
+              )}
               {lesson.is_lab && (
                 <span className="inline-flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-orange-100 to-orange-50 text-orange-700 border border-orange-200 rounded-md text-xs font-semibold">
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

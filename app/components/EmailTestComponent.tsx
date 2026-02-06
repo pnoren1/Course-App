@@ -29,6 +29,7 @@ export default function EmailTestComponent() {
 
       const response = await fetch('/api/admin/test-email', {
         method: 'POST',
+        credentials: 'include', // Include cookies for authentication
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -75,6 +76,7 @@ export default function EmailTestComponent() {
 
       const response = await fetch('/api/admin/test-email', {
         method: 'PUT',
+        credentials: 'include', // Include cookies for authentication
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`

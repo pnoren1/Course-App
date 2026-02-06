@@ -150,7 +150,10 @@ export default function GroupManagement({ organizationId, className = '' }: Grou
         url = `/api/admin/groups/by-organization/${organizationId}`;
       }
 
-      const response = await fetch(url, { headers });
+      const response = await fetch(url, { 
+        credentials: 'include', // Include cookies for authentication
+        headers 
+      });
       const data = await response.json();
 
       if (!response.ok) {
@@ -192,6 +195,7 @@ export default function GroupManagement({ organizationId, className = '' }: Grou
 
       const response = await fetch('/api/admin/groups', {
         method: 'POST',
+        credentials: 'include', // Include cookies for authentication
         headers,
         body: JSON.stringify({
           name: createFormData.name.trim(),
@@ -251,6 +255,7 @@ export default function GroupManagement({ organizationId, className = '' }: Grou
 
       const response = await fetch(`/api/admin/groups/${editingGroup.id}`, {
         method: 'PUT',
+        credentials: 'include', // Include cookies for authentication
         headers,
         body: JSON.stringify({
           name: editingGroup.name.trim()
@@ -296,6 +301,7 @@ export default function GroupManagement({ organizationId, className = '' }: Grou
 
       const response = await fetch(`/api/admin/groups/${groupId}`, {
         method: 'DELETE',
+        credentials: 'include', // Include cookies for authentication
         headers
       });
 

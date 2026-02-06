@@ -307,6 +307,7 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
 
       const response = await fetch(`/api/admin/users/${userId}`, {
         method: 'PUT',
+        credentials: 'include', // Include cookies for authentication
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`

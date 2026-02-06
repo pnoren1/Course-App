@@ -95,7 +95,10 @@ export default function GroupSelector({
         }
         
         const url = `/api/admin/groups/by-organization/${organizationId}`;
-        const response = await fetch(url, { headers });
+        const response = await fetch(url, { 
+          credentials: 'include', // Include cookies for authentication
+          headers 
+        });
         
         if (!response.ok) {
           const errorData = await response.json();

@@ -591,6 +591,40 @@ export interface Database {
           }
         ];
       };
+      video_views: {
+        Row: {
+          id: string;
+          user_id: string;
+          lesson_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          lesson_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          lesson_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "video_views_user_id_fkey";
+            columns: ["user_id"];
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "video_views_lesson_id_fkey";
+            columns: ["lesson_id"];
+            referencedRelation: "lessons";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -847,6 +881,10 @@ export type AuditLogUpdate = Database['public']['Tables']['rls_audit_log']['Upda
 export type UserInvitation = Database['public']['Tables']['user_invitations']['Row'];
 export type UserInvitationInsert = Database['public']['Tables']['user_invitations']['Insert'];
 export type UserInvitationUpdate = Database['public']['Tables']['user_invitations']['Update'];
+
+export type VideoView = Database['public']['Tables']['video_views']['Row'];
+export type VideoViewInsert = Database['public']['Tables']['video_views']['Insert'];
+export type VideoViewUpdate = Database['public']['Tables']['video_views']['Update'];
 
 // Role types for type safety
 export type RoleType = 'student' | 'admin' | 'instructor' | 'moderator' | 'org_admin';
