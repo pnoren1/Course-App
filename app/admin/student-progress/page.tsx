@@ -104,16 +104,16 @@ export default function StudentProgressPage() {
   };
 
   // Load detailed status for selected user
-  const loadUserDetails = async (userId: string) => {
+  const loadUserDetails = async (userId: string, userStats: UserSubmissionStats) => {
     try {
       setDetailsLoading(true);
-      const [detailedStatus, fullStats, videoProgress] = await Promise.all([
+      const [detailedStatus, videoProgress] = await Promise.all([
         submissionStatsService.getUserDetailedSubmissionStatus(userId),
-        submissionStatsService.getUserSubmissionStats(userId),
         loadUserVideoProgress(userId)
       ]);
       setUserDetailedStatus(detailedStatus);
-      setSelectedUserFullStats(fullStats);
+      // Use the userStats we already have instead of fetching again
+      setSelectedUserFullStats(userStats);
       setUserVideoProgress(videoProgress);
     } catch (err: any) {
       console.error('Error loading user details:', err);
@@ -149,7 +149,7 @@ export default function StudentProgressPage() {
     setUserVideoProgress(null); // Clear previous video progress
     setAssignmentsExpanded(false); // Reset collapse state
     setVideosExpanded(false); // Reset collapse state
-    loadUserDetails(user.userId);
+    loadUserDetails(user.userId, user);
   };
 
   // Filter and sort users

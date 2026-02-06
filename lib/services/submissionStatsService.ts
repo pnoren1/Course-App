@@ -356,6 +356,22 @@ export class SubmissionStatsService {
         allSubmissions = submissions || [];
       }
 
+      // Get users who have logged in (have course_acknowledgments)
+      let loggedInUserIds = new Set<string>();
+      if (userIds.length > 0) {
+        const { data: acknowledgments, error: ackError } = await rlsSupabase
+          .from('course_acknowledgments')
+          .select('user_id')
+          .in('user_id', userIds) as {
+            data: Array<{ user_id: string }> | null;
+            error: any;
+          };
+
+        if (!ackError && acknowledgments) {
+          loggedInUserIds = new Set(acknowledgments.map(ack => ack.user_id));
+        }
+      }
+
       // Group submissions by user
       const submissionsByUser = new Map<string, Array<{
         user_id: string;
@@ -400,7 +416,8 @@ export class SubmissionStatsService {
           submittedAssignments,
           pendingAssignments,
           submissionRate,
-          lastSubmissionDate
+          lastSubmissionDate,
+          hasLoggedIn: loggedInUserIds.has(user.user_id)
         };
       });
 
@@ -503,6 +520,22 @@ export class SubmissionStatsService {
         throw new Error(`Error fetching submissions: ${submissionsError.message}`);
       }
 
+      // Get users who have logged in (have course_acknowledgments)
+      const { data: acknowledgments, error: ackError } = await rlsSupabase
+        .from('course_acknowledgments')
+        .select('user_id') as {
+          data: Array<{ user_id: string }> | null;
+          error: any;
+        };
+
+      const loggedInUserIds = new Set(
+        (acknowledgments || []).map(ack => ack.user_id)
+      );
+
+      if (ackError) {
+        console.warn('Error fetching acknowledgments:', ackError.message);
+      }
+
       // Group submissions by user
       const submissionsByUser = new Map<string, Array<{
         user_id: string;
@@ -547,7 +580,8 @@ export class SubmissionStatsService {
           submittedAssignments,
           pendingAssignments,
           submissionRate,
-          lastSubmissionDate
+          lastSubmissionDate,
+          hasLoggedIn: loggedInUserIds.has(user.user_id)
         };
       });
 
