@@ -4,13 +4,8 @@ import { supabaseAdmin } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🔍 Starting role check...');
-    
     // בדיקת authentication
     const { user, error } = await getAuthenticatedUser(request);
-    
-    console.log('👤 User result:', user ? { id: user.id, email: user.email } : 'No user');
-    console.log('❌ Error result:', (error as any)?.message || 'No error');
     
     if (!user) {
       return NextResponse.json({
@@ -34,8 +29,6 @@ export async function GET(request: NextRequest) {
       .eq('user_id', user.id)
       .single();
 
-    console.log('📋 Profile result:', profile);
-    console.log('❌ Profile error:', profileError?.message || 'No error');
 
     if (profileError) {
       return NextResponse.json({

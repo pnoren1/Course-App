@@ -58,29 +58,22 @@ export default function StudentProgressPage() {
       setLoading(true);
       setError(null);
       
-      console.log('🔍 Loading user stats - role:', role, 'organizationId:', organizationId);
-      
       let stats: UserSubmissionStats[];
       
       if (role === 'admin') {
         // Admin can see all users
-        console.log('📊 Loading all users stats (admin)');
         stats = await submissionStatsService.getAllUsersSubmissionStats();
       } else if (role === 'org_admin' && organizationId) {
         // Org admin can only see users in their organization
-        console.log('📊 Loading organization users stats for org:', organizationId);
         stats = await submissionStatsService.getOrganizationUsersSubmissionStats(organizationId);
       } else {
-        console.log('❌ No valid role/organizationId combination');
         stats = [];
       }
       
-      console.log('📈 Loaded stats:', stats.length, 'users');
       setAllUserStats(stats);
 
       // Load users who have logged in
       const loggedInUsers = await submissionStatsService.getUsersWhoLoggedIn();
-      console.log('👥 Users who logged in:', loggedInUsers.size);
       setUsersWhoLoggedIn(loggedInUsers);
     } catch (err: any) {
       console.error('Error loading user stats:', err);

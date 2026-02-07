@@ -31,7 +31,6 @@ function LoginContent() {
               router.push('/course');
             } else {
               // המשתמש לא קיים במסד הנתונים, נתנתק אותו
-              console.log('User session exists but user not found in database, signing out');
               await supabase.auth.signOut();
             }
           } catch (profileError) {

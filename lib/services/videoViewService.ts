@@ -22,7 +22,6 @@ export class VideoViewService {
 
       // If view exists, return it (idempotent behavior)
       if (existingView) {
-        console.log('✅ Video view already exists, returning existing record');
         return existingView as VideoView;
       }
 
@@ -45,7 +44,6 @@ export class VideoViewService {
       if (error) {
         // If it's a duplicate key error, fetch and return the existing record
         if (error.code === '23505') {
-          console.log('⚠️ Duplicate key error, fetching existing record');
           const { data: existingRecord, error: fetchError } = await adminClient
             .from('video_views')
             .select('*')
@@ -67,7 +65,6 @@ export class VideoViewService {
         throw error;
       }
 
-      console.log('✅ Created new video view record');
       return data as VideoView;
     } catch (error) {
       console.error('Error in createView:', error);
@@ -149,16 +146,12 @@ export class VideoViewService {
       // Use admin client to bypass RLS for complex queries
       const adminClient = getSupabaseAdmin();
 
-      console.log('🔍 getAdminViews called for user:', adminUserId);
-
       // First, get the admin's role and organization
       const { data: adminProfile, error: adminError } = await adminClient
         .from('user_profile')
         .select('role, organization_id')
         .eq('user_id', adminUserId)  // Fixed: use user_id instead of id
         .single();
-
-      console.log('👤 Admin profile:', adminProfile, 'Error:', adminError);
 
       if (adminError || !adminProfile) {
         console.error('Error fetching admin profile:', adminError);
@@ -167,8 +160,6 @@ export class VideoViewService {
 
       const isAdmin = adminProfile.role === 'admin';
       const isOrgAdmin = adminProfile.role === 'org_admin';
-
-      console.log('🔐 Admin check:', { isAdmin, isOrgAdmin, role: adminProfile.role });
 
       if (!isAdmin && !isOrgAdmin) {
         throw new Error('User does not have admin privileges');
@@ -202,8 +193,6 @@ export class VideoViewService {
 
       const { data: users, error: usersError } = await userQuery;
 
-      console.log('👥 Found users:', users?.length, 'Error:', usersError);
-
       if (usersError) {
         console.error('Error fetching users:', usersError);
         throw usersError;
@@ -221,8 +210,6 @@ export class VideoViewService {
         .in('user_id', userIds)
         .order('created_at', { ascending: false });
 
-      console.log('📹 Found views:', views?.length, 'Error:', viewsError);
-
       if (viewsError) {
         console.error('Error fetching views:', viewsError);
         throw viewsError;
@@ -232,8 +219,6 @@ export class VideoViewService {
       const { data: lessons, error: lessonsError } = await adminClient
         .from('lessons')
         .select('id, title');
-
-      console.log('📚 Found lessons:', lessons?.length, 'Error:', lessonsError);
 
       if (lessonsError) {
         console.error('Error fetching lessons:', lessonsError);
@@ -250,8 +235,6 @@ export class VideoViewService {
         });
       }
 
-      console.log('🗺️ Lesson title map:', Array.from(lessonTitleMap.entries()));
-
       // Build UserProgress objects
       const userProgress: UserProgress[] = users.map(user => {
         const userViews = (views || []).filter(v => v.user_id === user.user_id);
@@ -264,7 +247,6 @@ export class VideoViewService {
           watched_lessons: userViews.map(v => {
             // Get lesson title from the map or fallback to lesson_id
             const lessonTitle = lessonTitleMap.get(v.lesson_id) || `שיעור ${v.lesson_id}`;
-            console.log(`🎬 Mapping lesson: ID="${v.lesson_id}" -> Title="${lessonTitle}"`);
             return {
               lesson_id: v.lesson_id,
               lesson_title: lessonTitle,
@@ -273,8 +255,6 @@ export class VideoViewService {
           })
         };
       });
-
-      console.log('✅ Returning user progress:', userProgress.length, 'users');
 
       return userProgress;
     } catch (error) {

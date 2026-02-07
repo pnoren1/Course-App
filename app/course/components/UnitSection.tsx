@@ -47,8 +47,6 @@ export default function UnitSection({
   onRefreshSubmissions,
   watchedLessons = []
 }: Props) {
-  console.log('UnitSection unit:', unit);
-  console.log('UnitSection assignments:', unit.assignments);
   
   const [userSubmissions, setUserSubmissions] = useState<Map<number, AssignmentSubmission>>(propUserSubmissions || new Map());
   const [loadingAssignments, setLoadingAssignments] = useState(false);

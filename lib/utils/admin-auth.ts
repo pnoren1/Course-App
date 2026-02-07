@@ -11,7 +11,6 @@ export async function requireAdminAuth(request: NextRequest) {
   const { user, error: authError } = await getAuthenticatedUser(request);
   
   if (authError || !user) {
-    console.log('❌ requireAdminAuth: No user found');
     throw NextResponse.json(
       { error: 'נדרשת התחברות למערכת' },
       { status: 401 }
@@ -19,7 +18,6 @@ export async function requireAdminAuth(request: NextRequest) {
   }
 
   if (!supabaseAdmin) {
-    console.log('❌ requireAdminAuth: supabaseAdmin not available');
     throw NextResponse.json(
       { error: 'שגיאה בהגדרות השרת' },
       { status: 500 }
@@ -33,15 +31,7 @@ export async function requireAdminAuth(request: NextRequest) {
     .eq('user_id', user.id)
     .single();
 
-  console.log('🔍 requireAdminAuth: User profile check:', { 
-    userId: user.id, 
-    email: user.email,
-    profile,
-    profileError 
-  });
-
   if (profileError || !profile) {
-    console.log('❌ requireAdminAuth: No profile found');
     throw NextResponse.json(
       { error: 'לא נמצא פרופיל משתמש' },
       { status: 403 }
@@ -49,15 +39,12 @@ export async function requireAdminAuth(request: NextRequest) {
   }
 
   if (!['admin', 'org_admin'].includes(profile.role)) {
-    console.log('❌ requireAdminAuth: Access denied - role:', profile.role);
     throw NextResponse.json(
       { error: 'אין הרשאה לבצע פעולה זו' },
       { status: 403 }
     );
   }
 
-  console.log('✅ requireAdminAuth: Access granted - role:', profile.role);
-  
   return { user, profile, supabase: supabaseAdmin };
 }
 
@@ -68,7 +55,6 @@ export async function requireSystemAdminAuth(request: NextRequest) {
   const { user, profile, supabase } = await requireAdminAuth(request);
   
   if (profile.role !== 'admin') {
-    console.log('❌ requireSystemAdminAuth: Access denied - role:', profile.role);
     throw NextResponse.json(
       { error: 'פעולה זו מיועדת למנהלי מערכת בלבד' },
       { status: 403 }

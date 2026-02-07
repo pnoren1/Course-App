@@ -36,14 +36,11 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (profileError || !userProfile) {
-      console.log('API: Profile error for current user:', profileError);
       return NextResponse.json(
         { error: 'לא נמצא פרופיל משתמש' },
         { status: 404 }
       );
     }
-
-    console.log('API: User profile:', userProfile);
 
     // Check permissions
     if (userProfile.role !== 'admin' && userProfile.role !== 'org_admin') {
@@ -115,14 +112,11 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (profileError || !userProfile) {
-      console.log('API: Profile error for current user:', profileError);
       return NextResponse.json(
         { error: 'לא נמצא פרופיל משתמש' },
         { status: 404 }
       );
     }
-
-    console.log('API: User profile:', userProfile);
 
     // Check permissions
     if (userProfile.role !== 'admin' && userProfile.role !== 'org_admin') {

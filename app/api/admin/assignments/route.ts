@@ -4,13 +4,9 @@ import { getAuthenticatedUser } from '@/lib/supabase-server';
 // GET - Get all assignments
 export async function GET(request: NextRequest) {
   try {
-    console.log('🔍 Starting GET /api/admin/assignments');
-    
     const { user, supabase } = await getAuthenticatedUser(request);
-    console.log('👤 User:', user ? { id: user.id, email: user.email } : 'No user');
     
     if (!user) {
-      console.log('❌ No user found');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -21,30 +17,22 @@ export async function GET(request: NextRequest) {
       .eq('user_id', user.id)
       .single();
 
-    console.log('🔐 User profile:', userProfile);
     
     if (profileError || !userProfile || userProfile.role !== 'admin') {
-      console.log('❌ User is not admin:', { profileError, userProfile });
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    console.log('📊 Fetching assignments from database...');
     const { data: assignments, error } = await supabase
       .from('assignments')
       .select('*')
       .order('created_at', { ascending: false });
 
-    console.log('📋 Query result:', { 
-      assignments: assignments?.length || 0, 
-      error: error?.message || 'No error' 
-    });
 
     if (error) {
       console.error('💥 Error fetching assignments:', error);
       return NextResponse.json({ error: 'Failed to fetch assignments' }, { status: 500 });
     }
 
-    console.log('✅ Successfully fetched assignments:', assignments?.length || 0);
     return NextResponse.json(assignments || []);
   } catch (error) {
     console.error('💥 Error in GET /api/admin/assignments:', error);

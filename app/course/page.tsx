@@ -194,9 +194,6 @@ function CourseContent({ userRoleData }: { userRoleData: any }) {
             // Fetch assignments
             const { data: assignments, error: assignmentsError } = await rlsSupabase.select('assignments', '*');
             
-            console.log('Assignments from DB:', assignments);
-            console.log('Assignments error:', assignmentsError);
-            
             // Build the response structure to match the original JSON format
             const formattedUnits = units.map((unit: any) => {
               // Find lessons for this unit
@@ -221,8 +218,6 @@ function CourseContent({ userRoleData }: { userRoleData: any }) {
               const unitAssignments = assignments 
                 ? assignments.filter((assignment: any) => assignment.unit_id === unit.id)
                 : [];
-
-              console.log(`Unit ${unit.id} assignments:`, unitAssignments);
 
               return {
                 id: unit.id,
@@ -295,7 +290,6 @@ function CourseContent({ userRoleData }: { userRoleData: any }) {
   const handleWelcomeAcknowledged = () => {
     // Update acknowledgment status when user acknowledges welcome popup
     setHasAcknowledged(true);
-    console.log('Welcome popup acknowledged');
   };
 
   // Helper function to check if a lesson is watched

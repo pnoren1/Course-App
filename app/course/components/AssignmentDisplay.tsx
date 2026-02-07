@@ -64,7 +64,6 @@ export default function AssignmentDisplay({
       }
       
       // Show a brief success message
-      console.log('Submission refreshed successfully');
     } catch (err: any) {
       setError(err.message || 'Failed to refresh submission data');
     } finally {
@@ -359,8 +358,6 @@ export default function AssignmentDisplay({
               key={refreshKey} // Force re-render when refreshKey changes
               submissions={[submission]}
               onFileDownload={(fileId: number) => {
-                // Handle file download
-                console.log('Download file:', fileId);
               }}
               onRefresh={() => {
                 // Refresh submission data when user clicks refresh in SubmissionHistory

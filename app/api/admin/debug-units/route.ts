@@ -3,15 +3,12 @@ import { rlsSupabase } from '@/lib/supabase';
 
 export async function GET() {
   try {
-    console.log('🔍 Checking units table...');
     
     // Try to query units table
     const { data: units, error } = await rlsSupabase.raw
       .from('units')
       .select('*')
       .limit(5);
-
-    console.log('📊 Units query result:', { units, error });
 
     // Also try to get table info
     let tableExists = false;
@@ -23,9 +20,7 @@ export async function GET() {
         .limit(1);
       
       tableExists = !tableError;
-      console.log('🗄️ Table exists:', tableExists);
     } catch (rpcError) {
-      console.log('⚠️ Could not check table existence');
       tableExists = false;
     }
 

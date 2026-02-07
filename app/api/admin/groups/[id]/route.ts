@@ -18,7 +18,6 @@ async function getUserProfile(userId: string) {
     .single();
 
   if (profileError || !userProfile) {
-    console.log('API: Profile error for user:', userId, profileError);
     throw new Error('לא נמצא פרופיל משתמש');
   }
 

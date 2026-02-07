@@ -44,15 +44,12 @@ export function useUserRole(): UserRoleData {
         setRoleData(prev => ({ ...prev, isLoading: true, error: null }));
         setHasAttempted(true);
 
-        console.log('🔍 useUserRole: Starting fetch');
-
         // בדיקה אם המשתמש מחובר
         const { user, error: userError } = await rlsSupabase.getCurrentUser();
         
         if (!isMounted) return;
         
         if (userError || !user) {
-          console.log('❌ useUserRole: No user found');
           setRoleData({
             role: null,
             userName: null,
@@ -68,14 +65,11 @@ export function useUserRole(): UserRoleData {
           return;
         }
 
-        console.log('✅ useUserRole: User found:', user.id);
-
         // קבלת הטוקן לשליחה לשרת
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
 
         if (!token) {
-          console.log('❌ useUserRole: No token found');
           setRoleData({
             role: null,
             userName: null,
@@ -91,18 +85,13 @@ export function useUserRole(): UserRoleData {
           return;
         }
 
-        console.log('🔑 useUserRole: Token found');
-
         // קריאה ל-API לקבלת פרופיל המשתמש
-        console.log('🔍 useUserRole: Calling profile API');
         const response = await fetch('/api/user/profile', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
-
-        console.log('📡 useUserRole: API response status:', response.status);
 
         if (!response.ok) {
           const errorText = await response.text();
@@ -111,7 +100,6 @@ export function useUserRole(): UserRoleData {
         }
 
         const data = await response.json();
-        console.log('📦 useUserRole: API data:', data);
         
         if (!data.success) {
           throw new Error(data.error || 'שגיאה בקבלת פרופיל משתמש');
@@ -121,7 +109,6 @@ export function useUserRole(): UserRoleData {
 
         if (!isMounted) return;
 
-        console.log('🎉 useUserRole: Setting role data');
         setRoleData({
           role: profile.role as RoleType || null,
           userName: profile.user_name || null,

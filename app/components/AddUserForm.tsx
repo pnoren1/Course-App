@@ -41,12 +41,9 @@ export default function AddUserForm({ organizations, onUserAdded, className = ''
         const { user } = await rlsSupabase.getCurrentUser();
         
         if (!user) {
-          console.log('No user found');
           setDirectCreationAvailable(false);
           return;
         }
-
-        console.log('Current user:', user.id);
 
         // שליחת בקשה עם מזהה המשתמש
         const response = await authenticatedFetch('/api/admin/simple-check', {
@@ -55,8 +52,6 @@ export default function AddUserForm({ organizations, onUserAdded, className = ''
         });
         
         const result = await response.json();
-        
-        console.log('Simple check result:', result);
         
         setDirectCreationAvailable(result.available);
         

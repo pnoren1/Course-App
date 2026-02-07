@@ -60,7 +60,6 @@ export default function UsernamePasswordSignIn({ onError }: Props) {
             router.push('/course');
           } else {
             // המשתמש לא קיים במסד הנתונים
-            console.log('User authenticated but not found in database');
             await supabase.auth.signOut();
             onError?.("החשבון שלך לא מורשה לגשת למערכת. יש לפנות למנהל המערכת");
           }

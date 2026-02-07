@@ -255,7 +255,6 @@ export class SubmissionStatsService {
    */
   async getOrganizationUsersSubmissionStats(organizationId: string): Promise<UserSubmissionStats[]> {
     try {
-      console.log('🔍 getOrganizationUsersSubmissionStats called with organizationId:', organizationId);
       
       // Use API endpoint to get students (bypasses RLS issues)
       const response = await authenticatedFetch('/api/admin/organization-students');
@@ -268,16 +267,7 @@ export class SubmissionStatsService {
       
       const { students, organizationId: userOrgId } = await response.json();
       
-      console.log('👥 API response - students:', students?.length || 0);
-      console.log('📋 Students details:', students?.map((s: any) => ({ 
-        id: s.user_id, 
-        name: s.user_name, 
-        role: s.role,
-        orgId: s.organization_id 
-      })));
-
       if (!students || students.length === 0) {
-        console.log('📊 No students found for organization');
         return [];
       }
 

@@ -10,16 +10,10 @@ import { supabaseAdmin } from '@/lib/supabase';
  */
 export async function GET(request: NextRequest) {
   try {
-    console.log('🔍 GET /api/admin/video-views called');
-    
     // Validate authentication
     const { user, error: authError } = await getAuthenticatedUser(request);
     
-    console.log('👤 User:', user ? { id: user.id, email: user.email } : 'null');
-    console.log('❌ Auth error:', authError);
-    
     if (authError || !user) {
-      console.log('❌ Authentication failed');
       return NextResponse.json(
         { error: 'Authentication required', code: 'AUTH_REQUIRED' },
         { status: 401 }
@@ -35,16 +29,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('🔍 Fetching user profile for:', user.id);
-
     const { data: userProfile, error: profileError } = await supabaseAdmin
       .from('user_profile')
       .select('role, organization_id')
       .eq('user_id', user.id)
       .single();
-
-    console.log('👤 User profile:', userProfile);
-    console.log('❌ Profile error:', profileError);
 
     if (profileError || !userProfile) {
       console.error('❌ API: Profile error for current user:', profileError);
@@ -56,30 +45,22 @@ export async function GET(request: NextRequest) {
 
     // Validate authorization (admin or org_admin only)
     if (userProfile.role !== 'admin' && userProfile.role !== 'org_admin') {
-      console.log('❌ Insufficient privileges:', userProfile.role);
       return NextResponse.json(
         { error: 'Insufficient privileges to view video progress', code: 'FORBIDDEN' },
         { status: 403 }
       );
     }
 
-    console.log('✅ User authorized:', userProfile.role);
-
     // Extract query parameters
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId') || undefined;
     const organizationId = searchParams.get('organizationId') || undefined;
 
-    console.log('🔍 Filters:', { userId, organizationId });
-
     // Call videoViewService.getAdminViews with appropriate filters
-    console.log('🔍 Calling videoViewService.getAdminViews...');
     const userProgress = await videoViewService.getAdminViews(user.id, {
       userId,
       organizationId
     });
-
-    console.log('✅ Got user progress:', userProgress.length, 'users');
 
     return NextResponse.json({
       success: true,

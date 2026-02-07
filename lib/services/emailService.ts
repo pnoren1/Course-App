@@ -434,7 +434,6 @@ class EmailService {
       };
 
       const result = await transporter.sendMail(mailOptions);
-      console.log('Welcome email sent successfully:', result.messageId);
       return true;
     } catch (error) {
       console.error('Error sending welcome email:', error);
@@ -446,10 +445,8 @@ class EmailService {
     try {
       const transporter = await this.getTransporter();
       await transporter.verify();
-      console.log('Email connection verified successfully');
       return true;
     } catch (error) {
-      console.error('Email connection test failed:', error);
       return false;
     }
   }

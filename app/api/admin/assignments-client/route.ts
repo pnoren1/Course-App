@@ -26,23 +26,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user is admin
-    console.log('🔍 Checking admin status for user:', user.id);
-    
     const { data: userProfile, error: profileError } = await supabase
       .from('user_profile')
       .select('role')
       .eq('user_id', user.id)
       .single();
 
-    console.log('👤 User profile:', userProfile);
-    console.log('❌ Profile error:', profileError);
 
     if (profileError || !userProfile || userProfile.role !== 'admin') {
-      console.log('❌ Access denied. Profile:', userProfile, 'Error:', profileError);
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-
-    console.log('✅ User is admin, proceeding...');
 
     // Handle different actions
     switch (action) {

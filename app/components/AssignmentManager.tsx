@@ -20,7 +20,6 @@ export default function AssignmentManager() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log('🚀 AssignmentManager mounted');
     checkAdminStatus();
   }, []);
 
@@ -92,17 +91,6 @@ export default function AssignmentManager() {
     try {
       setLoading(true);
       
-      // Debug: Check units table status
-      try {
-        const debugResponse = await authenticatedFetch('/api/admin/debug-units');
-        if (debugResponse.ok) {
-          const debugData = await debugResponse.json();
-          console.log('🐛 Units debug info:', debugData);
-        }
-      } catch (debugError) {
-        console.log('⚠️ Could not fetch debug info:', debugError);
-      }
-      
       await Promise.all([
         loadAssignments(),
         loadUnits()
@@ -116,22 +104,17 @@ export default function AssignmentManager() {
 
   const loadAssignments = async () => {
     try {
-      console.log('🔄 Loading assignments...');
-      
       // Work directly with Supabase like UserRoleManager does
       const { data: assignments, error } = await rlsSupabase.raw
         .from('assignments')
         .select('*')
         .order('created_at', { ascending: false });
 
-      console.log('📋 Assignments result:', { assignments: assignments?.length || 0, error });
-      
       if (error) {
         console.error('❌ Failed to load assignments:', error);
         return;
       }
 
-      console.log('✅ Assignments loaded successfully:', assignments?.length || 0);
       setAssignments(assignments || []);
     } catch (error) {
       console.error('💥 Error loading assignments:', error);
@@ -140,19 +123,13 @@ export default function AssignmentManager() {
 
   const loadUnits = async () => {
     try {
-      console.log('🔄 Loading units from database...');
-      
       // Try to load units from database first - try 'order' column first
       let { data: units, error } = await rlsSupabase.raw
         .from('units')
         .select('*')
         .order('order', { ascending: true });
 
-      console.log('📚 Units result:', { units: units?.length || 0, error });
-      
       if (error) {
-        console.log('⚠️ Database units failed with order column, trying order_number...');
-        
         // Try with order_number column name
         const { data: unitsAlt, error: errorAlt } = await rlsSupabase.raw
           .from('units')
@@ -160,22 +137,17 @@ export default function AssignmentManager() {
           .order('order_number', { ascending: true });
           
         if (errorAlt) {
-          console.log('⚠️ Alternative query also failed, trying without order...');
-          
           // Try without any order
           const { data: unitsNoOrder, error: errorNoOrder } = await rlsSupabase.raw
             .from('units')
             .select('*');
             
           if (errorNoOrder) {
-            console.log('⚠️ All database queries failed, falling back to JSON file...');
-            
             // Fallback to JSON file if database fails
             try {
               const response = await fetch('/course/lessons.json');
               if (response.ok) {
                 const data = await response.json();
-                console.log('✅ Units loaded from JSON:', data.units?.length || 0);
                 setUnits(data.units || []);
                 return;
               }
@@ -193,8 +165,6 @@ export default function AssignmentManager() {
         }
       }
 
-      console.log('✅ Units loaded from database:', units?.length || 0);
-      
       // Convert database units to match the expected format
       const formattedUnits = units?.map(unit => {
         // Handle both database format and JSON format with type assertion
@@ -235,7 +205,6 @@ export default function AssignmentManager() {
         const response = await fetch('/course/lessons.json');
         if (response.ok) {
           const data = await response.json();
-          console.log('✅ Units loaded from JSON (final fallback):', data.units?.length || 0);
           setUnits(data.units || []);
         }
       } catch (fallbackError) {
@@ -299,8 +268,6 @@ export default function AssignmentManager() {
 
   const handleFormSubmit = async (assignmentData: Partial<Assignment>) => {
     try {
-      console.log('💾 Saving assignment:', assignmentData);
-      
       if (editingAssignment) {
         // Update existing assignment
         const updateData = {
@@ -308,8 +275,6 @@ export default function AssignmentManager() {
           updated_at: new Date().toISOString()
         };
 
-        console.log('🔄 Updating assignment:', editingAssignment.id, updateData);
-        
         const { error } = await rlsSupabase.raw
           .from('assignments')
           .update(updateData)
@@ -321,12 +286,8 @@ export default function AssignmentManager() {
           return;
         }
         
-        console.log('✅ Assignment updated successfully');
       } else {
         // Create new assignment
-        console.log('➕ Creating new assignment:', assignmentData);
-        console.log('🔍 Unit ID type and value:', typeof assignmentData.unit_id, assignmentData.unit_id);
-        
         // Validate required fields
         if (!assignmentData.unit_id || !assignmentData.title) {
           console.error('❌ Missing required fields:', { unit_id: assignmentData.unit_id, title: assignmentData.title });
@@ -342,7 +303,6 @@ export default function AssignmentManager() {
           const selectedUnit = units.find(u => u.id.toString() === assignmentData.unit_id!.toString());
           if (selectedUnit) {
             processedData.unit_id = selectedUnit.id;
-            console.log('🔄 Converted unit_id to:', selectedUnit.id);
           }
         }
         
@@ -362,8 +322,6 @@ export default function AssignmentManager() {
           alert(`שגיאה ביצירת המטלה: ${error.message || 'שגיאה לא ידועה'}`);
           return;
         }
-        
-        console.log('✅ Assignment created successfully');
       }
 
       setShowForm(false);

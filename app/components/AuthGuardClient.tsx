@@ -33,7 +33,6 @@ export default function AuthGuard({
   useEffect(() => {
     if (userRoleData?.error?.includes('User from sub claim in JWT does not exist')) {
       // המשתמש נמחק מהמסד נתונים, נפנה לדף הלוגין
-      console.log('User deleted error detected, redirecting to login');
       router.replace('/login?error=user_deleted&message=' + encodeURIComponent('המשתמש נמחק מהמערכת. אנא התחבר מחדש.'));
       return;
     }
@@ -85,10 +84,7 @@ export default function AuthGuard({
 
     // הוספת מאזין לשינויי auth state
     const { data: { subscription } } = rlsSupabase.raw.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state changed:', event, session?.user?.id);
-      
       if (event === 'SIGNED_OUT' && pathname !== '/login') {
-        console.log('User signed out, redirecting to login');
         router.replace('/login');
       }
     });

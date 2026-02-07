@@ -60,7 +60,6 @@ export default function SubmissionComments({ submissionId, onCommentAdded, showA
       if (commentsError) {
         // If table doesn't exist, just show empty state
         if (commentsError.code === '42P01' || commentsError.message?.includes('does not exist')) {
-          console.log('Comments table not available yet');
           setComments([]);
           setCommentsAvailable(false);
           return;
@@ -118,8 +117,7 @@ export default function SubmissionComments({ submissionId, onCommentAdded, showA
       
       // Get current user ID
       const { data: { user } } = await rlsSupabase.auth.getUser();
-      console.log('Current user:', user?.id);
-      
+
       if (!user) {
         alert('יש להתחבר כדי להוסיף הערה');
         return;
@@ -132,16 +130,6 @@ export default function SubmissionComments({ submissionId, onCommentAdded, showA
         .eq('user_id', user.id)
         .single();
       
-      console.log('User profile:', profile);
-      console.log('Profile error:', profileError);
-      
-      console.log('Adding comment:', {
-        submission_id: submissionId,
-        user_id: user.id,
-        comment: newComment.trim(),
-        is_internal: isInternal
-      });
-
       const { data: commentData, error } = await rlsSupabase
         .from('submission_comments')
         .insert({
@@ -156,7 +144,6 @@ export default function SubmissionComments({ submissionId, onCommentAdded, showA
       if (error) {
         // If table doesn't exist, show helpful message
         if (error.code === '42P01' || error.message?.includes('does not exist')) {
-          console.log('Comments feature not available yet - please run migrations');
           setCommentsAvailable(false);
           return;
         }
@@ -178,8 +165,6 @@ export default function SubmissionComments({ submissionId, onCommentAdded, showA
         alert(`שגיאה בהוספת הערה: ${error.message || 'שגיאה לא ידועה'}`);
         return;
       }
-
-      console.log('Comment added successfully:', commentData);
 
       // Get user profile for the new comment with organization and group information
       const { data: profileData } = await rlsSupabase

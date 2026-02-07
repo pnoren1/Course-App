@@ -145,7 +145,6 @@ export default function WelcomePopup({ userId, userName, courseId, onAcknowledge
     // This ensures persistence for unacknowledged users
     setShowCloseMessage(true);
     setTimeout(() => setShowCloseMessage(false), 5000); // Hide message after 5 seconds
-    console.log('Close attempt blocked - acknowledgment required');
   };
 
   // Don't render anything if not visible or still loading initial check

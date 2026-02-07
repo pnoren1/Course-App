@@ -62,14 +62,14 @@ export default function MiniSubmissionStatus({ userId, className = '', onToggleD
   // More friendly approach - show neutral colors and focus on progress
   const getDisplayText = () => {
     if (totalCount === 0) return 'אין מטלות';
-    if (submittedCount === 0) return 'התחל הגשות';
+    // if (submittedCount === 0) return 'התחל הגשות';
     if (submittedCount === totalCount) return 'הושלם!';
     return `${submittedCount}/${totalCount} מטלות`;
   };
 
   const getStatusIcon = () => {
     if (totalCount === 0) return '📝';
-    if (submittedCount === 0) return '🚀';
+    // if (submittedCount === 0) return '🚀';
     if (submittedCount === totalCount) return '🎉';
     return '📊';
   };

@@ -94,36 +94,3 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
     }
   });
 }
-
-// פונקציה לדיבוג - מראה מה יש ב-storage
-export function debugAuthStorage() {
-  if (typeof window === 'undefined') return;
-  
-  console.log('=== Auth Storage Debug ===');
-  console.log('localStorage keys:', Object.keys(localStorage));
-  console.log('sessionStorage keys:', Object.keys(sessionStorage));
-  
-  const possibleKeys = [
-    'supabase.auth.token',
-    'sb-lzedeawtmzfenyrewhmo-auth-token',
-    'supabase-auth-token',
-    'sb-access-token',
-    'supabase.auth.session'
-  ];
-  
-  possibleKeys.forEach(key => {
-    const localValue = localStorage.getItem(key);
-    const sessionValue = sessionStorage.getItem(key);
-    
-    if (localValue) {
-      console.log(`localStorage[${key}]: Found (${localValue.length} chars)`);
-    }
-    if (sessionValue) {
-      console.log(`sessionStorage[${key}]: Found (${sessionValue.length} chars)`);
-    }
-  });
-  
-  const token = getSupabaseToken();
-  console.log('Extracted token:', token ? 'Found' : 'null');
-  console.log('=== End Debug ===');
-}

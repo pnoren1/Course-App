@@ -97,12 +97,10 @@ export class FileService {
       if (!forceRefresh) {
         const cached = this.fileCache.get(submissionId);
         if (cached && (Date.now() - cached.timestamp) < this.CACHE_DURATION) {
-          console.log(`Using cached files for submission ${submissionId}`);
           return cached.files;
         }
       }
 
-      console.log(`Fetching files from database for submission ${submissionId}`);
       const { data, error } = await rlsSupabase
         .from('submission_files')
         .select('*')
