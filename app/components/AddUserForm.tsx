@@ -104,11 +104,6 @@ export default function AddUserForm({ organizations, onUserAdded, className = ''
       return;
     }
 
-    if (!formData.groupId) {
-      setError('נדרש לבחור קבוצה');
-      return;
-    }
-
     if (mode === 'create' && (!formData.password || formData.password.length < 6)) {
       setError('נדרש להזין סיסמה באורך של לפחות 6 תווים');
       return;
@@ -431,14 +426,14 @@ export default function AddUserForm({ organizations, onUserAdded, className = ''
 
         <div>
           <label htmlFor="group" className="block text-sm font-medium text-slate-700 mb-1">
-            קבוצה *
+            קבוצה (אופציונלי)
           </label>
           <GroupSelector
             organizationId={formData.organizationId}
             value={formData.groupId}
             onChange={(groupId) => handleInputChange('groupId', groupId)}
-            required={true}
-            placeholder="בחר קבוצה..."
+            required={false}
+            placeholder="בחר קבוצה (אופציונלי)..."
           />
         </div>
 
