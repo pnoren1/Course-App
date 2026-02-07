@@ -110,14 +110,14 @@ To set up the user invitation system, run the latest migration:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key  # Optional - required only for direct user creation
+SUPABASE_SECRET_KEY=your_service_role_key  # Optional - required only for direct user creation
 ```
 
 ### Getting Your Service Role Key
 1. Go to your Supabase project dashboard
 2. Navigate to Settings → API
 3. Copy the "service_role" key (not the "anon" key)
-4. Add it to your `.env.local` file as `SUPABASE_SERVICE_ROLE_KEY`
+4. Add it to your `.env.local` file as `SUPABASE_SECRET_KEY`
 
 **Important**: 
 - Without the Service Role Key, only the invitation flow will be available
@@ -131,7 +131,7 @@ For detailed information about the new username/password authentication system, 
 ## Security Notes
 
 ### Service Role Key Security
-- The `SUPABASE_SERVICE_ROLE_KEY` has full database access and should be kept secure
+- The `SUPABASE_SECRET_KEY` has full database access and should be kept secure
 - Only use it in server-side API routes, never expose it to the client
 - In production, store it as an environment variable in your hosting platform
 - The key is used only for admin operations like creating users in `auth.users`

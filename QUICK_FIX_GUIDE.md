@@ -12,7 +12,7 @@
 4. ודא שיש את המשתנים האלה (אם חסרים, הוסף אותם):
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `SUPABASE_SECRET_KEY`
    - `NEXT_PUBLIC_SITE_URL`
 5. ודא שהם מוגדרים לכל הסביבות (Production, Preview, Development)
 
