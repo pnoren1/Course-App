@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { users, currentUserId } = body;
+    const { users, currentUserId, sendEmail = true } = body;
 
     // ולידציה בסיסית
     if (!Array.isArray(users) || users.length === 0) {
@@ -172,24 +172,26 @@ export async function POST(request: NextRequest) {
 
         result.success++;
 
-        // שליחת מייל ברוכים הבאים למשתמש החדש
-        try {
-          const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-          const emailSent = await emailService.sendWelcomeEmail({
-            email: userData.email.trim(),
-            userName: finalUserName || userData.email.trim(),
-            siteUrl: siteUrl
-          });
+        // שליחת מייל ברוכים הבאים למשתמש החדש (רק אם sendEmail = true)
+        if (sendEmail) {
+          try {
+            const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+            const emailSent = await emailService.sendWelcomeEmail({
+              email: userData.email.trim(),
+              userName: finalUserName || userData.email.trim(),
+              siteUrl: siteUrl
+            });
 
-          if (emailSent) {
-            result.emailsSent++;
-          } else {
+            if (emailSent) {
+              result.emailsSent++;
+            } else {
+              result.emailsFailed++;
+              console.warn('Failed to send welcome email to:', userData.email.trim());
+            }
+          } catch (emailError) {
             result.emailsFailed++;
-            console.warn('Failed to send welcome email to:', userData.email.trim());
+            console.error('Error sending welcome email to', userData.email.trim(), ':', emailError);
           }
-        } catch (emailError) {
-          result.emailsFailed++;
-          console.error('Error sending welcome email to', userData.email.trim(), ':', emailError);
         }
 
       } catch (error) {
@@ -203,7 +205,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `הושלם ייבוא המשתמשים: ${result.success} הצליחו, ${result.failed} נכשלו. מיילים: ${result.emailsSent} נשלחו, ${result.emailsFailed} נכשלו`,
+      message: sendEmail 
+        ? `הושלם ייבוא המשתמשים: ${result.success} הצליחו, ${result.failed} נכשלו. מיילים: ${result.emailsSent} נשלחו, ${result.emailsFailed} נכשלו`
+        : `הושלם ייבוא המשתמשים: ${result.success} הצליחו, ${result.failed} נכשלו (ללא שליחת מיילים)`,
       result
     });
 

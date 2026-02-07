@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     const supabaseAdmin = getSupabaseAdmin();
     
     const body = await request.json();
-    const { email, userName, role = 'student', organizationId, groupId, password, currentUserId } = body;
+    const { email, userName, role = 'student', organizationId, groupId, password, currentUserId, sendEmail = true } = body;
 
     // ולידציה בסיסית
     if (!email) {
@@ -144,23 +144,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // שליחת מייל ברוכים הבאים למשתמש החדש
+    // שליחת מייל ברוכים הבאים למשתמש החדש (רק אם sendEmail = true)
     let emailSent = false;
-    try {
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-      emailSent = await emailService.sendWelcomeEmail({
-        email: email.trim(),
-        userName: finalUserName || email.trim(),
-        siteUrl: siteUrl
-      });
+    if (sendEmail) {
+      try {
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+        emailSent = await emailService.sendWelcomeEmail({
+          email: email.trim(),
+          userName: finalUserName || email.trim(),
+          siteUrl: siteUrl
+        });
 
-      if (!emailSent) {
-        console.warn('Failed to send welcome email to:', email.trim());
+        if (!emailSent) {
+          console.warn('Failed to send welcome email to:', email.trim());
+          // לא נכשיל את כל התהליך אם המייל לא נשלח
+        }
+      } catch (emailError) {
+        console.error('Error sending welcome email:', emailError);
         // לא נכשיל את כל התהליך אם המייל לא נשלח
       }
-    } catch (emailError) {
-      console.error('Error sending welcome email:', emailError);
-      // לא נכשיל את כל התהליך אם המייל לא נשלח
     }
 
     return NextResponse.json({

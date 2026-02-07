@@ -30,7 +30,8 @@ export default function AddUserForm({ organizations, onUserAdded, className = ''
     password: '',
     role: 'student' as RoleType,
     organizationId: '',
-    groupId: ''
+    groupId: '',
+    sendEmail: true
   });
 
   // בדיקת זמינות יצירה ישירה בעת טעינת הקומפוננט
@@ -132,7 +133,8 @@ export default function AddUserForm({ organizations, onUserAdded, className = ''
             role: formData.role,
             organizationId: formData.organizationId || null,
             groupId: formData.groupId || null,
-            currentUserId: user.id
+            currentUserId: user.id,
+            sendEmail: formData.sendEmail
           }
         : {
             email: formData.email.trim(),
@@ -181,7 +183,8 @@ export default function AddUserForm({ organizations, onUserAdded, className = ''
         password: '',
         role: 'student',
         organizationId: '',
-        groupId: ''
+        groupId: '',
+        sendEmail: true
       });
       
       // קריאה לפונקציה להתעדכנות
@@ -203,7 +206,11 @@ export default function AddUserForm({ organizations, onUserAdded, className = ''
   };
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    if (field === 'sendEmail') {
+      setFormData(prev => ({ ...prev, [field]: value === 'true' }));
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }));
+    }
     setError(null);
     setSuccess(null);
     setEmailStatus(null);
@@ -436,6 +443,21 @@ export default function AddUserForm({ organizations, onUserAdded, className = ''
             placeholder="בחר קבוצה (אופציונלי)..."
           />
         </div>
+
+        {mode === 'create' && (
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="sendEmail"
+              checked={formData.sendEmail}
+              onChange={(e) => handleInputChange('sendEmail', e.target.checked ? 'true' : 'false')}
+              className="w-4 h-4 text-green-600 border-slate-300 rounded focus:ring-green-500"
+            />
+            <label htmlFor="sendEmail" className="text-sm text-slate-700">
+              שלח מייל ברוכים הבאים למשתמש
+            </label>
+          </div>
+        )}
 
         <div className="flex gap-3 pt-2">
           <button

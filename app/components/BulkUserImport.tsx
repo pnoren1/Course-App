@@ -41,6 +41,7 @@ export default function BulkUserImport({ organizations, groups, onUsersAdded, cl
   const [error, setError] = useState<string | null>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [mode, setMode] = useState<'invite' | 'create'>('invite');
+  const [sendEmail, setSendEmail] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const parseCSV = (text: string): UserRow[] => {
@@ -223,7 +224,8 @@ export default function BulkUserImport({ organizations, groups, onUsersAdded, cl
       const requestBody = mode === 'create' 
         ? {
             users: usersData,
-            currentUserId: user.id
+            currentUserId: user.id,
+            sendEmail: sendEmail
           }
         : {
             users: usersData
@@ -526,6 +528,22 @@ export default function BulkUserImport({ organizations, groups, onUsersAdded, cl
                 className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
               />
             </div>
+
+            {/* Send Email Checkbox */}
+            {mode === 'create' && (
+              <div className="mb-4 flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="sendEmailBulk"
+                  checked={sendEmail}
+                  onChange={(e) => setSendEmail(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                />
+                <label htmlFor="sendEmailBulk" className="text-sm text-slate-700">
+                  שלח מיילי ברוכים הבאים למשתמשים
+                </label>
+              </div>
+            )}
 
             {/* Data Preview */}
             {loading && (
