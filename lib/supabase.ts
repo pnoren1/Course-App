@@ -1,10 +1,11 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { Database } from "./types/database.types";
+import { getSupabaseUrl, getSupabaseAnonKey } from "./env";
 
 // Create the base Supabase client
 export const supabase = createClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  getSupabaseUrl(),
+  getSupabaseAnonKey(),
   {
     auth: {
       // הגדרת זמן תוקף הסשן (בשניות)
@@ -25,7 +26,7 @@ function createAdminClient() {
     return null;
   }
   
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseUrl = getSupabaseUrl();
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   
   if (!supabaseUrl || !serviceRoleKey) {
@@ -54,7 +55,7 @@ export function getSupabaseAdmin(): SupabaseClient<Database> {
   }
   
   if (!supabaseAdmin) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseUrl = getSupabaseUrl();
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     
     if (!supabaseUrl || !serviceRoleKey) {

@@ -1,5 +1,6 @@
 import "./globals.css";
 import type { Metadata } from 'next';
+import EnvironmentCheck from './components/EnvironmentCheck';
 
 export const metadata: Metadata = {
   title: 'קורס AWS - פלטפורמת למידה',
@@ -30,14 +31,16 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-gray-50 text-gray-900 antialiased min-h-screen flex flex-col">
-        <main className="flex-1">
-          {children}
-        </main>
-        <footer className="bg-gray-800 text-white py-4 px-6 text-center text-sm">
-          <p>
-            © כל הזכויות שמורות לפנינה אורן, אין להעתיק/להוריד/להקליט/לצלם/להעביר בשום צורה ואופן | pnoren1@gmail.com | 0527142050
-          </p>
-        </footer>
+        <EnvironmentCheck>
+          <main className="flex-1">
+            {children}
+          </main>
+          <footer className="bg-gray-800 text-white py-4 px-6 text-center text-sm">
+            <p>
+              © כל הזכויות שמורות לפנינה אורן, אין להעתיק/להוריד/להקליט/לצלם/להעביר בשום צורה ואופן | pnoren1@gmail.com | 0527142050
+            </p>
+          </footer>
+        </EnvironmentCheck>
       </body>
     </html>
   );
