@@ -215,23 +215,26 @@ export class VideoViewService {
         throw viewsError;
       }
 
-      // Get all lessons to map IDs to titles
+      // Get all lessons to map IDs to titles and order
       const { data: lessons, error: lessonsError } = await adminClient
         .from('lessons')
-        .select('id, title');
+        .select('id, title, order');
 
       if (lessonsError) {
         console.error('Error fetching lessons:', lessonsError);
         // Don't throw - we can still show views without titles
       }
 
-      // Create a map of lesson_id to title for quick lookup
+      // Create maps of lesson_id to title and order for quick lookup
       const lessonTitleMap = new Map<string, string>();
+      const lessonOrderMap = new Map<string, number>();
       if (lessons) {
         lessons.forEach(lesson => {
           // Store both numeric and string versions of the ID
           lessonTitleMap.set(String(lesson.id), lesson.title);
           lessonTitleMap.set(lesson.id.toString(), lesson.title);
+          lessonOrderMap.set(String(lesson.id), lesson.order);
+          lessonOrderMap.set(lesson.id.toString(), lesson.order);
         });
       }
 
@@ -245,11 +248,13 @@ export class VideoViewService {
           email: user.email || 'unknown@example.com',
           organization_id: user.organization_id || undefined,
           watched_lessons: userViews.map(v => {
-            // Get lesson title from the map or fallback to lesson_id
+            // Get lesson title and order from the maps or fallback to lesson_id
             const lessonTitle = lessonTitleMap.get(v.lesson_id) || `שיעור ${v.lesson_id}`;
+            const lessonOrder = lessonOrderMap.get(v.lesson_id) || 0;
             return {
               lesson_id: v.lesson_id,
               lesson_title: lessonTitle,
+              lesson_order: lessonOrder,
               watched_at: v.created_at
             };
           })

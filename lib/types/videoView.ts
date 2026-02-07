@@ -19,6 +19,7 @@ export interface UserProgress {
   watched_lessons: {
     lesson_id: string;
     lesson_title: string;
+    lesson_order: number;
     watched_at: string;
   }[];
 }

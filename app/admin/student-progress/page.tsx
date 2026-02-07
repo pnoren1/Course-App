@@ -905,7 +905,9 @@ export default function StudentProgressPage() {
                           </div>
                         ) : (
                           <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                            {userVideoProgress.watched_lessons.map((lesson, index) => (
+                            {[...userVideoProgress.watched_lessons]
+                              .sort((a, b) => (a.lesson_order || 0) - (b.lesson_order || 0))
+                              .map((lesson, index) => (
                               <div
                                 key={`${lesson.lesson_id}-${index}`}
                                 className="p-3 bg-gray-50 rounded-lg border border-gray-200"
@@ -917,7 +919,7 @@ export default function StudentProgressPage() {
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                       </svg>
                                       <span className="text-sm font-medium text-gray-900">
-                                        {lesson.lesson_title}
+                                        {lesson.lesson_order ? `${lesson.lesson_order}. ` : ''}{lesson.lesson_title}
                                       </span>
                                     </div>
                                     <div className="text-xs text-gray-500 mt-1 mr-6">
