@@ -234,24 +234,6 @@ function CourseContent({ userRoleData }: { userRoleData: any }) {
             return;
           }
         }
-        
-        // Fallback to API if direct DB access fails
-        const response = await fetch('/api/course/lessons');
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error('API Error:', errorData);
-          throw new Error(`Failed to fetch course data: ${errorData.error || response.statusText}`);
-        }
-        
-        const data = await response.json();
-        
-        if (!data.units || !Array.isArray(data.units)) {
-          console.error('Invalid data format:', data);
-          throw new Error('Invalid course data format');
-        }
-        
-        setUnits(data.units);
       } catch (err: any) {
         console.error('Error fetching course data:', err);
         setError(err.message ?? 'Failed to load course');

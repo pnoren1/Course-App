@@ -49,7 +49,7 @@ export function getSupabaseAnonKey(): string {
   const key = 
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
     (typeof window !== 'undefined' && (window as any).__NEXT_DATA__?.props?.pageProps?.env?.NEXT_PUBLIC_SUPABASE_ANON_KEY) ||
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6ZWRlYXd0bXpmZW55cmV3aG1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5MTE4NzgsImV4cCI6MjA4MjQ4Nzg3OH0.IJ7tOANZzuqLsM7AtrDHX6H__xOcB80wF9QMbx1B1iQ'; // Fallback to known key
+    'sb_publishable_Ew7uTRq0ZzeruFrajTgnTQ_DFvxZAnr'; // Fallback to known key
 
   if (!key) {
     throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY is not defined');
