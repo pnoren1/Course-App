@@ -42,7 +42,7 @@ export async function PUT(request: NextRequest) {
     await requireAdminAuth(request);
 
     const body = await request.json();
-    const { testEmail } = body;
+    const { testEmail, testUserName } = body;
 
     if (!testEmail) {
       return NextResponse.json(
@@ -55,7 +55,7 @@ export async function PUT(request: NextRequest) {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
     const emailSent = await emailService.sendWelcomeEmail({
       email: testEmail,
-      userName: 'משתמש בדיקה',
+      userName: testUserName || 'משתמש בדיקה',
       siteUrl: siteUrl
     });
 

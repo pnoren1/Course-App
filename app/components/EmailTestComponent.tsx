@@ -7,6 +7,7 @@ export default function EmailTestComponent() {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [testEmail, setTestEmail] = useState('');
+  const [testUserName, setTestUserName] = useState('');
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const testConnection = async () => {
@@ -81,7 +82,10 @@ export default function EmailTestComponent() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ testEmail: testEmail.trim() })
+        body: JSON.stringify({ 
+          testEmail: testEmail.trim(),
+          testUserName: testUserName.trim() || 'משתמש בדיקה'
+        })
       });
 
       const data = await response.json();
@@ -182,6 +186,13 @@ export default function EmailTestComponent() {
                   value={testEmail}
                   onChange={(e) => setTestEmail(e.target.value)}
                   placeholder="הזן כתובת מייל לבדיקה"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                />
+                <input
+                  type="text"
+                  value={testUserName}
+                  onChange={(e) => setTestUserName(e.target.value)}
+                  placeholder="שם המשתמש (אופציונלי)"
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 />
                 <button
