@@ -41,6 +41,7 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
   const [selectedOrganization, setSelectedOrganization] = useState<string>('all');
   const [selectedGroup, setSelectedGroup] = useState<string>('all');
   const [collapsedOrgs, setCollapsedOrgs] = useState<Set<string>>(new Set());
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -683,17 +684,41 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
                       {/* קבוצות בארגון - מוצגות רק אם הארגון לא מכווץ */}
                       {!isCollapsed && (
                         <div className="mr-4 space-y-3 mb-4">
-                          {sortedGroups.map(([groupKey, group]) => (
-                            <div key={`${orgKey}-${groupKey}`}>
-                              {/* כותרת קבוצה מינימלית */}
-                              <div className="flex items-center gap-2 mb-1 px-1">
+                          {sortedGroups.map(([groupKey, group]) => {
+                            const groupCollapseKey = `${orgKey}-${groupKey}`;
+                            const isGroupCollapsed = collapsedGroups.has(groupCollapseKey);
+                            
+                            return (
+                            <div key={groupCollapseKey}>
+                              {/* כותרת קבוצה מינימלית עם אפשרות כיווץ */}
+                              <div 
+                                className="flex items-center gap-2 mb-1 px-1 cursor-pointer hover:bg-slate-50 rounded py-1"
+                                onClick={() => {
+                                  const newCollapsed = new Set(collapsedGroups);
+                                  if (isGroupCollapsed) {
+                                    newCollapsed.delete(groupCollapseKey);
+                                  } else {
+                                    newCollapsed.add(groupCollapseKey);
+                                  }
+                                  setCollapsedGroups(newCollapsed);
+                                }}
+                              >
+                                <svg 
+                                  className={`w-3 h-3 text-slate-400 transition-transform ${isGroupCollapsed ? 'rotate-90' : ''}`} 
+                                  fill="none" 
+                                  stroke="currentColor" 
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
+                                </svg>
                                 <div className="w-1 h-1 bg-green-500 rounded-full"></div>
                                 <h5 className="text-xs font-medium text-slate-600">{group.name}</h5>
                                 <div className="flex-1 h-px bg-slate-100"></div>
                                 <span className="text-xs text-slate-400">{group.users.length}</span>
                               </div>
                               
-                              {/* רשימת המשתמשים בקבוצה */}
+                              {/* רשימת המשתמשים בקבוצה - מוצגת רק אם הקבוצה לא מכווצת */}
+                              {!isGroupCollapsed && (
                               <div className="space-y-2">
                                 {group.users.map(user => (
                                   <div key={user.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border-r-2 border-green-200">
@@ -778,8 +803,10 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
                                   </div>
                                 ))}
                               </div>
+                              )}
                             </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </div>
