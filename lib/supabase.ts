@@ -2,21 +2,84 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { Database } from "./types/database.types";
 import { getSupabaseUrl, getSupabaseAnonKey } from "./env";
 
-// Create the base Supabase client
-export const supabase = createClient<Database>(
-  getSupabaseUrl(),
-  getSupabaseAnonKey(),
-  {
-    auth: {
-      // הגדרת זמן תוקף הסשן (בשניות)
-      // 1800 = 30 דקות, 900 = 15 דקות
-      autoRefreshToken: true, // רענון אוטומטי
-      persistSession: true, // שמירת סשן בלוקל סטורג'
-      detectSessionInUrl: true, // זיהוי סשן מ-URL
-      // flowType: 'pkce' // אבטחה משופרת
+/**
+ * Log Supabase initialization errors
+ * This function is separate to avoid circular dependencies with errorLoggerService
+ */
+async function logSupabaseInitError(error: Error, context: {
+  isServerSide: boolean;
+  url?: string;
+  hasAnonKey: boolean;
+}) {
+  try {
+    // Import dynamically to avoid circular dependency
+    const { errorLoggerService } = await import('./services/errorLoggerService');
+    
+    // Gather environment context
+    const metadata: Record<string, any> = {
+      isServerSide: context.isServerSide,
+      hasUrl: !!context.url,
+      hasAnonKey: context.hasAnonKey,
+    };
+
+    // Add browser info if client-side
+    if (!context.isServerSide && typeof window !== 'undefined') {
+      metadata.browserInfo = {
+        userAgent: navigator.userAgent,
+        language: navigator.language,
+        platform: navigator.platform,
+      };
+      metadata.referrer = document.referrer || 'direct';
+      metadata.url = window.location.href;
     }
+
+    await errorLoggerService.logCriticalError({
+      logType: 'SUPABASE_INIT_ERROR',
+      message: error.message,
+      error,
+      metadata,
+    });
+  } catch (logError) {
+    // Silent failure - just log to console
+    console.error('Failed to log Supabase init error:', logError);
   }
-);
+}
+
+/**
+ * Create Supabase client with error logging
+ */
+function createSupabaseClientWithErrorLogging() {
+  try {
+    const url = getSupabaseUrl();
+    const anonKey = getSupabaseAnonKey();
+    
+    return createClient<Database>(url, anonKey, {
+      auth: {
+        // הגדרת זמן תוקף הסשן (בשניות)
+        // 1800 = 30 דקות, 900 = 15 דקות
+        autoRefreshToken: true, // רענון אוטומטי
+        persistSession: true, // שמירת סשן בלוקל סטורג'
+        detectSessionInUrl: true, // זיהוי סשן מ-URL
+        // flowType: 'pkce' // אבטחה משופרת
+      }
+    });
+  } catch (error) {
+    const isServerSide = typeof window === 'undefined';
+    
+    // Log the error asynchronously
+    logSupabaseInitError(error as Error, {
+      isServerSide,
+      url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    });
+
+    // Re-throw the error so the app knows initialization failed
+    throw error;
+  }
+}
+
+// Create the base Supabase client
+export const supabase = createSupabaseClientWithErrorLogging();
 
 // Create admin client with service role key (server-side only)
 // Only create if service role key is available
@@ -26,23 +89,34 @@ function createAdminClient() {
     return null;
   }
   
-  const supabaseUrl = getSupabaseUrl();
-  const serviceRoleKey = process.env.SUPABASE_SECRET_KEY;
-  
-  if (!supabaseUrl || !serviceRoleKey) {
+  try {
+    const supabaseUrl = getSupabaseUrl();
+    const serviceRoleKey = process.env.SUPABASE_SECRET_KEY;
+    
+    if (!supabaseUrl || !serviceRoleKey) {
+      return null;
+    }
+    
+    return createClient<Database>(
+      supabaseUrl,
+      serviceRoleKey,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    );
+  } catch (error) {
+    // Log admin client initialization error
+    logSupabaseInitError(error as Error, {
+      isServerSide: true,
+      url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasAnonKey: !!process.env.SUPABASE_SECRET_KEY,
+    });
+    
     return null;
   }
-  
-  return createClient<Database>(
-    supabaseUrl,
-    serviceRoleKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    }
-  );
 }
 
 export const supabaseAdmin = createAdminClient();
@@ -55,20 +129,42 @@ export function getSupabaseAdmin(): SupabaseClient<Database> {
   }
   
   if (!supabaseAdmin) {
-    const supabaseUrl = getSupabaseUrl();
-    const serviceRoleKey = process.env.SUPABASE_SECRET_KEY;
-    
-    if (!supabaseUrl || !serviceRoleKey) {
-      console.error('Missing environment variables for admin client');
-      throw new Error('Missing environment variables for admin client');
-    }
-    
-    return createClient<Database>(supabaseUrl, serviceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
+    try {
+      const supabaseUrl = getSupabaseUrl();
+      const serviceRoleKey = process.env.SUPABASE_SECRET_KEY;
+      
+      if (!supabaseUrl || !serviceRoleKey) {
+        const error = new Error('Missing environment variables for admin client');
+        console.error('Missing environment variables for admin client');
+        
+        // Log the error
+        logSupabaseInitError(error, {
+          isServerSide: true,
+          url: supabaseUrl,
+          hasAnonKey: !!serviceRoleKey,
+        });
+        
+        throw error;
       }
-    });
+      
+      return createClient<Database>(supabaseUrl, serviceRoleKey, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      });
+    } catch (error) {
+      // Log the error if not already logged
+      if (!(error instanceof Error && error.message === 'Missing environment variables for admin client')) {
+        logSupabaseInitError(error as Error, {
+          isServerSide: true,
+          url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+          hasAnonKey: !!process.env.SUPABASE_SECRET_KEY,
+        });
+      }
+      
+      throw error;
+    }
   }
   
   return supabaseAdmin;

@@ -89,25 +89,6 @@ export async function getAuthenticatedUser(request: NextRequest) {
   const { supabase, token } = createServerSupabaseClient(request);
   
   if (!token) {
-    // Try to get token from session cookie as fallback
-    const cookies = request.cookies;
-    const sessionCookie = cookies.get('sb-lzedeawtmzfenyrewhmo-auth-token');
-    
-    if (sessionCookie?.value) {
-      try {
-        const sessionData = JSON.parse(sessionCookie.value);
-        if (sessionData.access_token) {
-          const { data: { user }, error } = await supabase.auth.getUser(sessionData.access_token);
-          
-          if (user && !error) {
-            return { user, error: null, supabase };
-          }
-        }
-      } catch (parseError) {
-        // Ignore parsing errors
-      }
-    }
-    
     return { user: null, error: { message: 'No authentication token found' }, supabase };
   }
 

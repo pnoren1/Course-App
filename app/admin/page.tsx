@@ -4,9 +4,9 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import AdminLayout from '@/app/components/AdminLayout';
 import SessionTimeoutProvider from '@/app/components/SessionTimeoutProvider';
+import ErrorLogsDashboard from '@/app/components/ErrorLogsDashboard';
 import { rlsSupabase } from '@/lib/supabase';
 import { useUserRole } from '@/lib/hooks/useUserRole';
-import { authenticatedFetch } from '@/lib/utils/api-helpers';
 
 interface Stats {
   totalUsers: number;
@@ -79,6 +79,9 @@ export default function AdminPage() {
         }
       >
       <div className="space-y-8">
+        {/* Error Logs Dashboard - Prominent Position */}
+        <ErrorLogsDashboard />
+
         {/* Info message for org admins */}
         {role === 'org_admin' && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
