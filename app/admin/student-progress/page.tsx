@@ -26,6 +26,7 @@ export default function StudentProgressPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [organizationFilter, setOrganizationFilter] = useState<string>('all');
   const [groupFilter, setGroupFilter] = useState<string>('all');
+  const [showOnlyNotLoggedIn, setShowOnlyNotLoggedIn] = useState(false);
   const [expandedOrganizations, setExpandedOrganizations] = useState<Set<string>>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('student-progress-expanded-orgs');
@@ -68,6 +69,28 @@ export default function StudentProgressPage() {
         stats = await submissionStatsService.getOrganizationUsersSubmissionStats(organizationId);
       } else {
         stats = [];
+      }
+      
+      // Load video views for all users
+      try {
+        const { authenticatedFetch } = await import('@/lib/utils/api-helpers');
+        const response = await authenticatedFetch('/api/admin/video-views');
+        
+        if (response.ok) {
+          const data = await response.json();
+          const videoViewsMap = new Map<string, number>(
+            data.users?.map((u: any) => [u.user_id, u.watched_lessons?.length || 0]) || []
+          );
+          
+          // Add video view counts to stats
+          stats = stats.map(stat => ({
+            ...stat,
+            watchedLessons: videoViewsMap.get(stat.userId) || 0
+          }));
+        }
+      } catch (videoErr) {
+        console.error('Error loading video views:', videoErr);
+        // Continue without video data
       }
       
       setAllUserStats(stats);
@@ -163,7 +186,10 @@ export default function StudentProgressPage() {
         (groupFilter === 'no-group' && !user.groupId) ||
         user.groupId === groupFilter;
       
-      return searchMatch && organizationMatch && groupMatch;
+      // סינון לפי סטטוס כניסה למערכת
+      const loginMatch = !showOnlyNotLoggedIn || !usersWhoLoggedIn.has(user.userId);
+      
+      return searchMatch && organizationMatch && groupMatch && loginMatch;
     })
     .sort((a, b) => {
       let aValue: any, bValue: any;
@@ -349,153 +375,130 @@ export default function StudentProgressPage() {
         </button>
       }
     >
-      <div className="space-y-6">
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center gap-3">
-              <div className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 rounded-lg">
-                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
+      <div className="space-y-4">
+        {/* Compact Stats and Filters - Side by Side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          {/* Left Side - Stats Boxes (2x2 grid) */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-white rounded-lg border border-gray-200 p-3">
+              <div className="flex items-center gap-2">
+                <div className="inline-flex items-center justify-center w-7 h-7 bg-blue-100 rounded-lg">
+                  <svg className="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600">סה"כ תלמידים</p>
+                  <p className="text-lg font-semibold text-gray-900">{allUserStats.length}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-gray-600">סה"כ תלמידים</p>
-                <p className="text-lg font-semibold text-gray-900">{allUserStats.length}</p>
-                <p className="text-xs text-gray-500">
-                  {Object.keys(groupedUsers).length} ארגונים
-                </p>
+            </div>
+
+            <div 
+              onClick={() => setShowOnlyNotLoggedIn(!showOnlyNotLoggedIn)}
+              className={`bg-white rounded-lg border-2 p-3 cursor-pointer transition-all hover:shadow-md ${
+                showOnlyNotLoggedIn ? 'border-orange-500 bg-orange-50' : 'border-gray-200'
+              }`}
+              title="לחץ כדי לסנן ולהציג רק תלמידים שלא נכנסו למערכת"
+            >
+              <div className="flex items-center gap-2">
+                <div className={`inline-flex items-center justify-center w-7 h-7 rounded-lg ${
+                  showOnlyNotLoggedIn ? 'bg-orange-200' : 'bg-orange-100'
+                }`}>
+                  <svg className="w-3.5 h-3.5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-gray-600">לא נכנסו למערכת</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {allUserStats.filter(u => !usersWhoLoggedIn.has(u.userId)).length}
+                  </p>
+                </div>
+                {showOnlyNotLoggedIn && (
+                  <div className="text-orange-600 text-xs font-medium">✓</div>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg border border-gray-200 p-3">
+              <div className="flex items-center gap-2">
+                <div className="inline-flex items-center justify-center w-7 h-7 bg-green-100 rounded-lg">
+                  <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600">מצוינים</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {allUserStats.filter(u => u.submissionRate >= 80).length}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg border border-gray-200 p-3">
+              <div className="flex items-center gap-2">
+                <div className="inline-flex items-center justify-center w-7 h-7 bg-red-100 rounded-lg">
+                  <svg className="w-3.5 h-3.5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600">זקוקים לתשומת לב</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {allUserStats.filter(u => u.submissionRate < 60).length}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center gap-3">
-              <div className="inline-flex items-center justify-center w-8 h-8 bg-green-100 rounded-lg">
-                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-xs text-gray-600">ביצועים מצוינים</p>
-                <p className="text-lg font-semibold text-gray-900">
-                  {allUserStats.filter(u => u.submissionRate >= 80).length}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {Object.values(groupedUsers).reduce((total, groups) => 
-                    total + Object.keys(groups).length, 0
-                  )} קבוצות
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center gap-3">
-              <div className="inline-flex items-center justify-center w-8 h-8 bg-yellow-100 rounded-lg">
-                <svg className="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-xs text-gray-600">ביצועים טובים</p>
-                <p className="text-lg font-semibold text-gray-900">
-                  {allUserStats.filter(u => u.submissionRate >= 60 && u.submissionRate < 80).length}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {filteredAndSortedUsers.length} מסוננים
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center gap-3">
-              <div className="inline-flex items-center justify-center w-8 h-8 bg-red-100 rounded-lg">
-                <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-xs text-gray-600">זקוקים לתשומת לב</p>
-                <p className="text-lg font-semibold text-gray-900">
-                  {allUserStats.filter(u => u.submissionRate < 60).length}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {allUserStats.filter(u => u.lastSubmissionDate).length} עם הגשות
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-        {/* Info message for org admins */}
-        {role === 'org_admin' && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-center gap-3">
-              <div className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 rounded-lg">
-                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-blue-900">מידע למנהל אירגון</h3>
-                <p className="text-sm text-blue-700 mt-1">
-                  אתה רואה רק את התלמידים השייכים לארגון שלך. מנהלי מערכת רואים את כל התלמידים.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Search and Sort Controls */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex flex-col gap-4">
-            {/* Search */}
-            <div className="flex-1">
+          {/* Right Side - Filters */}
+          <div className="bg-white rounded-lg border border-gray-200 p-3">
+            <div className="flex flex-col gap-2">
+              {/* Search */}
               <input
                 type="text"
                 placeholder="חיפוש לפי שם או אימייל..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-            </div>
-            
-            {/* Filters Row */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              {/* Sort Controls */}
-              <div className="flex gap-2">
+              
+              {/* All Filters in One Row with Flex */}
+              <div className="flex gap-1">
+                {/* Sort Type - Medium width */}
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as any)}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 min-w-[100px] px-2 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="rate">אחוז השלמה</option>
+                  <option value="rate">אחוז</option>
                   <option value="name">שם</option>
-                  <option value="submitted">מספר הגשות</option>
-                  <option value="lastSubmission">הגשה אחרונה</option>
+                  <option value="submitted">הגשות</option>
+                  <option value="lastSubmission">אחרונה</option>
                 </select>
                 
+                {/* Sort Direction - Small fixed width */}
                 <button
                   onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                  className="px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-10 px-2 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  title={sortOrder === 'asc' ? 'מיון עולה' : 'מיון יורד'}
                 >
                   {sortOrder === 'asc' ? '↑' : '↓'}
                 </button>
-              </div>
 
-              {/* Organization Filter */}
-              <div className="flex-1">
+                {/* Organization Filter - Large width */}
                 <select
                   value={organizationFilter}
                   onChange={(e) => {
                     setOrganizationFilter(e.target.value);
-                    // Reset group filter when organization changes
                     if (e.target.value !== organizationFilter) {
                       setGroupFilter('all');
                     }
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-[1.5] min-w-[120px] px-2 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="all">כל הארגונים</option>
                   <option value="no-org">ללא ארגון</option>
@@ -515,14 +518,12 @@ export default function StudentProgressPage() {
                     ));
                   })()}
                 </select>
-              </div>
 
-              {/* Group Filter */}
-              <div className="flex-1">
+                {/* Group Filter - Large width */}
                 <select
                   value={groupFilter}
                   onChange={(e) => setGroupFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-[1.5] min-w-[120px] px-2 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   disabled={organizationFilter === 'all'}
                 >
                   <option value="all">כל הקבוצות</option>
@@ -546,24 +547,41 @@ export default function StudentProgressPage() {
                     ));
                   })()}
                 </select>
-              </div>
 
-              {/* Clear Filters */}
-              {(organizationFilter !== 'all' || groupFilter !== 'all' || searchTerm !== '') && (
-                <button
-                  onClick={() => {
-                    setOrganizationFilter('all');
-                    setGroupFilter('all');
-                    setSearchTerm('');
-                  }}
-                  className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                >
-                  נקה סינונים
-                </button>
-              )}
+                {/* Clear Filters - Small fixed width */}
+                {(organizationFilter !== 'all' || groupFilter !== 'all' || searchTerm !== '' || showOnlyNotLoggedIn) && (
+                  <button
+                    onClick={() => {
+                      setOrganizationFilter('all');
+                      setGroupFilter('all');
+                      setSearchTerm('');
+                      setShowOnlyNotLoggedIn(false);
+                    }}
+                    className="w-14 px-2 py-2 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                  >
+                    נקה
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Info message for org admins */}
+        {role === 'org_admin' && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div className="flex items-center gap-2">
+              <div className="inline-flex items-center justify-center w-6 h-6 bg-blue-100 rounded-lg">
+                <svg className="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <p className="text-xs text-blue-700">
+                אתה רואה רק את התלמידים השייכים לארגון שלך
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Users List */}
@@ -620,7 +638,9 @@ export default function StudentProgressPage() {
                 </div>
               ) : (
                 <div className="p-6 space-y-4">
-                  {Object.entries(groupedUsers).map(([orgName, groups]) => (
+                  {Object.entries(groupedUsers)
+                    .sort(([orgNameA], [orgNameB]) => orgNameA.localeCompare(orgNameB, 'he'))
+                    .map(([orgName, groups]) => (
                     <div key={orgName}>
                       {/* כותרת ארגון מינימלית עם אפשרות כיווץ */}
                       <div 
@@ -656,7 +676,9 @@ export default function StudentProgressPage() {
                       {/* קבוצות בארגון - מוצגות רק אם הארגון לא מכווץ */}
                       {expandedOrganizations.has(orgName) && (
                         <div className="mr-4 space-y-3 mb-4">
-                          {Object.entries(groups).map(([groupName, groupUsers]) => {
+                          {Object.entries(groups)
+                            .sort(([groupNameA], [groupNameB]) => groupNameA.localeCompare(groupNameB, 'he'))
+                            .map(([groupName, groupUsers]) => {
                             const groupKey = `${orgName}-${groupName}`;
                             return (
                               <div key={groupName}>
@@ -724,6 +746,17 @@ export default function StudentProgressPage() {
                                               title="התלמיד לא נכנס למערכת"
                                             >
                                               <span className="text-sm">⚠️</span>
+                                            </div>
+                                          )}
+                                          {user.watchedLessons !== undefined && user.watchedLessons > 0 && (
+                                            <div 
+                                              className="inline-flex items-center gap-1 px-2 py-1 bg-purple-50 text-purple-700 rounded-full text-xs font-medium"
+                                              title="מספר סרטונים שנצפו"
+                                            >
+                                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                              </svg>
+                                              <span>{user.watchedLessons}</span>
                                             </div>
                                           )}
                                           <div className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${getStatusColor(user.submissionRate)}`}>

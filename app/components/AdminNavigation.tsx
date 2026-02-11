@@ -55,19 +55,6 @@ interface NavigationItem {
     )
   },
   {
-    id: 'assignments',
-    name: 'ניהול מטלות',
-    href: '/admin/assignments',
-    description: 'יצירה ועריכה של מטלות',
-    orgAdminDescription: 'רק מנהלי מערכת יכולים לנהל מטלות',
-    adminOnly: true,
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-      </svg>
-    )
-  },
-  {
     id: 'student-progress',
     name: 'התקדמות תלמידים',
     href: '/admin/student-progress',
@@ -81,6 +68,31 @@ interface NavigationItem {
     )
   },
   {
+    id: 'submissions',
+    name: 'ניהול הגשות',
+    href: '/admin/submissions',
+    description: 'צפייה וניהול הגשות המטלות',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    )
+  },
+  {
+    id: 'assignments',
+    name: 'ניהול מטלות',
+    href: '/admin/assignments',
+    description: 'יצירה ועריכה של מטלות',
+    orgAdminDescription: 'רק מנהלי מערכת יכולים לנהל מטלות',
+    adminOnly: true,
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+    )
+  },
+  {
     id: 'units',
     name: 'ניהול יחידות',
     href: '/admin/units',
@@ -90,18 +102,6 @@ interface NavigationItem {
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-      </svg>
-    )
-  },
-  {
-    id: 'submissions',
-    name: 'ניהול הגשות',
-    href: '/admin/submissions',
-    description: 'צפייה וניהול הגשות המטלות',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
       </svg>
     )
   },
@@ -153,7 +153,7 @@ export default function AdminNavigation({ className = '' }: AdminNavigationProps
       <nav className={`hidden lg:block bg-white border-b border-slate-200 ${className}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-8 space-x-reverse">
+            <div className="flex items-center gap-2">
               {navigationItems.map((item) => (
                 <button
                   key={item.id}
