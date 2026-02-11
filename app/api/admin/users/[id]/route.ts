@@ -181,3 +181,118 @@ export async function PUT(
     );
   }
 }
+
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: userId } = await params;
+    
+    const { user, error: authError } = await getAuthenticatedUser(request);
+    
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'אין הרשאה לגשת למשאב זה' },
+        { status: 401 }
+      );
+    }
+
+    if (!supabaseAdmin) {
+      console.error('API: supabaseAdmin not available');
+      return NextResponse.json(
+        { error: 'שגיאה בהגדרות השרת' },
+        { status: 500 }
+      );
+    }
+
+    // Get user profile to check role
+    const { data: userProfile, error: profileError } = await supabaseAdmin
+      .from('user_profile')
+      .select('role')
+      .eq('user_id', user.id)
+      .single();
+
+    if (profileError || !userProfile || userProfile.role !== 'admin') {
+      return NextResponse.json(
+        { error: 'אין הרשאה לבצע פעולה זו - נדרשות הרשאות מנהל' },
+        { status: 403 }
+      );
+    }
+
+    // ולידציה בסיסית
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'נדרש מזהה משתמש' },
+        { status: 400 }
+      );
+    }
+
+    // בדיקה שהמשתמש קיים
+    const userResult = await supabaseAdmin
+      .from('user_profile')
+      .select('user_id, user_name, email')
+      .eq('user_id', userId)
+      .single();
+
+    if (userResult.error || !userResult.data) {
+      return NextResponse.json(
+        { error: 'משתמש לא נמצא' },
+        { status: 404 }
+      );
+    }
+
+    const userToDelete = userResult.data;
+
+    // מניעת מחיקה עצמית
+    if (userId === user.id) {
+      return NextResponse.json(
+        { error: 'לא ניתן למחוק את המשתמש הנוכחי' },
+        { status: 400 }
+      );
+    }
+
+    // מחיקת הפרופיל מטבלת user_profile
+    const { error: deleteProfileError } = await supabaseAdmin
+      .from('user_profile')
+      .delete()
+      .eq('user_id', userId);
+
+    if (deleteProfileError) {
+      console.error('Error deleting user profile:', deleteProfileError);
+      return NextResponse.json(
+        { error: `שגיאה במחיקת פרופיל המשתמש: ${deleteProfileError.message}` },
+        { status: 500 }
+      );
+    }
+
+    // מחיקת המשתמש מ-auth.users באמצעות Admin API
+    const { error: deleteAuthError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+
+    if (deleteAuthError) {
+      console.error('Error deleting user from auth.users:', deleteAuthError);
+      return NextResponse.json(
+        { error: `שגיאה במחיקת המשתמש מהאימות: ${deleteAuthError.message}` },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `משתמש ${userToDelete.user_name || userToDelete.email} נמחק בהצלחה`,
+      deletedUser: {
+        id: userId,
+        userName: userToDelete.user_name,
+        email: userToDelete.email
+      }
+    });
+
+  } catch (error) {
+    console.error('Error in user delete API:', error);
+    return NextResponse.json(
+      { error: `שגיאה פנימית בשרת: ${error instanceof Error ? error.message : 'Unknown error'}` },
+      { status: 500 }
+    );
+  }
+}

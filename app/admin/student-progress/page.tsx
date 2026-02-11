@@ -17,6 +17,7 @@ export default function StudentProgressPage() {
   const [userVideoProgress, setUserVideoProgress] = useState<UserProgress | null>(null);
   const [usersWhoLoggedIn, setUsersWhoLoggedIn] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [assignmentsExpanded, setAssignmentsExpanded] = useState(false);
@@ -51,8 +52,10 @@ export default function StudentProgressPage() {
 
   // Load all users stats
   useEffect(() => {
-    loadAllUsersStats();
-  }, [role, organizationId]);
+    if (!roleLoading && (role === 'admin' || role === 'org_admin')) {
+      loadAllUsersStats();
+    }
+  }, [role, organizationId, roleLoading]);
 
   const loadAllUsersStats = async () => {
     try {
@@ -103,6 +106,7 @@ export default function StudentProgressPage() {
       setError('שגיאה בטעינת נתוני התלמידים');
     } finally {
       setLoading(false);
+      setInitialLoad(false);
     }
   };
 
@@ -377,6 +381,23 @@ export default function StudentProgressPage() {
     >
       <div className="space-y-4">
         {/* Compact Stats and Filters - Side by Side */}
+        {(roleLoading || initialLoad) ? (
+          // Show full loading state on initial load
+          <div className="bg-white rounded-lg border border-gray-200 p-8">
+            <div className="flex flex-col items-center gap-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <div className="space-y-2 text-center">
+                <p className="text-gray-900 font-medium text-lg">טוען נתוני תלמידים...</p>
+                <p className="text-gray-500 text-sm">אנא המתן, זה עשוי לקחת מספר שניות</p>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-gray-400">
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                <span>טוען סטטיסטיקות הגשות</span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {/* Left Side - Stats Boxes (2x2 grid) */}
           <div className="grid grid-cols-2 gap-2">
@@ -389,17 +410,24 @@ export default function StudentProgressPage() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">סה"כ תלמידים</p>
-                  <p className="text-lg font-semibold text-gray-900">{allUserStats.length}</p>
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                      <span className="text-sm text-gray-500">טוען...</span>
+                    </div>
+                  ) : (
+                    <p className="text-lg font-semibold text-gray-900">{allUserStats.length}</p>
+                  )}
                 </div>
               </div>
             </div>
 
             <div 
-              onClick={() => setShowOnlyNotLoggedIn(!showOnlyNotLoggedIn)}
-              className={`bg-white rounded-lg border-2 p-3 cursor-pointer transition-all hover:shadow-md ${
-                showOnlyNotLoggedIn ? 'border-orange-500 bg-orange-50' : 'border-gray-200'
-              }`}
-              title="לחץ כדי לסנן ולהציג רק תלמידים שלא נכנסו למערכת"
+              onClick={() => !loading && setShowOnlyNotLoggedIn(!showOnlyNotLoggedIn)}
+              className={`bg-white rounded-lg border-2 p-3 transition-all ${
+                loading ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:shadow-md'
+              } ${showOnlyNotLoggedIn ? 'border-orange-500 bg-orange-50' : 'border-gray-200'}`}
+              title={loading ? "טוען נתונים..." : "לחץ כדי לסנן ולהציג רק תלמידים שלא נכנסו למערכת"}
             >
               <div className="flex items-center gap-2">
                 <div className={`inline-flex items-center justify-center w-7 h-7 rounded-lg ${
@@ -411,11 +439,18 @@ export default function StudentProgressPage() {
                 </div>
                 <div className="flex-1">
                   <p className="text-xs text-gray-600">לא נכנסו למערכת</p>
-                  <p className="text-lg font-semibold text-gray-900">
-                    {allUserStats.filter(u => !usersWhoLoggedIn.has(u.userId)).length}
-                  </p>
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600"></div>
+                      <span className="text-sm text-gray-500">טוען...</span>
+                    </div>
+                  ) : (
+                    <p className="text-lg font-semibold text-gray-900">
+                      {allUserStats.filter(u => !usersWhoLoggedIn.has(u.userId)).length}
+                    </p>
+                  )}
                 </div>
-                {showOnlyNotLoggedIn && (
+                {showOnlyNotLoggedIn && !loading && (
                   <div className="text-orange-600 text-xs font-medium">✓</div>
                 )}
               </div>
@@ -430,9 +465,16 @@ export default function StudentProgressPage() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">מצוינים</p>
-                  <p className="text-lg font-semibold text-gray-900">
-                    {allUserStats.filter(u => u.submissionRate >= 80).length}
-                  </p>
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                      <span className="text-sm text-gray-500">טוען...</span>
+                    </div>
+                  ) : (
+                    <p className="text-lg font-semibold text-gray-900">
+                      {allUserStats.filter(u => u.submissionRate >= 80).length}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -446,9 +488,16 @@ export default function StudentProgressPage() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">זקוקים לתשומת לב</p>
-                  <p className="text-lg font-semibold text-gray-900">
-                    {allUserStats.filter(u => u.submissionRate < 60).length}
-                  </p>
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                      <span className="text-sm text-gray-500">טוען...</span>
+                    </div>
+                  ) : (
+                    <p className="text-lg font-semibold text-gray-900">
+                      {allUserStats.filter(u => u.submissionRate < 60).length}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -582,7 +631,10 @@ export default function StudentProgressPage() {
             </div>
           </div>
         )}
+          </>
+        )}
 
+        {!(roleLoading || initialLoad) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Users List */}
           <div className="bg-white rounded-lg border border-gray-200">
@@ -621,8 +673,17 @@ export default function StudentProgressPage() {
             <div className="h-[640px] overflow-y-auto">
               {loading ? (
                 <div className="p-8 text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="text-gray-600 mt-2">טוען נתונים...</p>
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    <div className="space-y-2">
+                      <p className="text-gray-900 font-medium text-lg">טוען נתוני תלמידים...</p>
+                      <p className="text-gray-500 text-sm">אנא המתן, זה עשוי לקחת מספר שניות</p>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-gray-400">
+                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                      <span>טוען סטטיסטיקות הגשות</span>
+                    </div>
+                  </div>
                 </div>
               ) : error ? (
                 <div className="p-8 text-center text-red-600">
@@ -972,6 +1033,7 @@ export default function StudentProgressPage() {
             </div>
           </div>
         </div>
+        )}
       </div>
     </AdminLayout>
   );
