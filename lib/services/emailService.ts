@@ -441,6 +441,194 @@ class EmailService {
     }
   }
 
+  private generateBulkEmailHTML(message: string, siteUrl: string): string {
+    return `
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>הודעה מפורטל הקורסים</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px 20px;
+            direction: rtl;
+            text-align: right;
+            line-height: 1.6;
+        }
+        
+        .email-container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            border: 2px solid #e5e7eb;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            padding: 28px 32px;
+            text-align: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.08"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.08"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.08"/><circle cx="10" cy="60" r="0.5" fill="white" opacity="0.08"/><circle cx="90" cy="40" r="0.5" fill="white" opacity="0.08"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            pointer-events: none;
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 1;
+            display: inline-flex;
+            align-items: baseline;
+            gap: 12px;
+            direction: rtl;
+        }
+        
+        .header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: -0.3px;
+            line-height: 1.2;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header-icon {
+            font-size: 22px;
+            line-height: 1;
+            vertical-align: baseline;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+            margin-top: -2px;
+            margin-right: 10px;
+        }
+        
+        .content {
+            padding: 32px;
+            text-align: right;
+        }
+        
+        .message-content {
+            font-size: 16px;
+            color: #1f2937;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .footer {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            padding: 24px 32px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .footer-message {
+            font-size: 16px;
+            color: #4f46e5;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .footer-note {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 12px;
+            line-height: 1.4;
+        }
+        
+        @media (max-width: 600px) {
+            body {
+                padding: 20px 10px;
+            }
+            
+            .content {
+                padding: 24px;
+            }
+            
+            .header {
+                padding: 20px 24px;
+            }
+            
+            .footer {
+                padding: 20px 24px;
+            }
+        }
+    </style>
+</head>
+<body style="direction: rtl;">
+    <div class="email-container">
+        <div class="header">
+            <div class="header-content">
+                <h1>פורטל הקורסים</h1>
+                <span class="header-icon">🎓</span>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="message-content">${message.replace(/\n/g, '<br>')}</div>
+        </div>
+        
+        <div class="footer">
+            <div class="footer-message">
+                פורטל הקורסים 🌟
+            </div>
+            <div class="footer-note">
+                מייל זה נשלח אוטומטית ממערכת פורטל הקורסים<br>
+                אין להשיב למייל זה
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+    `;
+  }
+
+  async sendBulkEmail(data: {
+    recipients: string[];
+    subject: string;
+    message: string;
+    siteUrl: string;
+  }): Promise<boolean> {
+    try {
+      const transporter = await this.getTransporter();
+      const config = this.getEmailConfig();
+
+      const mailOptions = {
+        from: `"פורטל הקורסים" <${config.user}>`,
+        bcc: data.recipients, // Send as BCC
+        subject: data.subject,
+        html: this.generateBulkEmailHTML(data.message, data.siteUrl),
+        text: data.message,
+      };
+
+      await transporter.sendMail(mailOptions);
+      return true;
+    } catch (error) {
+      console.error('Error sending bulk email:', error);
+      return false;
+    }
+  }
+
   async testEmailConnection(): Promise<boolean> {
     try {
       const transporter = await this.getTransporter();
