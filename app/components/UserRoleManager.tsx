@@ -41,6 +41,7 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
   const [selectedOrganization, setSelectedOrganization] = useState<string>('all');
   const [selectedGroup, setSelectedGroup] = useState<string>('all');
   const [collapsedOrgs, setCollapsedOrgs] = useState<Set<string>>(new Set());
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -365,6 +366,59 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
     }
   };
 
+  const deleteUser = async (userId: string, userName: string) => {
+    // אישור מחיקה
+    const confirmMessage = `האם אתה בטוח שברצונך למחוק את המשתמש "${userName}"?\n\nפעולה זו תמחק:\n- את המשתמש מהמערכת\n- את כל הנתונים הקשורים אליו\n\nפעולה זו אינה ניתנת לביטול!`;
+    
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    try {
+      setUpdatingUserId(userId);
+      setError(null);
+
+      // קבלת הטוקן לשליחה לשרת
+      const { data: { session } } = await rlsSupabase.auth.getSession();
+      const token = session?.access_token;
+
+      if (!token) {
+        throw new Error('לא נמצא טוקן אימות');
+      }
+
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'שגיאה במחיקת המשתמש');
+      }
+
+      // הסרת המשתמש מהמצב המקומי
+      setUsers(prev => prev.filter(user => user.id !== userId));
+
+      // הודעת הצלחה
+      setSuccessMessage(result.message || 'המשתמש נמחק בהצלחה');
+      setTimeout(() => setSuccessMessage(null), 3000);
+
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      setError(error instanceof Error ? error.message : 'שגיאה במחיקת המשתמש');
+      
+      // במקרה של שגיאה, נטען מחדש כדי לוודא שהמידע נכון
+      setTimeout(() => fetchUsers(), 1000);
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
 
 
   if (!isAdmin) {
@@ -683,19 +737,49 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
                       {/* קבוצות בארגון - מוצגות רק אם הארגון לא מכווץ */}
                       {!isCollapsed && (
                         <div className="mr-4 space-y-3 mb-4">
-                          {sortedGroups.map(([groupKey, group]) => (
-                            <div key={`${orgKey}-${groupKey}`}>
-                              {/* כותרת קבוצה מינימלית */}
-                              <div className="flex items-center gap-2 mb-1 px-1">
+                          {sortedGroups.map(([groupKey, group]) => {
+                            const groupCollapseKey = `${orgKey}-${groupKey}`;
+                            const isGroupCollapsed = collapsedGroups.has(groupCollapseKey);
+                            
+                            return (
+                            <div key={groupCollapseKey}>
+                              {/* כותרת קבוצה מינימלית עם אפשרות כיווץ */}
+                              <div 
+                                className="flex items-center gap-2 mb-1 px-1 cursor-pointer hover:bg-slate-50 rounded py-1"
+                                onClick={() => {
+                                  const newCollapsed = new Set(collapsedGroups);
+                                  if (isGroupCollapsed) {
+                                    newCollapsed.delete(groupCollapseKey);
+                                  } else {
+                                    newCollapsed.add(groupCollapseKey);
+                                  }
+                                  setCollapsedGroups(newCollapsed);
+                                }}
+                              >
+                                <svg 
+                                  className={`w-3 h-3 text-slate-400 transition-transform ${isGroupCollapsed ? 'rotate-90' : ''}`} 
+                                  fill="none" 
+                                  stroke="currentColor" 
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
+                                </svg>
                                 <div className="w-1 h-1 bg-green-500 rounded-full"></div>
                                 <h5 className="text-xs font-medium text-slate-600">{group.name}</h5>
                                 <div className="flex-1 h-px bg-slate-100"></div>
                                 <span className="text-xs text-slate-400">{group.users.length}</span>
                               </div>
                               
-                              {/* רשימת המשתמשים בקבוצה */}
+                              {/* רשימת המשתמשים בקבוצה - מוצגת רק אם הקבוצה לא מכווצת */}
+                              {!isGroupCollapsed && (
                               <div className="space-y-2">
-                                {group.users.map(user => (
+                                {group.users
+                                  .sort((a, b) => {
+                                    const nameA = (a.user_name || a.email).toLowerCase();
+                                    const nameB = (b.user_name || b.email).toLowerCase();
+                                    return nameA.localeCompare(nameB, 'he');
+                                  })
+                                  .map(user => (
                                   <div key={user.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border-r-2 border-green-200">
                                     <div className="flex items-center gap-3">
                                       <div className="w-7 h-7 bg-slate-200 rounded-full flex items-center justify-center">
@@ -766,20 +850,33 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
                                         </div>
                                       )}
 
-                                      {updatingUserId === user.id && (
+                                      {updatingUserId === user.id ? (
                                         <div className="w-4 h-4">
                                           <svg className="animate-spin w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24">
                                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                           </svg>
                                         </div>
+                                      ) : (
+                                        <button
+                                          onClick={() => deleteUser(user.id, user.user_name || user.email)}
+                                          disabled={updatingUserId === user.id}
+                                          className="p-1.5 text-red-600 hover:bg-red-50 hover:text-red-700 rounded border border-transparent hover:border-red-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+                                          title="מחיקת משתמש"
+                                        >
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                          </svg>
+                                        </button>
                                       )}
                                     </div>
                                   </div>
                                 ))}
                               </div>
+                              )}
                             </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </div>

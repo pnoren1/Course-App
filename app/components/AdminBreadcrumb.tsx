@@ -63,7 +63,7 @@ export default function AdminBreadcrumb({ items, actions }: AdminBreadcrumbProps
   }
 
   return (
-    <div className="flex items-center justify-between mb-6">
+    <div className="flex items-center justify-between mb-4">
       <nav className="flex items-center space-x-1 space-x-reverse text-sm text-slate-600">
         {breadcrumbItems.map((item, index) => (
           <div key={index} className="flex items-center">
