@@ -333,6 +333,70 @@ export default function StudentProgressPage() {
     });
   };
 
+  // Get submission status display (icon, text, color)
+  const getSubmissionStatusDisplay = (status?: string) => {
+    if (!status) {
+      return {
+        icon: '⏳',
+        text: 'ממתין',
+        bgColor: 'bg-gray-50',
+        borderColor: 'border-gray-200',
+        textColor: 'text-gray-500'
+      };
+    }
+
+    switch (status) {
+      case 'submitted':
+        return {
+          icon: '📝',
+          text: 'הוגש',
+          bgColor: 'bg-blue-50',
+          borderColor: 'border-blue-200',
+          textColor: 'text-blue-600'
+        };
+      case 'reviewed':
+        return {
+          icon: '🔍',
+          text: 'נבדק',
+          bgColor: 'bg-purple-50',
+          borderColor: 'border-purple-200',
+          textColor: 'text-purple-600'
+        };
+      case 'approved':
+        return {
+          icon: '✅',
+          text: 'אושר',
+          bgColor: 'bg-green-50',
+          borderColor: 'border-green-200',
+          textColor: 'text-green-600'
+        };
+      case 'needs_revision':
+        return {
+          icon: '🔄',
+          text: 'דרוש תיקון',
+          bgColor: 'bg-yellow-50',
+          borderColor: 'border-yellow-200',
+          textColor: 'text-yellow-600'
+        };
+      case 'rejected':
+        return {
+          icon: '❌',
+          text: 'נדחה',
+          bgColor: 'bg-red-50',
+          borderColor: 'border-red-200',
+          textColor: 'text-red-600'
+        };
+      default:
+        return {
+          icon: '📋',
+          text: status,
+          bgColor: 'bg-gray-50',
+          borderColor: 'border-gray-200',
+          textColor: 'text-gray-600'
+        };
+    }
+  };
+
   if (roleLoading) {
     return (
       <AdminLayout title="מעקב התקדמות תלמידים">
@@ -916,43 +980,36 @@ export default function StudentProgressPage() {
 
                     {assignmentsExpanded && (
                       <div className="mt-3 space-y-2">
-                        {userDetailedStatus.map((assignment) => (
-                          <div
-                            key={assignment.assignmentId}
-                            className={`p-3 rounded-lg border ${
-                              assignment.isSubmitted 
-                                ? 'bg-green-50 border-green-200' 
-                                : 'bg-gray-50 border-gray-200'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <div className="text-sm font-medium text-gray-900">
-                                  {assignment.assignmentTitle}
+                        {userDetailedStatus.map((assignment) => {
+                          const statusDisplay = getSubmissionStatusDisplay(assignment.submissionStatus);
+                          return (
+                            <div
+                              key={assignment.assignmentId}
+                              className={`p-3 rounded-lg border ${statusDisplay.bgColor} ${statusDisplay.borderColor}`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {assignment.assignmentTitle}
+                                  </div>
+                                  <div className="text-xs text-gray-600">
+                                    {assignment.unitTitle}
+                                  </div>
                                 </div>
-                                <div className="text-xs text-gray-600">
-                                  {assignment.unitTitle}
+                                <div className="text-left">
+                                  <div className={`text-sm font-medium ${statusDisplay.textColor}`}>
+                                    {statusDisplay.icon} {statusDisplay.text}
+                                  </div>
+                                  {assignment.submissionDate && (
+                                    <div className="text-xs text-gray-500">
+                                      {formatDate(assignment.submissionDate)}
+                                    </div>
+                                  )}
                                 </div>
-                              </div>
-                              <div className="text-left">
-                                {assignment.isSubmitted ? (
-                                  <div className="text-green-600 text-sm font-medium">
-                                    ✅ הוגש
-                                  </div>
-                                ) : (
-                                  <div className="text-gray-500 text-sm">
-                                    ⏳ ממתין
-                                  </div>
-                                )}
-                                {assignment.submissionDate && (
-                                  <div className="text-xs text-gray-500">
-                                    {formatDate(assignment.submissionDate)}
-                                  </div>
-                                )}
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
