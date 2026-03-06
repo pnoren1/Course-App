@@ -722,7 +722,7 @@ export default function StudentProgressPage() {
                         <span className="text-xs text-gray-500">
                           {Object.values(groups).reduce((total, groupUsers) => total + groupUsers.length, 0)} תלמידים
                         </span>
-                        {(() => {
+                        {/* {(() => {
                           const orgStats = getGroupStats(Object.values(groups).flat());
                           return (
                             <div className="flex items-center gap-2 text-xs">
@@ -731,7 +731,7 @@ export default function StudentProgressPage() {
                               {orgStats.needsAttention > 0 && <span className="text-red-600">{orgStats.needsAttention} זקוקים לתשומת לב</span>}
                             </div>
                           );
-                        })()}
+                        })()} */}
                       </div>
                       
                       {/* קבוצות בארגון - מוצגות רק אם הארגון לא מכווץ */}
@@ -760,7 +760,7 @@ export default function StudentProgressPage() {
                                   <h5 className="text-xs font-medium text-gray-600">{groupName}</h5>
                                   <div className="flex-1 h-px bg-gray-100"></div>
                                   <span className="text-xs text-gray-400">{groupUsers.length}</span>
-                                  {(() => {
+                                  {/* {(() => {
                                     const groupStats = getGroupStats(groupUsers);
                                     return (
                                       <div className="flex items-center gap-1 text-xs">
@@ -769,7 +769,7 @@ export default function StudentProgressPage() {
                                         {groupStats.needsAttention > 0 && <span className="text-red-600">{groupStats.needsAttention}</span>}
                                       </div>
                                     );
-                                  })()}
+                                  })()} */}
                                 </div>
                                 
                                 {/* רשימת התלמידים בקבוצה */}

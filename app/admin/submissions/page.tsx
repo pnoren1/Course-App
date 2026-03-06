@@ -48,7 +48,7 @@ export default function SubmissionsPage() {
   });
 
   useEffect(() => {
-    // Check user permissions first
+    // Check user permissions first - runs only once on mount
     const checkPermissions = async () => {
       try {
         const { user } = await rlsSupabase.getCurrentUser();
@@ -95,8 +95,10 @@ export default function SubmissionsPage() {
     };
 
     checkPermissions();
+  }, []); // Empty dependency array - runs only once on mount
 
-    // Add keyboard shortcuts
+  useEffect(() => {
+    // Keyboard shortcuts - separate effect
     const handleKeyDown = (event: KeyboardEvent) => {
       // Ctrl/Cmd + R to refresh
       if ((event.ctrlKey || event.metaKey) && event.key === 'r') {
@@ -114,7 +116,7 @@ export default function SubmissionsPage() {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedSubmission]);
+  }, [selectedSubmission]); // Only for keyboard shortcuts
 
   const loadAssignments = async () => {
     try {
