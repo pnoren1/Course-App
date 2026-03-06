@@ -46,6 +46,9 @@ export default function SubmissionsPage() {
     }
     return new Set();
   });
+  const [selectedSubmissions, setSelectedSubmissions] = useState<Set<number>>(new Set());
+  const [showBulkActions, setShowBulkActions] = useState(false);
+  const [bulkUpdating, setBulkUpdating] = useState(false);
 
   useEffect(() => {
     // Check user permissions first - runs only once on mount
@@ -110,13 +113,35 @@ export default function SubmissionsPage() {
       if (event.key === 'Escape' && selectedSubmission) {
         setSelectedSubmission(null);
       }
+      
+      // Escape to close bulk actions dropdown
+      if (event.key === 'Escape' && showBulkActions) {
+        setShowBulkActions(false);
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedSubmission]); // Only for keyboard shortcuts
+  }, [selectedSubmission, showBulkActions]); // Only for keyboard shortcuts
+
+  useEffect(() => {
+    // Close bulk actions dropdown when clicking outside
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showBulkActions) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('.relative')) {
+          setShowBulkActions(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showBulkActions]);
 
   const loadAssignments = async () => {
     try {
@@ -281,6 +306,134 @@ export default function SubmissionsPage() {
       });
       throw error;
     }
+  };
+
+  const bulkUpdateSubmissionStatus = async (newStatus: string) => {
+    if (selectedSubmissions.size === 0) return;
+
+    try {
+      setBulkUpdating(true);
+      const submissionIds = Array.from(selectedSubmissions);
+
+      const response = await authenticatedFetch('/api/admin/submissions/bulk-update', {
+        method: 'POST',
+        body: JSON.stringify({
+          submissionIds,
+          status: newStatus
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update submissions');
+      }
+
+      const { updatedCount } = await response.json();
+
+      // Update local state
+      setSubmissions(prev => 
+        prev.map(sub => 
+          selectedSubmissions.has(sub.id)
+            ? { ...sub, status: newStatus }
+            : sub
+        )
+      );
+
+      // Clear selection
+      setSelectedSubmissions(new Set());
+      setShowBulkActions(false);
+
+      // Show success toast
+      const statusLabels = {
+        'submitted': 'הוגשה',
+        'reviewed': 'נבדקה',
+        'needs_revision': 'דורשת תיקון',
+        'approved': 'אושרה'
+      };
+      setToast({
+        message: `${updatedCount} הגשות עודכנו ל: ${statusLabels[newStatus as keyof typeof statusLabels]}`,
+        type: 'success'
+      });
+    } catch (error: any) {
+      console.error('Error bulk updating submissions:', error.message || error);
+      setToast({
+        message: `שגיאה בעדכון ההגשות: ${error.message || 'שגיאה לא ידועה'}`,
+        type: 'error'
+      });
+    } finally {
+      setBulkUpdating(false);
+    }
+  };
+
+  const toggleSubmissionSelection = (submissionId: number) => {
+    setSelectedSubmissions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(submissionId)) {
+        newSet.delete(submissionId);
+      } else {
+        newSet.add(submissionId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleGroupSelection = (groupSubmissions: SubmissionWithDetails[]) => {
+    const groupIds = groupSubmissions.map(s => s.id);
+    const allSelected = groupIds.every(id => selectedSubmissions.has(id));
+    
+    setSelectedSubmissions(prev => {
+      const newSet = new Set(prev);
+      if (allSelected) {
+        groupIds.forEach(id => newSet.delete(id));
+      } else {
+        groupIds.forEach(id => newSet.add(id));
+      }
+      return newSet;
+    });
+  };
+
+  const toggleOrganizationSelection = (orgSubmissions: SubmissionWithDetails[]) => {
+    const orgIds = orgSubmissions.map(s => s.id);
+    const allSelected = orgIds.every(id => selectedSubmissions.has(id));
+    
+    setSelectedSubmissions(prev => {
+      const newSet = new Set(prev);
+      if (allSelected) {
+        orgIds.forEach(id => newSet.delete(id));
+      } else {
+        orgIds.forEach(id => newSet.add(id));
+      }
+      return newSet;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const allIds = filteredSubmissions.map(s => s.id);
+    const allSelected = allIds.every(id => selectedSubmissions.has(id));
+    
+    if (allSelected) {
+      setSelectedSubmissions(new Set());
+    } else {
+      setSelectedSubmissions(new Set(allIds));
+    }
+  };
+
+  const getGroupCheckboxState = (groupSubmissions: SubmissionWithDetails[]) => {
+    const groupIds = groupSubmissions.map(s => s.id);
+    const selectedCount = groupIds.filter(id => selectedSubmissions.has(id)).length;
+    
+    if (selectedCount === 0) return 'none';
+    if (selectedCount === groupIds.length) return 'all';
+    return 'some';
+  };
+
+  const getOrgCheckboxState = (orgSubmissions: SubmissionWithDetails[]) => {
+    const orgIds = orgSubmissions.map(s => s.id);
+    const selectedCount = orgIds.filter(id => selectedSubmissions.has(id)).length;
+    
+    if (selectedCount === 0) return 'none';
+    if (selectedCount === orgIds.length) return 'all';
+    return 'some';
   };
 
   const filteredSubmissions = submissions.filter(submission => {
@@ -704,11 +857,96 @@ export default function SubmissionsPage() {
         {/* Submissions List */}
         <div className="bg-white rounded-lg border border-slate-200">
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-            <h3 className="text-lg font-semibold text-slate-900">
-              הגשות ({filteredSubmissions.length})
-            </h3>
+            <div className="flex items-center gap-3">
+              {filteredSubmissions.length > 0 && (
+                <input
+                  type="checkbox"
+                  checked={filteredSubmissions.length > 0 && filteredSubmissions.every(s => selectedSubmissions.has(s.id))}
+                  ref={(el) => {
+                    if (el) {
+                      const allIds = filteredSubmissions.map(s => s.id);
+                      const selectedCount = allIds.filter(id => selectedSubmissions.has(id)).length;
+                      el.indeterminate = selectedCount > 0 && selectedCount < allIds.length;
+                    }
+                  }}
+                  onChange={toggleSelectAll}
+                  className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                  title="בחר הכל"
+                />
+              )}
+              <h3 className="text-lg font-semibold text-slate-900">
+                הגשות ({filteredSubmissions.length})
+                {selectedSubmissions.size > 0 && (
+                  <span className="text-blue-600 mr-2">
+                    ({selectedSubmissions.size} מסומנות)
+                  </span>
+                )}
+              </h3>
+            </div>
             
             <div className="flex items-center gap-2">
+              {selectedSubmissions.size > 0 && (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowBulkActions(!showBulkActions)}
+                    disabled={bulkUpdating}
+                    className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                  >
+                    {bulkUpdating ? (
+                      <>
+                        <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 818-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        מעדכן...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        עדכן סטטוס למסומנות
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </>
+                    )}
+                  </button>
+                  
+                  {showBulkActions && !bulkUpdating && (
+                    <div className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 z-10">
+                      <button
+                        onClick={() => bulkUpdateSubmissionStatus('reviewed')}
+                        className="w-full px-4 py-2 text-right text-sm text-slate-700 hover:bg-green-50 hover:text-green-700 transition-colors flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        נבדקה
+                      </button>
+                      <button
+                        onClick={() => bulkUpdateSubmissionStatus('approved')}
+                        className="w-full px-4 py-2 text-right text-sm text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        אושרה
+                      </button>
+                      <button
+                        onClick={() => bulkUpdateSubmissionStatus('needs_revision')}
+                        className="w-full px-4 py-2 text-right text-sm text-slate-700 hover:bg-yellow-50 hover:text-yellow-700 transition-colors flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        דורשת תיקון
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+              
               {Object.keys(groupedSubmissions).length > 0 && (
                 <>
                   <button
@@ -798,125 +1036,171 @@ export default function SubmissionsPage() {
             </div>
           ) : (
             <div className="p-6 space-y-4">
-              {Object.entries(groupedSubmissions).map(([orgName, groups]) => (
-                <div key={orgName}>
-                  {/* כותרת ארגון מינימלית עם אפשרות כיווץ */}
-                  <div 
-                    className="flex items-center gap-2 mb-2 px-1 cursor-pointer hover:bg-slate-50 rounded py-1"
-                    onClick={() => toggleOrganization(orgName)}
-                  >
-                    <svg 
-                      className={`w-4 h-4 text-slate-400 transition-transform ${expandedOrganizations.has(orgName) ? '' : 'rotate-90'}`} 
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
-                    </svg>
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <h4 className="text-sm font-medium text-slate-700">{orgName}</h4>
-                    <div className="flex-1 h-px bg-slate-200"></div>
-                    <span className="text-xs text-slate-500">
-                      {Object.values(groups).reduce((total, groupSubmissions) => total + groupSubmissions.length, 0)} הגשות
-                    </span>
-                    {(() => {
-                      const orgStats = getGroupStats(Object.values(groups).flat());
-                      return (
-                        <div className="flex items-center gap-2 text-xs">
-                          {orgStats.submitted > 0 && <span className="text-orange-600">{orgStats.submitted} ממתינות</span>}
-                          {orgStats.approved > 0 && <span className="text-green-600">{orgStats.approved} אושרו</span>}
-                          {orgStats.needs_revision > 0 && <span className="text-yellow-600">{orgStats.needs_revision} תיקון</span>}
-                        </div>
-                      );
-                    })()}
-                  </div>
-                  
-                  {/* קבוצות בארגון - מוצגות רק אם הארגון לא מכווץ */}
-                  {expandedOrganizations.has(orgName) && (
-                    <div className="mr-4 space-y-3 mb-4">
-                      {Object.entries(groups).map(([groupName, groupSubmissions]) => {
-                        const groupKey = `${orgName}-${groupName}`;
-                        return (
-                          <div key={groupName}>
-                            {/* כותרת קבוצה מינימלית */}
-                            <div 
-                              className="flex items-center gap-2 mb-1 px-1 cursor-pointer hover:bg-slate-50 rounded py-1"
-                              onClick={() => toggleGroup(groupKey)}
-                            >
-                              <svg 
-                                className={`w-3 h-3 text-slate-400 transition-transform ${expandedGroups.has(groupKey) ? '' : 'rotate-90'}`} 
-                                fill="none" 
-                                stroke="currentColor" 
-                                viewBox="0 0 24 24"
-                              >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
-                              </svg>
-                              <div className="w-1 h-1 bg-green-500 rounded-full"></div>
-                              <h5 className="text-xs font-medium text-slate-600">{groupName}</h5>
-                              <div className="flex-1 h-px bg-slate-100"></div>
-                              <span className="text-xs text-slate-400">{groupSubmissions.length}</span>
-                              {(() => {
-                                const groupStats = getGroupStats(groupSubmissions);
-                                return (
-                                  <div className="flex items-center gap-1 text-xs">
-                                    {groupStats.submitted > 0 && <span className="text-orange-600">{groupStats.submitted}</span>}
-                                    {groupStats.approved > 0 && <span className="text-green-600">{groupStats.approved}</span>}
-                                    {groupStats.needs_revision > 0 && <span className="text-yellow-600">{groupStats.needs_revision}</span>}
-                                  </div>
-                                );
-                              })()}
+              {Object.entries(groupedSubmissions).map(([orgName, groups]) => {
+                const orgSubmissions = Object.values(groups).flat();
+                const orgCheckboxState = getOrgCheckboxState(orgSubmissions);
+                
+                return (
+                  <div key={orgName}>
+                    {/* כותרת ארגון מינימלית עם אפשרות כיווץ */}
+                    <div className="flex items-center gap-2 mb-2 px-1 py-1">
+                      <input
+                        type="checkbox"
+                        checked={orgCheckboxState === 'all'}
+                        ref={(el) => {
+                          if (el) {
+                            el.indeterminate = orgCheckboxState === 'some';
+                          }
+                        }}
+                        onChange={() => toggleOrganizationSelection(orgSubmissions)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                        title="בחר כל ההגשות בארגון"
+                      />
+                      <div 
+                        className="flex items-center gap-2 flex-1 cursor-pointer hover:bg-slate-50 rounded py-1 px-2"
+                        onClick={() => toggleOrganization(orgName)}
+                      >
+                        <svg 
+                          className={`w-4 h-4 text-slate-400 transition-transform ${expandedOrganizations.has(orgName) ? '' : 'rotate-90'}`} 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
+                        </svg>
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <h4 className="text-sm font-medium text-slate-700">{orgName}</h4>
+                        <div className="flex-1 h-px bg-slate-200"></div>
+                        <span className="text-xs text-slate-500">
+                          {Object.values(groups).reduce((total, groupSubmissions) => total + groupSubmissions.length, 0)} הגשות
+                        </span>
+                        {(() => {
+                          const orgStats = getGroupStats(Object.values(groups).flat());
+                          return (
+                            <div className="flex items-center gap-2 text-xs">
+                              {orgStats.submitted > 0 && <span className="text-orange-600">{orgStats.submitted} ממתינות</span>}
+                              {orgStats.approved > 0 && <span className="text-green-600">{orgStats.approved} אושרו</span>}
+                              {orgStats.needs_revision > 0 && <span className="text-yellow-600">{orgStats.needs_revision} תיקון</span>}
                             </div>
-                            
-                            {/* רשימת ההגשות בקבוצה */}
-                            {expandedGroups.has(groupKey) && (
-                              <div className="space-y-2">
-                                {groupSubmissions.map((submission) => (
-                                  <div
-                                    key={submission.id}
-                                    className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border-r-2 border-green-200 hover:bg-slate-100 cursor-pointer transition-colors"
-                                    onClick={() => setSelectedSubmission(submission)}
+                          );
+                        })()}
+                      </div>
+                    </div>
+                    
+                    {/* קבוצות בארגון - מוצגות רק אם הארגון לא מכווץ */}
+                    {expandedOrganizations.has(orgName) && (
+                      <div className="mr-4 space-y-3 mb-4">
+                        {Object.entries(groups).map(([groupName, groupSubmissions]) => {
+                          const groupKey = `${orgName}-${groupName}`;
+                          const groupCheckboxState = getGroupCheckboxState(groupSubmissions);
+                          
+                          return (
+                            <div key={groupName}>
+                              {/* כותרת קבוצה מינימלית */}
+                              <div className="flex items-center gap-2 mb-1 px-1 py-1">
+                                <input
+                                  type="checkbox"
+                                  checked={groupCheckboxState === 'all'}
+                                  ref={(el) => {
+                                    if (el) {
+                                      el.indeterminate = groupCheckboxState === 'some';
+                                    }
+                                  }}
+                                  onChange={() => toggleGroupSelection(groupSubmissions)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                                  title="בחר כל ההגשות בקבוצה"
+                                />
+                                <div 
+                                  className="flex items-center gap-2 flex-1 cursor-pointer hover:bg-slate-50 rounded py-1 px-2"
+                                  onClick={() => toggleGroup(groupKey)}
+                                >
+                                  <svg 
+                                    className={`w-3 h-3 text-slate-400 transition-transform ${expandedGroups.has(groupKey) ? '' : 'rotate-90'}`} 
+                                    fill="none" 
+                                    stroke="currentColor" 
+                                    viewBox="0 0 24 24"
                                   >
-                                    <div className="flex items-center gap-3">
-                                      <div className="w-7 h-7 bg-slate-200 rounded-full flex items-center justify-center">
-                                        <svg className="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                        </svg>
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
+                                  </svg>
+                                  <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+                                  <h5 className="text-xs font-medium text-slate-600">{groupName}</h5>
+                                  <div className="flex-1 h-px bg-slate-100"></div>
+                                  <span className="text-xs text-slate-400">{groupSubmissions.length}</span>
+                                  {(() => {
+                                    const groupStats = getGroupStats(groupSubmissions);
+                                    return (
+                                      <div className="flex items-center gap-1 text-xs">
+                                        {groupStats.submitted > 0 && <span className="text-orange-600">{groupStats.submitted}</span>}
+                                        {groupStats.approved > 0 && <span className="text-green-600">{groupStats.approved}</span>}
+                                        {groupStats.needs_revision > 0 && <span className="text-yellow-600">{groupStats.needs_revision}</span>}
                                       </div>
-                                      <div>
-                                        <p className="font-medium text-slate-900 text-sm">{submission.assignment.title}</p>
-                                        <div className="flex items-center gap-2 text-xs text-slate-500">
-                                          <span>{submission.user_profile?.user_name || 'משתמש לא ידוע'}</span>
-                                          <span>•</span>
-                                          <span>{new Date(submission.submission_date).toLocaleDateString('he-IL')}</span>
-                                          {/* <span>•</span> */}
-                                          {/* <span>{submission.files_count} קבצים</span> */}
-                                          {(submission.comments_count || 0) > 0 && (
-                                            <>
+                                    );
+                                  })()}
+                                </div>
+                              </div>
+                              
+                              {/* רשימת ההגשות בקבוצה */}
+                              {expandedGroups.has(groupKey) && (
+                                <div className="space-y-2">
+                                  {groupSubmissions.map((submission) => (
+                                    <div
+                                      key={submission.id}
+                                      className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border-r-2 border-green-200 hover:bg-slate-100 transition-colors"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={selectedSubmissions.has(submission.id)}
+                                        onChange={() => toggleSubmissionSelection(submission.id)}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                                      />
+                                      <div 
+                                        className="flex items-center justify-between flex-1 cursor-pointer"
+                                        onClick={() => setSelectedSubmission(submission)}
+                                      >
+                                        <div className="flex items-center gap-3">
+                                          <div className="w-7 h-7 bg-slate-200 rounded-full flex items-center justify-center">
+                                            <svg className="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                          </div>
+                                          <div>
+                                            <p className="font-medium text-slate-900 text-sm">{submission.assignment.title}</p>
+                                            <div className="flex items-center gap-2 text-xs text-slate-500">
+                                              <span>{submission.user_profile?.user_name || 'משתמש לא ידוע'}</span>
                                               <span>•</span>
-                                              <span>{submission.comments_count} הערות</span>
-                                            </>
-                                          )}
+                                              <span>{new Date(submission.submission_date).toLocaleDateString('he-IL')}</span>
+                                              {(submission.comments_count || 0) > 0 && (
+                                                <>
+                                                  <span>•</span>
+                                                  <span>{submission.comments_count} הערות</span>
+                                                </>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                          {getStatusBadge(submission.status)}
+                                          <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
+                                          </svg>
                                         </div>
                                       </div>
                                     </div>
-
-                                    <div className="flex items-center gap-2">
-                                      {getStatusBadge(submission.status)}
-                                      <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
-                                      </svg>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              ))}
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
