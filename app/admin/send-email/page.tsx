@@ -444,8 +444,7 @@ export default function SendEmailPage() {
                     {/* Header */}
                     <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-7 text-center text-white">
                       <div className="flex items-center justify-center gap-3">
-                        <h1 className="text-xl font-bold">פורטל הקורסים</h1>
-                        <span className="text-xl">🎓</span>
+                        <h1 className="text-xl font-bold">קורס AWS - פלטפורמת למידה</h1>
                       </div>
                     </div>
                     
@@ -465,9 +464,6 @@ export default function SendEmailPage() {
                     
                     {/* Footer */}
                     <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-6 text-center border-t">
-                      <div className="text-indigo-600 font-semibold mb-2">
-                        פורטל הקורסים 🌟
-                      </div>
                       <div className="text-xs text-gray-500">
                         מייל זה נשלח אוטומטית ממערכת פורטל הקורסים<br />
                         אין להשיב למייל זה

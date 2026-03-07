@@ -356,8 +356,7 @@ class EmailService {
     <div class="email-container">
         <div class="header">
             <div class="header-content">
-                <h1>פורטל הקורסים</h1>
-                <span class="header-icon">🎓</span>
+                <h1>קורס AWS - פלטפורמת למידה</h1>
             </div>
         </div>
         
@@ -367,14 +366,13 @@ class EmailService {
             </div>
             
             <div class="success-card">
-                <span class="success-icon">✨</span>
                 <div class="success-title">החשבון שלך מוכן ומחכה לך!</div>
                 <div class="success-subtitle">כל מה שנותר זה להתחבר ולהתחיל ללמוד</div>
             </div>
             
             <div class="cta-section">
                 <a href="${data.siteUrl}/login" class="cta-button">
-                    בואו נתחיל ללמוד ←
+                    מתחילים ללמוד מכאן ←
                 </a>
             </div>
             
@@ -386,17 +384,10 @@ class EmailService {
                     <span class="info-label">כתובת המייל</span>
                     <span class="info-value">${data.email}</span>
                 </div>
-                <div class="info-row">
-                    <span class="info-label">שם המשתמש</span>
-                    <span class="info-value">${data.userName}</span>
-                </div>
             </div>
         </div>
         
         <div class="footer">
-            <div class="footer-message">
-                מצפים לראות אותך בפורטל! 🌟
-            </div>
             <div class="footer-note">
                 מייל זה נשלח אוטומטית ממערכת פורטל הקורסים<br>
                 אין להשיב למייל זה
@@ -414,18 +405,17 @@ class EmailService {
       const config = this.getEmailConfig();
 
       const mailOptions = {
-        from: `"פורטל הקורסים" <${config.user}>`,
+        from: `"קורס AWS - פלטפורמת למידה" <${config.user}>`,
         to: data.email,
-        subject: '✨ החשבון שלך מוכן - פורטל הקורסים',
+        subject: '✨ החשבון שלך מוכן - קורס AWS - פלטפורמת למידה',
         html: this.generateWelcomeEmailHTML(data),
         text: `
 שלום ${data.userName} 👋
 
-החשבון שלך בפורטל הקורסים מוכן! ✨
+החשבון שלך בקורס AWS - פלטפורמת למידה, מוכן! ✨
 
 פרטי התחברות:
 • כתובת מייל: ${data.email}
-• שם משתמש: ${data.userName}
 
 להתחברות: ${data.siteUrl}/login
 
@@ -579,7 +569,7 @@ class EmailService {
     <div class="email-container">
         <div class="header">
             <div class="header-content">
-                <h1>פורטל הקורסים</h1>
+                <h1>קורס AWS - פלטפורמת למידה</h1>
                 <span class="header-icon">🎓</span>
             </div>
         </div>
@@ -589,9 +579,6 @@ class EmailService {
         </div>
         
         <div class="footer">
-            <div class="footer-message">
-                פורטל הקורסים 🌟
-            </div>
             <div class="footer-note">
                 מייל זה נשלח אוטומטית ממערכת פורטל הקורסים<br>
                 אין להשיב למייל זה
@@ -614,7 +601,7 @@ class EmailService {
       const config = this.getEmailConfig();
 
       const mailOptions = {
-        from: `"פורטל הקורסים" <${config.user}>`,
+        from: `"קורס AWS - פלטפורמת למידה" <${config.user}>`,
         bcc: data.recipients, // Send as BCC
         subject: data.subject,
         html: this.generateBulkEmailHTML(data.message, data.siteUrl),
