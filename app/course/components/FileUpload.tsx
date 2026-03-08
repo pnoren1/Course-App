@@ -234,10 +234,10 @@ export default function FileUpload({
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
-        onClick={() => !disabled && document.getElementById('file-input')?.click()}
+        onClick={() => !disabled && document.getElementById(`file-input-${assignment.id}`)?.click()}
       >
         <input
-          id="file-input"
+          id={`file-input-${assignment.id}`}
           type="file"
           multiple
           className="hidden"
