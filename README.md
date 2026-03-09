@@ -124,9 +124,21 @@ SUPABASE_SECRET_KEY=your_service_role_key  # Optional - required only for direct
 - The system will automatically disable direct user creation if the key is missing
 - The Service Role Key should never be exposed to the client-side code
 
-## Authentication Guide
+## Documentation
 
-For detailed information about the new username/password authentication system, see [USERNAME_PASSWORD_AUTH_GUIDE.md](./USERNAME_PASSWORD_AUTH_GUIDE.md).
+### Setup Guides
+- [Email Setup](./docs/setup/email-setup.md) - Configure email system for user notifications
+- [Storage Setup](./docs/setup/storage-setup.md) - Configure file storage for assignments
+- [Assignment Management](./docs/setup/assignment-setup.md) - Set up assignment and submission system
+
+### User Guides
+- [Authentication Guide](./docs/guides/authentication.md) - Username/password authentication system
+- [User Roles & Organizations](./docs/guides/user-roles.md) - Role management and organization structure
+- [Bulk User Import](./docs/guides/bulk-import.md) - Import multiple users via CSV
+- [Email Broadcasting](./docs/guides/email-broadcast.md) - Send emails to users and groups
+
+### Security
+- [Security Improvements](./docs/security/security-improvements.md) - Security features and best practices
 
 ## Security Notes
 
