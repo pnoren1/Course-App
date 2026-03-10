@@ -65,3 +65,10 @@ export function getSiteUrl(): string {
   return process.env.NEXT_PUBLIC_SITE_URL || 
     (typeof window !== 'undefined' ? window.location.origin : 'https://course-app-khaki.vercel.app');
 }
+
+/**
+ * Get feedback email address
+ */
+export function getFeedbackEmail(): string {
+  return process.env.FEEDBACK_EMAIL || 'pnoren1@gmail.com';
+}

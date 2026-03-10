@@ -6,6 +6,7 @@ import { Assignment, AssignmentSubmission } from "../../../lib/types/assignment"
 import { assignmentService } from "../../../lib/services/assignmentService";
 import { VideoView } from "../../../lib/types/videoView";
 import LessonItem from "./LessonItem";
+import FeedbackButton from "@/app/components/FeedbackButton";
 import dynamic from "next/dynamic";
 
 // Use dynamic import to avoid potential issues
@@ -216,6 +217,21 @@ export default function UnitSection({
               );
             })}
           </ol>
+
+          {/* Feedback Section */}
+          {/* <div className="border-t border-slate-200 bg-gradient-to-l from-amber-25 to-orange-25 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-semibold text-slate-900 mb-1">
+                  💭 מה דעתך על היחידה?
+                </h3>
+                <p className="text-sm text-slate-600">
+                  המשוב שלך עוזר לנו לשפר את הקורס
+                </p>
+              </div>
+              <FeedbackButton variant="unit" />
+            </div>
+          </div> */}
 
           {/* Assignments Section */}
           {((unit.assignments && unit.assignments.length > 0) || loadingAssignments) && (

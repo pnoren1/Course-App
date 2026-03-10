@@ -215,6 +215,16 @@ CREATE TABLE IF NOT EXISTS public.video_views (
   created_at timestamptz DEFAULT now() NOT NULL
 );
 
+-- Table: feedback
+CREATE TABLE IF NOT EXISTS public.feedback (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  user_id uuid NOT NULL,
+  rating integer NOT NULL,
+  message text NOT NULL,
+  created_at timestamptz DEFAULT now() NOT NULL,
+  CONSTRAINT feedback_rating_check CHECK ((rating >= 1) AND (rating <= 5))
+);
+
 
 -- ============================================
 -- PRIMARY KEY CONSTRAINTS
@@ -268,6 +278,9 @@ ALTER TABLE public.user_invitations
 ALTER TABLE public.video_views
   ADD CONSTRAINT video_views_pkey PRIMARY KEY (id);
 
+ALTER TABLE public.feedback
+  ADD CONSTRAINT feedback_pkey PRIMARY KEY (id);
+
 
 -- ============================================
 -- FOREIGN KEY CONSTRAINTS
@@ -317,6 +330,11 @@ ALTER TABLE public.user_profile
   ADD CONSTRAINT user_profile_organization_id_fkey
   FOREIGN KEY (organization_id)
   REFERENCES public.organizations(id);
+
+ALTER TABLE public.feedback
+  ADD CONSTRAINT feedback_user_id_fkey
+  FOREIGN KEY (user_id)
+  REFERENCES auth.users(id) ON DELETE CASCADE;
 
 
 -- ============================================
@@ -427,6 +445,10 @@ CREATE INDEX idx_video_views_user_id ON public.video_views USING btree (user_id)
 CREATE INDEX idx_video_views_lesson_id ON public.video_views USING btree (lesson_id);
 
 CREATE INDEX idx_video_views_created_at ON public.video_views USING btree (created_at);
+
+CREATE INDEX idx_feedback_user_id ON public.feedback USING btree (user_id);
+
+CREATE INDEX idx_feedback_created_at ON public.feedback USING btree (created_at DESC);
 
 
 -- ============================================
@@ -1062,6 +1084,8 @@ ALTER TABLE public.user_profile ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE public.video_views ENABLE ROW LEVEL SECURITY;
 
+ALTER TABLE public.feedback ENABLE ROW LEVEL SECURITY;
+
 
 -- ============================================
 -- RLS POLICIES
@@ -1635,3 +1659,26 @@ CREATE POLICY ""Org admins can view organization video views""
 
 
 
+
+CREATE POLICY ""Users can create their own feedback""
+  ON public.feedback
+  AS PERMISSIVE
+  FOR INSERT
+  TO authenticated
+  WITH CHECK ((auth.uid() = user_id));
+
+CREATE POLICY ""Users can read their own feedback""
+  ON public.feedback
+  AS PERMISSIVE
+  FOR SELECT
+  TO authenticated
+  USING ((auth.uid() = user_id));
+
+CREATE POLICY ""Admins can read all feedback""
+  ON public.feedback
+  AS PERMISSIVE
+  FOR SELECT
+  TO authenticated
+  USING ((EXISTS ( SELECT 1
+   FROM user_profile
+  WHERE ((user_profile.user_id = auth.uid()) AND ((user_profile.role)::text = 'admin'::text)))));

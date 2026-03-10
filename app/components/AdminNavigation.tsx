@@ -93,19 +93,6 @@ interface NavigationItem {
     )
   },
   {
-    id: 'units',
-    name: 'ניהול יחידות',
-    href: '/admin/units',
-    description: 'ניהול יחידות הקורס',
-    orgAdminDescription: 'רק מנהלי מערכת יכולים לנהל יחידות',
-    adminOnly: true,
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-      </svg>
-    )
-  },
-  {
     id: 'send-email',
     name: 'שליחת מיילים',
     href: '/admin/send-email',
@@ -115,6 +102,17 @@ interface NavigationItem {
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      </svg>
+    )
+  },
+  {
+    id: 'feedback',
+    name: 'משובים',
+    href: '/admin/feedback',
+    description: 'צפייה במשובים מהתלמידות',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
       </svg>
     )
   },
