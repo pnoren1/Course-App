@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { rlsSupabase } from '@/lib/supabase';
 import { Assignment, AssignmentSubmission } from '@/lib/types/assignment';
+import { SubmissionStatus, getSubmissionStatusLabel, getSubmissionStatusStyle, SubmissionStatusType } from '@/lib/types/submission-status';
 import { SubmissionFile } from '@/lib/types/database.types';
 import { UserWithGroup } from '@/lib/services/userService';
 import { fileService } from '@/lib/services/fileService';
@@ -19,7 +20,7 @@ interface SubmissionWithDetails extends AssignmentSubmission {
 interface SubmissionManagerProps {
   submission: SubmissionWithDetails;
   onClose: () => void;
-  onStatusUpdate: (submissionId: number, newStatus: string) => Promise<void>;
+  onStatusUpdate: (submissionId: number, newStatus: SubmissionStatusType) => Promise<void>;
 }
 
 export default function SubmissionManager({ 
@@ -31,7 +32,7 @@ export default function SubmissionManager({
   const [loading, setLoading] = useState(true);
   const [selectedFile, setSelectedFile] = useState<SubmissionFile | null>(null);
   const [updating, setUpdating] = useState(false);
-  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState<SubmissionStatusType | null>(null);
   const [downloadingAll, setDownloadingAll] = useState(false);
   const [loadedSubmissionId, setLoadedSubmissionId] = useState<number | null>(null);
 
@@ -73,7 +74,7 @@ export default function SubmissionManager({
     }
   };
 
-  const handleStatusUpdate = async (newStatus: string) => {
+  const handleStatusUpdate = async (newStatus: SubmissionStatusType) => {
     try {
       setUpdating(true);
       setUpdatingStatus(newStatus);
@@ -88,10 +89,9 @@ export default function SubmissionManager({
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      'submitted': { label: 'הוגשה', color: 'bg-blue-100 text-blue-800' },
-      'reviewed': { label: 'נבדקה', color: 'bg-green-100 text-green-800' },
-      'needs_revision': { label: 'דורשת תיקון', color: 'bg-yellow-100 text-yellow-800' },
-      'approved': { label: 'אושרה', color: 'bg-emerald-100 text-emerald-800' }
+      [SubmissionStatus.SUBMITTED]: { label: getSubmissionStatusLabel(SubmissionStatus.SUBMITTED), color: getSubmissionStatusStyle(SubmissionStatus.SUBMITTED) },
+      [SubmissionStatus.APPROVED]: { label: getSubmissionStatusLabel(SubmissionStatus.APPROVED), color: getSubmissionStatusStyle(SubmissionStatus.APPROVED) },
+      [SubmissionStatus.NEEDS_REVISION]: { label: getSubmissionStatusLabel(SubmissionStatus.NEEDS_REVISION), color: getSubmissionStatusStyle(SubmissionStatus.NEEDS_REVISION) }
     };
     
     const config = statusConfig[status as keyof typeof statusConfig] || 
@@ -372,12 +372,12 @@ export default function SubmissionManager({
                   
                   <div className="flex gap-1">
                     <button
-                      onClick={() => handleStatusUpdate('reviewed')}
-                      disabled={updating || submission.status === 'reviewed'}
-                      className="flex-1 p-1.5 bg-green-50 hover:bg-green-100 text-green-700 rounded border border-green-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex flex-col items-center"
-                      title="סמן כנבדקה"
+                      onClick={() => handleStatusUpdate(SubmissionStatus.APPROVED)}
+                      disabled={updating || submission.status === SubmissionStatus.APPROVED}
+                      className="flex-1 p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded border border-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex flex-col items-center"
+                      title="אשר הגשה"
                     >
-                      {updating && updatingStatus === 'reviewed' ? (
+                      {updating && updatingStatus === SubmissionStatus.APPROVED ? (
                         <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 818-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -387,45 +387,26 @@ export default function SubmissionManager({
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       )}
-                      <span className="text-xs mt-0.5">נבדקה</span>
+                      <span className="text-xs mt-0.5">{getSubmissionStatusLabel(SubmissionStatus.APPROVED)}</span>
                     </button>
                     
                     <button
-                      onClick={() => handleStatusUpdate('approved')}
-                      disabled={updating || submission.status === 'approved'}
-                      className="flex-1 p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded border border-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex flex-col items-center"
-                      title="אשר הגשה"
-                    >
-                      {updating && updatingStatus === 'approved' ? (
-                        <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 818-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                      ) : (
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                      <span className="text-xs mt-0.5">אושרה</span>
-                    </button>
-                    
-                    <button
-                      onClick={() => handleStatusUpdate('needs_revision')}
-                      disabled={updating || submission.status === 'needs_revision'}
+                      onClick={() => handleStatusUpdate(SubmissionStatus.NEEDS_REVISION)}
+                      disabled={updating || submission.status === SubmissionStatus.NEEDS_REVISION}
                       className="flex-1 p-1.5 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 rounded border border-yellow-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex flex-col items-center"
-                      title="דורש תיקון"
+                      title="דרוש תיקון"
                     >
-                      {updating && updatingStatus === 'needs_revision' ? (
+                      {updating && updatingStatus === SubmissionStatus.NEEDS_REVISION ? (
                         <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 818-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                       ) : (
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
                         </svg>
                       )}
-                      <span className="text-xs mt-0.5">תיקון</span>
+                      <span className="text-xs mt-0.5">{getSubmissionStatusLabel(SubmissionStatus.NEEDS_REVISION)}</span>
                     </button>
                   </div>
                 </div>

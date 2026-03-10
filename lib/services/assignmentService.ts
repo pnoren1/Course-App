@@ -57,7 +57,7 @@ export class AssignmentService {
         throw error;
       }
 
-      return (data as Database['public']['Tables']['assignment_submissions']['Row'][]) || [];
+      return (data as AssignmentSubmission[]) || [];
     } catch (error) {
       console.error('Error in getSubmissionsByUser:', error);
       throw error;
@@ -149,7 +149,7 @@ export class AssignmentService {
         throw error;
       }
 
-      return (data as Database['public']['Tables']['assignment_submissions']['Row']) || null;
+      return (data as AssignmentSubmission) || null;
     } catch (error) {
       console.error('Error in getUserSubmissionForAssignment:', error);
       throw error;
@@ -169,7 +169,7 @@ export class AssignmentService {
         throw error;
       }
 
-      return data as Database['public']['Tables']['assignment_submissions']['Row'];
+      return data as AssignmentSubmission;
     } catch (error) {
       console.error('Error in createSubmission:', error);
       throw error;
@@ -190,7 +190,7 @@ export class AssignmentService {
         throw error;
       }
 
-      return data as Database['public']['Tables']['assignment_submissions']['Row'];
+      return data as AssignmentSubmission;
     } catch (error) {
       console.error('Error in updateSubmission:', error);
       throw error;
@@ -211,7 +211,7 @@ export class AssignmentService {
         throw new Error(`Failed to update submission status: ${error.message || error.code || 'Unknown error'}`);
       }
 
-      return data as Database['public']['Tables']['assignment_submissions']['Row'];
+      return data as AssignmentSubmission;
     } catch (error: any) {
       console.error('Error in updateSubmissionStatus:', error);
       throw error;

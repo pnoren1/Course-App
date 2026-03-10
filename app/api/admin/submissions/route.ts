@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/supabase-server';
+import { VALID_SUBMISSION_STATUSES } from '@/lib/types/submission-status';
 
 export async function GET(request: NextRequest) {
   try {
@@ -130,8 +131,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Validate status
-    const validStatuses = ['submitted', 'reviewed', 'needs_revision', 'approved'];
-    if (!validStatuses.includes(status)) {
+    if (!VALID_SUBMISSION_STATUSES.includes(status)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
 

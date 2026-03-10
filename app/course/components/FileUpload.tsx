@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { Assignment } from '../../../lib/types/assignment';
+import { SubmissionStatus } from '../../../lib/types/submission-status';
 import { fileService } from '../../../lib/services/fileService';
 import { assignmentService } from '../../../lib/services/assignmentService';
 
@@ -77,7 +78,7 @@ export default function FileUpload({
             assignment_id: assignment.id,
             user_id: userId,
             submission_date: new Date().toISOString(),
-            status: 'submitted'
+            status: SubmissionStatus.SUBMITTED
           });
           currentSubmissionId = newSubmission.id;
         } catch (error) {

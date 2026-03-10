@@ -1,3 +1,5 @@
+import { SubmissionStatusType } from './submission-status';
+
 export interface Assignment {
   id: number;
   title: string;
@@ -26,7 +28,7 @@ export interface AssignmentSubmission {
   assignment_id: number;
   user_id: string;
   submission_date: string;
-  status: string;
+  status: SubmissionStatusType;
   created_at: string;
 }
 

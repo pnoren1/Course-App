@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
+import { SubmissionStatus } from '@/lib/types/submission-status';
 import { getAuthenticatedUser } from '@/lib/supabase-server';
 
 export async function POST(request: NextRequest) {
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
     // Try to update with admin client
     const { data: updateResult, error: updateError } = await supabaseAdmin
       .from('assignment_submissions')
-      .update({ status: 'reviewed' })
+      .update({ status: SubmissionStatus.APPROVED })
       .eq('id', submissionId)
       .select()
       .single();

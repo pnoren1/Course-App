@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Assignment, AssignmentSubmission } from '@/lib/types/assignment';
+import { getSubmissionStatusLabel } from '@/lib/types/submission-status';
 import { UserProfile } from '@/lib/types/database.types';
 
 interface SubmissionWithDetails extends AssignmentSubmission {
@@ -32,13 +33,6 @@ export default function SubmissionExport({ submissions }: SubmissionExportProps)
         'מספר קבצים'
       ];
 
-      const statusLabels = {
-        'submitted': 'הוגשה',
-        'reviewed': 'נבדקה',
-        'needs_revision': 'דורשת תיקון',
-        'approved': 'אושרה'
-      };
-
       const csvData = submissions.map(submission => [
         submission.id.toString(),
         submission.assignment.title,
@@ -51,7 +45,7 @@ export default function SubmissionExport({ submissions }: SubmissionExportProps)
           hour: '2-digit',
           minute: '2-digit'
         }),
-        statusLabels[submission.status as keyof typeof statusLabels] || submission.status,
+        getSubmissionStatusLabel(submission.status),
         submission.files_count.toString()
       ]);
 

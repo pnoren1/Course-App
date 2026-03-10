@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useUserRole } from '../../../lib/hooks/useUserRole';
 import { submissionStatsService, UserSubmissionStats, DetailedSubmissionStatus } from '../../../lib/services/submissionStatsService';
+import { SubmissionStatus, getSubmissionStatusLabel } from '../../../lib/types/submission-status';
 import { UserProgress } from '../../../lib/types/videoView';
 import AdminLayout from '../../components/AdminLayout';
 import { useRouter } from 'next/navigation';
@@ -346,34 +347,26 @@ export default function StudentProgressPage() {
     }
 
     switch (status) {
-      case 'submitted':
+      case SubmissionStatus.SUBMITTED:
         return {
           icon: '📝',
-          text: 'הוגש',
+          text: getSubmissionStatusLabel(SubmissionStatus.SUBMITTED),
           bgColor: 'bg-blue-50',
           borderColor: 'border-blue-200',
           textColor: 'text-blue-600'
         };
-      case 'reviewed':
-        return {
-          icon: '🔍',
-          text: 'נבדק',
-          bgColor: 'bg-purple-50',
-          borderColor: 'border-purple-200',
-          textColor: 'text-purple-600'
-        };
-      case 'approved':
+      case SubmissionStatus.APPROVED:
         return {
           icon: '✅',
-          text: 'אושר',
+          text: getSubmissionStatusLabel(SubmissionStatus.APPROVED),
           bgColor: 'bg-green-50',
           borderColor: 'border-green-200',
           textColor: 'text-green-600'
         };
-      case 'needs_revision':
+      case SubmissionStatus.NEEDS_REVISION:
         return {
           icon: '🔄',
-          text: 'דרוש תיקון',
+          text: getSubmissionStatusLabel(SubmissionStatus.NEEDS_REVISION),
           bgColor: 'bg-yellow-50',
           borderColor: 'border-yellow-200',
           textColor: 'text-yellow-600'

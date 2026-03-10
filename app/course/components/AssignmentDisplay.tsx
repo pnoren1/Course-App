@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Assignment, AssignmentSubmission, AssignmentDisplayProps } from '../../../lib/types/assignment';
+import { SubmissionStatus, getSubmissionStatusLabel, getSubmissionStatusStyle } from '../../../lib/types/submission-status';
 import { assignmentService } from '../../../lib/services/assignmentService';
 import FileUpload from './FileUpload';
 import SubmissionHistory from './SubmissionHistory';
@@ -108,47 +109,29 @@ export default function AssignmentDisplay({
           {/* Assignment Status Badge */}
           <div className="flex flex-col items-end gap-2">
             {submission ? (
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-medium border ${
-                submission.status === 'submitted' 
-                  ? 'bg-blue-100 text-blue-700 border-blue-200'
-                  : submission.status === 'reviewed'
-                  ? 'bg-green-100 text-green-700 border-green-200'
-                  : submission.status === 'needs_revision'
-                  ? 'bg-yellow-100 text-yellow-700 border-yellow-200'
-                  : submission.status === 'approved'
-                  ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
-                  : 'bg-gray-100 text-gray-700 border-gray-200'
-              }`}>
-                {submission.status === 'submitted' && (
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-medium border ${getSubmissionStatusStyle(submission.status)}`}>
+                {submission.status === SubmissionStatus.SUBMITTED && (
                   <>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    הוגש
+                    {getSubmissionStatusLabel(submission.status)}
                   </>
                 )}
-                {submission.status === 'reviewed' && (
-                  <>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    נבדק
-                  </>
-                )}
-                {submission.status === 'needs_revision' && (
+                {submission.status === SubmissionStatus.NEEDS_REVISION && (
                   <>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                     </svg>
-                    דורש תיקון
+                    {getSubmissionStatusLabel(submission.status)}
                   </>
                 )}
-                {submission.status === 'approved' && (
+                {submission.status === SubmissionStatus.APPROVED && (
                   <>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    אושר
+                    {getSubmissionStatusLabel(submission.status)}
                   </>
                 )}
               </span>
@@ -181,21 +164,7 @@ export default function AssignmentDisplay({
             </div>
           )}
           
-          {submission.status === 'reviewed' && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-              <div className="flex items-start gap-2">
-                <svg className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <div>
-                  <h4 className="text-sm font-medium text-green-800 mb-1">נבדק</h4>
-                  <p className="text-sm text-green-700">המטלה נבדקה על ידי המדריך. בדוק את ההערות למידע נוסף.</p>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {submission.status === 'approved' && (
+          {submission.status === SubmissionStatus.APPROVED && (
             <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
               <div className="flex items-start gap-2">
                 <svg className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

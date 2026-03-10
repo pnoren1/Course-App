@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import AdminLayout from '@/app/components/AdminLayout';
 import { rlsSupabase } from '@/lib/supabase';
 import { Assignment, AssignmentSubmission } from '@/lib/types/assignment';
+import { SubmissionStatus, getSubmissionStatusLabel, getSubmissionStatusStyle, SubmissionStatusType } from '@/lib/types/submission-status';
 import { UserWithGroup } from '@/lib/services/userService';
 import SubmissionManager from '@/app/components/SubmissionManager';
 import SubmissionExport from '@/app/components/SubmissionExport';
@@ -255,7 +256,7 @@ export default function SubmissionsPage() {
     }
   };
 
-  const updateSubmissionStatus = async (submissionId: number, newStatus: string) => {
+  const updateSubmissionStatus = async (submissionId: number, newStatus: SubmissionStatusType) => {
     try {
       const response = await authenticatedFetch('/api/admin/submissions', {
         method: 'PATCH',
@@ -289,10 +290,9 @@ export default function SubmissionsPage() {
 
       // Show success toast
       const statusLabels = {
-        'submitted': 'הוגשה',
-        'reviewed': 'נבדקה',
-        'needs_revision': 'דורשת תיקון',
-        'approved': 'אושרה'
+        [SubmissionStatus.SUBMITTED]: getSubmissionStatusLabel(SubmissionStatus.SUBMITTED),
+        [SubmissionStatus.APPROVED]: getSubmissionStatusLabel(SubmissionStatus.APPROVED),
+        [SubmissionStatus.NEEDS_REVISION]: getSubmissionStatusLabel(SubmissionStatus.NEEDS_REVISION)
       };
       setToast({
         message: `סטטוס ההגשה עודכן ל: ${statusLabels[newStatus as keyof typeof statusLabels]}`,
@@ -308,7 +308,7 @@ export default function SubmissionsPage() {
     }
   };
 
-  const bulkUpdateSubmissionStatus = async (newStatus: string) => {
+  const bulkUpdateSubmissionStatus = async (newStatus: SubmissionStatusType) => {
     if (selectedSubmissions.size === 0) return;
 
     try {
@@ -345,10 +345,9 @@ export default function SubmissionsPage() {
 
       // Show success toast
       const statusLabels = {
-        'submitted': 'הוגשה',
-        'reviewed': 'נבדקה',
-        'needs_revision': 'דורשת תיקון',
-        'approved': 'אושרה'
+        [SubmissionStatus.SUBMITTED]: getSubmissionStatusLabel(SubmissionStatus.SUBMITTED),
+        [SubmissionStatus.APPROVED]: getSubmissionStatusLabel(SubmissionStatus.APPROVED),
+        [SubmissionStatus.NEEDS_REVISION]: getSubmissionStatusLabel(SubmissionStatus.NEEDS_REVISION)
       };
       setToast({
         message: `${updatedCount} הגשות עודכנו ל: ${statusLabels[newStatus as keyof typeof statusLabels]}`,
@@ -538,20 +537,18 @@ export default function SubmissionsPage() {
   const getGroupStats = (submissions: SubmissionWithDetails[]) => {
     const stats = {
       total: submissions.length,
-      submitted: submissions.filter(s => s.status === 'submitted').length,
-      reviewed: submissions.filter(s => s.status === 'reviewed').length,
-      needs_revision: submissions.filter(s => s.status === 'needs_revision').length,
-      approved: submissions.filter(s => s.status === 'approved').length,
+      submitted: submissions.filter(s => s.status === SubmissionStatus.SUBMITTED).length,
+      needs_revision: submissions.filter(s => s.status === SubmissionStatus.NEEDS_REVISION).length,
+      approved: submissions.filter(s => s.status === SubmissionStatus.APPROVED).length,
     };
     return stats;
   };
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      'submitted': { label: 'הוגשה', color: 'bg-blue-100 text-blue-800' },
-      'reviewed': { label: 'נבדקה', color: 'bg-green-100 text-green-800' },
-      'needs_revision': { label: 'דורשת תיקון', color: 'bg-yellow-100 text-yellow-800' },
-      'approved': { label: 'אושרה', color: 'bg-emerald-100 text-emerald-800' }
+      [SubmissionStatus.SUBMITTED]: { label: getSubmissionStatusLabel(SubmissionStatus.SUBMITTED), color: getSubmissionStatusStyle(SubmissionStatus.SUBMITTED) },
+      [SubmissionStatus.APPROVED]: { label: getSubmissionStatusLabel(SubmissionStatus.APPROVED), color: getSubmissionStatusStyle(SubmissionStatus.APPROVED) },
+      [SubmissionStatus.NEEDS_REVISION]: { label: getSubmissionStatusLabel(SubmissionStatus.NEEDS_REVISION), color: getSubmissionStatusStyle(SubmissionStatus.NEEDS_REVISION) }
     };
     
     const config = statusConfig[status as keyof typeof statusConfig] || 
@@ -562,6 +559,16 @@ export default function SubmissionsPage() {
         {config.label}
       </span>
     );
+  };
+
+  const handleStatusCardClick = (status: string) => {
+    if (statusFilter === status) {
+      // אם הקוביה כבר פעילה, בטל את הסינון
+      setStatusFilter('all');
+    } else {
+      // אחרת, הגדר את הסינון לסטטוס הנבחר
+      setStatusFilter(status);
+    }
   };
 
   return (
@@ -577,82 +584,142 @@ export default function SubmissionsPage() {
     >
       <div className="space-y-6">
         {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg border border-slate-200 p-4">
-            <div className="flex items-center gap-3">
-              <div className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 rounded-lg">
-                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <button
+            onClick={() => {
+              // בטל את כל הסינונים
+              setStatusFilter('all');
+              setAssignmentFilter('all');
+              setOrganizationFilter('all');
+              setGroupFilter('all');
+              setSearchTerm('');
+              setDateFilter({ from: '', to: '' });
+            }}
+            className={`bg-white rounded-lg border p-3 w-full text-right transition-all hover:shadow-md ${
+              statusFilter === 'all' && 
+              assignmentFilter === 'all' && 
+              organizationFilter === 'all' && 
+              groupFilter === 'all' && 
+              searchTerm === '' && 
+              dateFilter.from === '' && 
+              dateFilter.to === ''
+                ? 'border-blue-400 border-2 shadow-sm' 
+                : 'border-slate-200'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <div className={`inline-flex items-center justify-center w-9 h-9 rounded-lg ${
+                statusFilter === 'all' && 
+                assignmentFilter === 'all' && 
+                organizationFilter === 'all' && 
+                groupFilter === 'all' && 
+                searchTerm === '' && 
+                dateFilter.from === '' && 
+                dateFilter.to === ''
+                  ? 'bg-blue-200' 
+                  : 'bg-blue-100'
+              }`}>
+                <svg className={`w-4 h-4 ${
+                  statusFilter === 'all' && 
+                  assignmentFilter === 'all' && 
+                  organizationFilter === 'all' && 
+                  groupFilter === 'all' && 
+                  searchTerm === '' && 
+                  dateFilter.from === '' && 
+                  dateFilter.to === ''
+                    ? 'text-blue-700' 
+                    : 'text-blue-600'
+                }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <div>
-                <p className="text-xs text-slate-600">סה"כ הגשות</p>
-                <p className="text-lg font-semibold text-slate-900">{submissions.length}</p>
-                <p className="text-xs text-slate-500">
-                  {Object.keys(groupedSubmissions).length} ארגונים
-                </p>
+              <div className="flex-1">
+                <p className="text-2xl font-bold text-slate-900">{submissions.length}</p>
+                <p className="text-xs text-slate-500">סה"כ הגשות</p>
               </div>
             </div>
-          </div>
+          </button>
 
-          <div className="bg-white rounded-lg border border-slate-200 p-4">
-            <div className="flex items-center gap-3">
-              <div className="inline-flex items-center justify-center w-8 h-8 bg-orange-100 rounded-lg">
-                <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button
+            onClick={() => handleStatusCardClick('submitted')}
+            className={`bg-white rounded-lg border p-3 w-full text-right transition-all hover:shadow-md ${
+              statusFilter === 'submitted' 
+                ? 'border-orange-400 border-2 shadow-sm' 
+                : 'border-slate-200'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <div className={`inline-flex items-center justify-center w-9 h-9 rounded-lg ${
+                statusFilter === 'submitted' ? 'bg-orange-200' : 'bg-orange-100'
+              }`}>
+                <svg className={`w-4 h-4 ${
+                  statusFilter === 'submitted' ? 'text-orange-700' : 'text-orange-600'
+                }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <div>
-                <p className="text-xs text-slate-600">ממתינות לבדיקה</p>
-                <p className="text-lg font-semibold text-slate-900">
+              <div className="flex-1">
+                <p className="text-2xl font-bold text-slate-900">
                   {submissions.filter(s => s.status === 'submitted').length}
                 </p>
-                <p className="text-xs text-slate-500">
-                  {Object.values(groupedSubmissions).reduce((total, groups) => 
-                    total + Object.keys(groups).length, 0
-                  )} קבוצות
-                </p>
+                <p className="text-xs text-slate-500">ממתינות</p>
               </div>
             </div>
-          </div>
+          </button>
 
-          <div className="bg-white rounded-lg border border-slate-200 p-4">
-            <div className="flex items-center gap-3">
-              <div className="inline-flex items-center justify-center w-8 h-8 bg-green-100 rounded-lg">
-                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button
+            onClick={() => handleStatusCardClick(SubmissionStatus.APPROVED)}
+            className={`bg-white rounded-lg border p-3 w-full text-right transition-all hover:shadow-md ${
+              statusFilter === SubmissionStatus.APPROVED 
+                ? 'border-emerald-400 border-2 shadow-sm' 
+                : 'border-slate-200'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <div className={`inline-flex items-center justify-center w-9 h-9 rounded-lg ${
+                statusFilter === SubmissionStatus.APPROVED ? 'bg-emerald-200' : 'bg-emerald-100'
+              }`}>
+                <svg className={`w-4 h-4 ${
+                  statusFilter === SubmissionStatus.APPROVED ? 'text-emerald-700' : 'text-emerald-600'
+                }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <div>
-                <p className="text-xs text-slate-600">אושרו</p>
-                <p className="text-lg font-semibold text-slate-900">
-                  {submissions.filter(s => s.status === 'approved').length}
+              <div className="flex-1">
+                <p className="text-2xl font-bold text-slate-900">
+                  {submissions.filter(s => s.status === SubmissionStatus.APPROVED).length}
                 </p>
-                <p className="text-xs text-slate-500">
-                  {filteredSubmissions.length} מסוננות
-                </p>
+                <p className="text-xs text-slate-500">אושרו</p>
               </div>
             </div>
-          </div>
+          </button>
 
-          <div className="bg-white rounded-lg border border-slate-200 p-4">
-            <div className="flex items-center gap-3">
-              <div className="inline-flex items-center justify-center w-8 h-8 bg-yellow-100 rounded-lg">
-                <svg className="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button
+            onClick={() => handleStatusCardClick('needs_revision')}
+            className={`bg-white rounded-lg border p-3 w-full text-right transition-all hover:shadow-md ${
+              statusFilter === 'needs_revision' 
+                ? 'border-yellow-400 border-2 shadow-sm' 
+                : 'border-slate-200'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <div className={`inline-flex items-center justify-center w-9 h-9 rounded-lg ${
+                statusFilter === 'needs_revision' ? 'bg-yellow-200' : 'bg-yellow-100'
+              }`}>
+                <svg className={`w-4 h-4 ${
+                  statusFilter === 'needs_revision' ? 'text-yellow-700' : 'text-yellow-600'
+                }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
                 </svg>
               </div>
-              <div>
-                <p className="text-xs text-slate-600">דורשות תיקון</p>
-                <p className="text-lg font-semibold text-slate-900">
+              <div className="flex-1">
+                <p className="text-2xl font-bold text-slate-900">
                   {submissions.filter(s => s.status === 'needs_revision').length}
                 </p>
-                <p className="text-xs text-slate-500">
-                  {submissions.filter(s => (s.comments_count || 0) > 0).length} עם הערות
-                </p>
+                <p className="text-xs text-slate-500">דורשות תיקון</p>
               </div>
             </div>
-          </div>
+          </button>
         </div>
         {/* Filters */}
         <div className="bg-white rounded-lg border border-slate-200">
@@ -729,10 +796,9 @@ export default function SubmissionsPage() {
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="all">כל הסטטוסים</option>
-                      <option value="submitted">הוגשה</option>
-                      <option value="reviewed">נבדקה</option>
-                      <option value="needs_revision">דורשת תיקון</option>
-                      <option value="approved">אושרה</option>
+                      <option value={SubmissionStatus.SUBMITTED}>{getSubmissionStatusLabel(SubmissionStatus.SUBMITTED)}</option>
+                      <option value={SubmissionStatus.NEEDS_REVISION}>{getSubmissionStatusLabel(SubmissionStatus.NEEDS_REVISION)}</option>
+                      <option value={SubmissionStatus.APPROVED}>{getSubmissionStatusLabel(SubmissionStatus.APPROVED)}</option>
                       <option value="with_comments">עם הערות</option>
                     </select>
                   </div>
@@ -916,31 +982,22 @@ export default function SubmissionsPage() {
                   {showBulkActions && !bulkUpdating && (
                     <div className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 z-10">
                       <button
-                        onClick={() => bulkUpdateSubmissionStatus('reviewed')}
-                        className="w-full px-4 py-2 text-right text-sm text-slate-700 hover:bg-green-50 hover:text-green-700 transition-colors flex items-center gap-2"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        נבדקה
-                      </button>
-                      <button
-                        onClick={() => bulkUpdateSubmissionStatus('approved')}
+                        onClick={() => bulkUpdateSubmissionStatus(SubmissionStatus.APPROVED)}
                         className="w-full px-4 py-2 text-right text-sm text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors flex items-center gap-2"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
-                        אושרה
+                        {getSubmissionStatusLabel(SubmissionStatus.APPROVED)}
                       </button>
                       <button
-                        onClick={() => bulkUpdateSubmissionStatus('needs_revision')}
+                        onClick={() => bulkUpdateSubmissionStatus(SubmissionStatus.NEEDS_REVISION)}
                         className="w-full px-4 py-2 text-right text-sm text-slate-700 hover:bg-yellow-50 hover:text-yellow-700 transition-colors flex items-center gap-2"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
                         </svg>
-                        דורשת תיקון
+                        {getSubmissionStatusLabel(SubmissionStatus.NEEDS_REVISION)}
                       </button>
                     </div>
                   )}
