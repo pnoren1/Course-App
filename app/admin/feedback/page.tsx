@@ -102,108 +102,129 @@ export default function FeedbackPage() {
         </svg>
       }
     >
-      <div className="space-y-6">
-        {/* Stats Cards */}
-        {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white rounded-xl border border-slate-200 p-6">
-              <div className="text-sm text-slate-600 mb-1">סה"כ משובים</div>
-              <div className="text-3xl font-bold text-slate-900">{stats.total}</div>
-            </div>
-            <div className="bg-white rounded-xl border border-slate-200 p-6">
-              <div className="text-sm text-slate-600 mb-1">דירוג ממוצע</div>
-              <div className="text-3xl font-bold text-amber-600">
-                {stats.averageRating.toFixed(1)} ⭐
-              </div>
-            </div>
-            <div className="bg-white rounded-xl border border-slate-200 p-6">
-              <div className="text-sm text-slate-600 mb-2">התפלגות דירוגים</div>
-              <div className="space-y-1">
+      <div className="space-y-2">
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-3" dir="ltr">
+          {/* Right Column - Feedback List */}
+          <div className="space-y-2" dir="rtl">
+            {/* Filters */}
+            <div className="bg-white rounded border border-slate-200 p-2">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-medium text-slate-600">סינון:</span>
+                <button
+                  onClick={() => setFilterRating(null)}
+                  className={`px-2 py-1 rounded text-xs transition-colors ${
+                    filterRating === null
+                      ? "bg-amber-100 text-amber-700 font-medium"
+                      : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  הכל
+                </button>
                 {[5, 4, 3, 2, 1].map((rating) => (
-                  <div key={rating} className="flex items-center gap-2 text-sm">
-                    <span className="w-8">{rating}⭐</span>
-                    <div className="flex-1 bg-slate-100 rounded-full h-2">
-                      <div
-                        className="bg-amber-400 h-2 rounded-full"
-                        style={{
-                          width: `${((stats.ratingDistribution[rating] || 0) / stats.total) * 100}%`
-                        }}
-                      />
-                    </div>
-                    <span className="w-8 text-slate-600">
-                      {stats.ratingDistribution[rating] || 0}
-                    </span>
-                  </div>
+                  <button
+                    key={rating}
+                    onClick={() => setFilterRating(rating)}
+                    className={`px-2 py-1 rounded text-xs transition-colors ${
+                      filterRating === rating
+                        ? "bg-amber-100 text-amber-700 font-medium"
+                        : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    {rating}⭐
+                  </button>
                 ))}
               </div>
             </div>
-          </div>
-        )}
 
-        {/* Filters */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-slate-700">סינון לפי דירוג:</span>
-            <button
-              onClick={() => setFilterRating(null)}
-              className={`px-3 py-1 rounded-lg text-sm transition-colors ${
-                filterRating === null
-                  ? "bg-amber-100 text-amber-700"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-              }`}
-            >
-              הכל
-            </button>
-            {[5, 4, 3, 2, 1].map((rating) => (
-              <button
-                key={rating}
-                onClick={() => setFilterRating(rating)}
-                className={`px-3 py-1 rounded-lg text-sm transition-colors ${
-                  filterRating === rating
-                    ? "bg-amber-100 text-amber-700"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                {rating}⭐
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Feedback List */}
-        <div className="bg-white rounded-xl border border-slate-200">
-          {loading ? (
-            <div className="p-12 text-center text-slate-500">טוען משובים...</div>
-          ) : filteredFeedback.length === 0 ? (
-            <div className="p-12 text-center text-slate-500">
-              {filterRating ? `אין משובים עם דירוג ${filterRating}⭐` : "אין משובים עדיין"}
-            </div>
-          ) : (
-            <div className="divide-y divide-slate-200">
-              {filteredFeedback.map((item) => (
-                <div key={item.id} className="p-6 hover:bg-slate-50 transition-colors">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <div className="font-medium text-slate-900">
-                        {item.user_name || "לא צוין"}
+            {/* Feedback Items */}
+            {loading ? (
+              <div className="bg-white rounded border border-slate-200 p-6 text-center text-xs text-slate-500">
+                טוען משובים...
+              </div>
+            ) : filteredFeedback.length === 0 ? (
+              <div className="bg-white rounded border border-slate-200 p-6 text-center text-xs text-slate-500">
+                {filterRating ? `אין משובים עם דירוג ${filterRating}⭐` : "אין משובים עדיין"}
+              </div>
+            ) : (
+              <>
+                {filteredFeedback.map((item) => (
+                  <div key={item.id} className="bg-white rounded border border-slate-200 p-2 hover:bg-slate-50/50 transition-colors">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span className="font-medium text-sm text-slate-900 truncate">
+                          {item.user_name || "לא צוין"}
+                        </span>
+                        {(item.organization_name || item.group_name) && (
+                          <>
+                            <span className="text-[11px] text-slate-400">•</span>
+                            <span className="text-[11px] text-slate-500 truncate">
+                              {[item.organization_name, item.group_name].filter(Boolean).join(" • ")}
+                            </span>
+                          </>
+                        )}
                       </div>
-                      <div className="text-sm text-slate-600">
-                        {item.organization_name && `${item.organization_name} • `}
-                        {item.group_name || "ללא קבוצה"}
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <span className="text-[18px]">{renderStars(item.rating)}</span>
+                        <span className="text-[12px] text-slate-400 whitespace-nowrap">
+                          {new Date(item.created_at).toLocaleTimeString("he-IL", {
+                            hour: "2-digit",
+                            minute: "2-digit"
+                          })}
+                          {" "}
+                          {new Date(item.created_at).toLocaleDateString("he-IL", {
+                            day: "numeric",
+                            month: "numeric",
+                            year: "numeric"
+                          })}
+                          
+                          
+                        </span>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-lg mb-1">{renderStars(item.rating)}</div>
-                      <div className="text-xs text-slate-500">
-                        {formatDate(item.created_at)}
-                      </div>
+                    <div className="text-[11px] text-slate-600 leading-relaxed pr-1 whitespace-pre-wrap">
+                      {item.message}
                     </div>
                   </div>
-                  <div className="bg-slate-50 rounded-lg p-4 text-slate-700 whitespace-pre-wrap">
-                    {item.message}
-                  </div>
+                ))}
+              </>
+            )}
+          </div>
+
+          {/* Left Column - Stats */}
+          {stats && (
+            <div className="space-y-2 lg:sticky lg:top-4 lg:self-start" dir="rtl">
+              <div className="bg-white rounded border border-slate-200 p-3">
+                <div className="text-xs text-slate-500 mb-1">סה"כ משובים</div>
+                <div className="text-2xl font-bold text-slate-900">{stats.total}</div>
+              </div>
+              <div className="bg-white rounded border border-slate-200 p-3">
+                <div className="text-xs text-slate-500 mb-1">דירוג ממוצע</div>
+                <div className="text-2xl font-bold text-amber-600">
+                  {stats.averageRating.toFixed(1)} ⭐
                 </div>
-              ))}
+              </div>
+              <div className="bg-white rounded border border-slate-200 p-3">
+                <div className="text-xs text-slate-500 mb-2">התפלגות דירוגים</div>
+                <div className="space-y-1.5">
+                  {[5, 4, 3, 2, 1].map((rating) => (
+                    <div key={rating} className="flex items-center gap-1.5 text-xs">
+                      <span className="w-7">{rating}⭐</span>
+                      <div className="flex-1 bg-slate-100 rounded-full h-1.5">
+                        <div
+                          className="bg-amber-400 h-1.5 rounded-full"
+                          style={{
+                            width: `${((stats.ratingDistribution[rating] || 0) / stats.total) * 100}%`
+                          }}
+                        />
+                      </div>
+                      <span className="w-6 text-slate-600 text-left">
+                        {stats.ratingDistribution[rating] || 0}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
         </div>

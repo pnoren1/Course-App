@@ -48,6 +48,9 @@ export default function AdminBreadcrumb({ items, actions }: AdminBreadcrumbProps
         case 'reports':
           breadcrumbs.push({ name: 'דוחות וסטטיסטיקות' });
           break;
+        case 'feedback':
+          breadcrumbs.push({ name: 'משובים' });
+          break;
         default:
           breadcrumbs.push({ name: currentPage });
       }
