@@ -25,6 +25,8 @@ export default function FeedbackPage() {
   const [stats, setStats] = useState<FeedbackStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [filterRating, setFilterRating] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -68,6 +70,37 @@ export default function FeedbackPage() {
     }
   };
 
+  const handleDelete = async (feedbackId: string) => {
+    setDeletingId(feedbackId);
+    try {
+      const { authenticatedFetch } = await import('@/lib/utils/api-helpers');
+      const response = await authenticatedFetch(`/api/admin/feedback/${feedbackId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        // Remove from local state
+        setFeedback(prev => prev.filter(item => item.id !== feedbackId));
+        // Reload stats
+        const statsRes = await authenticatedFetch("/api/admin/feedback?stats=true");
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          setStats(statsData);
+        }
+      } else {
+        const errorData = await response.json();
+        console.error('Error deleting feedback:', errorData);
+        alert(errorData.error || 'שגיאה במחיקת המשוב');
+      }
+    } catch (error) {
+      console.error('Error deleting feedback:', error);
+      alert('שגיאה במחיקת המשוב');
+    } finally {
+      setDeletingId(null);
+      setConfirmDeleteId(null);
+    }
+  };
+
   const filteredFeedback = filterRating
     ? feedback.filter((item) => item.rating === filterRating)
     : feedback;
@@ -77,16 +110,6 @@ export default function FeedbackPage() {
     console.log('Feedback state updated:', feedback);
     console.log('Feedback count:', feedback.length);
   }, [feedback]);
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString("he-IL", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
-  };
 
   const renderStars = (rating: number) => {
     return "⭐".repeat(rating);
@@ -177,9 +200,35 @@ export default function FeedbackPage() {
                             month: "numeric",
                             year: "numeric"
                           })}
-                          
-                          
                         </span>
+                        {confirmDeleteId === item.id ? (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleDelete(item.id)}
+                              disabled={deletingId === item.id}
+                              className="px-2 py-1 text-[11px] bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+                            >
+                              {deletingId === item.id ? "מוחק..." : "אישור"}
+                            </button>
+                            <button
+                              onClick={() => setConfirmDeleteId(null)}
+                              disabled={deletingId === item.id}
+                              className="px-2 py-1 text-[11px] bg-slate-200 text-slate-700 rounded hover:bg-slate-300 disabled:opacity-50"
+                            >
+                              ביטול
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setConfirmDeleteId(item.id)}
+                            className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                            title="מחק משוב"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        )}
                       </div>
                     </div>
                     <div className="text-[11px] text-slate-600 leading-relaxed pr-1 whitespace-pre-wrap">

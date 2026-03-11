@@ -170,5 +170,24 @@ export const feedbackService = {
       averageRating,
       ratingDistribution
     };
+  },
+
+  /**
+   * Delete a feedback entry (admin only)
+   */
+  async deleteFeedback(feedbackId: string): Promise<boolean> {
+    const admin = getSupabaseAdmin();
+    
+    const { error } = await admin
+      .from('feedback')
+      .delete()
+      .eq('id', feedbackId);
+
+    if (error) {
+      console.error('Error deleting feedback:', error);
+      return false;
+    }
+
+    return true;
   }
 };
