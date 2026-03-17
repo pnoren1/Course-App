@@ -255,6 +255,18 @@ export default function SubmissionComments({ submissionId, onCommentAdded, showA
           {showAddForm && canAddComments && (
             <div className="border-t border-slate-200 pt-2">
               <div className="space-y-2">
+                <div className="flex flex-wrap gap-1">
+                  {['מעולה!!!', 'יפה מאד!!', 'מצוין!!!', 'אלופה!!!', 'אין דברים כאלה!!'].map((phrase) => (
+                    <button
+                      key={phrase}
+                      type="button"
+                      onClick={() => setNewComment(prev => prev ? `${prev} ${phrase}` : phrase)}
+                      className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs border border-slate-300"
+                    >
+                      {phrase}
+                    </button>
+                  ))}
+                </div>
                 <textarea
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}

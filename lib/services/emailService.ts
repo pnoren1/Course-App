@@ -74,7 +74,7 @@ class EmailService {
         }
         
         .email-container {
-            max-width: 500px;
+            max-width: 680px;
             margin: 0 auto;
             background: #ffffff;
             border-radius: 20px;
@@ -456,7 +456,7 @@ class EmailService {
         }
         
         .email-container {
-            max-width: 500px;
+            max-width: 680px;
             margin: 0 auto;
             background: #ffffff;
             border-radius: 20px;
