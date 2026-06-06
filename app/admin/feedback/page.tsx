@@ -10,6 +10,7 @@ interface FeedbackItem {
   message: string;
   created_at: string;
   user_name?: string;
+  email?: string;
   organization_name?: string;
   group_name?: string;
 }
@@ -178,6 +179,14 @@ export default function FeedbackPage() {
                         <span className="font-medium text-sm text-slate-900 truncate">
                           {item.user_name || "לא צוין"}
                         </span>
+                        {item.email && (
+                          <>
+                            <span className="text-[11px] text-slate-400">•</span>
+                            <span className="text-[11px] text-slate-500 truncate" dir="ltr">
+                              {item.email}
+                            </span>
+                          </>
+                        )}
                         {(item.organization_name || item.group_name) && (
                           <>
                             <span className="text-[11px] text-slate-400">•</span>

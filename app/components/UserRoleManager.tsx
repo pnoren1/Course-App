@@ -44,6 +44,14 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
+
+  const handleCopyEmail = (email: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(email);
+    setCopiedEmail(email);
+    setTimeout(() => setCopiedEmail(null), 1500);
+  };
 
   useEffect(() => {
     checkAdminStatus();
@@ -791,6 +799,23 @@ export default function UserRoleManager({ className = '' }: UserRoleManagerProps
                                         <p className="font-medium text-slate-900 text-sm">{user.user_name || user.email}</p>
                                         <div className="flex items-center gap-2 text-xs text-slate-500">
                                           <span>{user.user_email}</span>
+                                          {user.user_email && (
+                                            <button
+                                              onClick={(e) => handleCopyEmail(user.user_email!, e)}
+                                              className="inline-flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+                                              title="העתק מייל"
+                                            >
+                                              {copiedEmail === user.user_email ? (
+                                                <svg className="w-3 h-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                </svg>
+                                              ) : (
+                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                                </svg>
+                                              )}
+                                            </button>
+                                          )}
                                           <span>•</span>
                                           <span>ID: {user.id.slice(0, 8)}...</span>
                                         </div>

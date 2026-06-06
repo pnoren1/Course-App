@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
       .from('user_profile')
       .select(`
         user_name,
+        email,
         organization_id,
         group_id,
         organizations (name),
@@ -68,6 +69,7 @@ export async function POST(request: NextRequest) {
 
     // Prepare email content
     const userName = userProfile?.user_name || 'לא צוין';
+    const userEmail = userProfile?.email || 'לא צוין';
     const organizationName = userProfile?.organizations?.name || 'לא משויך';
     const groupName = userProfile?.groups?.name || 'לא משויך';
     const stars = '⭐'.repeat(rating);
@@ -86,6 +88,7 @@ export async function POST(request: NextRequest) {
 דירוג: ${stars} (${rating}/5)
 
 תלמידה: ${userName}
+מייל: ${userEmail}
 ארגון: ${organizationName}
 קבוצה: ${groupName}
 

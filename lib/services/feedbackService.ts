@@ -10,6 +10,7 @@ export interface Feedback {
 
 export interface FeedbackWithUser extends Feedback {
   user_name?: string;
+  email?: string;
   organization_name?: string;
   group_name?: string;
 }
@@ -92,6 +93,7 @@ export const feedbackService = {
       .select(`
         user_id,
         user_name,
+        email,
         organizations(name),
         groups(name)
       `)
@@ -107,6 +109,7 @@ export const feedbackService = {
         p.user_id,
         {
           user_name: p.user_name,
+          email: p.email,
           organization_name: p.organizations?.name,
           group_name: p.groups?.name
         }
@@ -123,6 +126,7 @@ export const feedbackService = {
         message: item.message,
         created_at: item.created_at,
         user_name: profile?.user_name,
+        email: profile?.email,
         organization_name: profile?.organization_name,
         group_name: profile?.group_name
       };
