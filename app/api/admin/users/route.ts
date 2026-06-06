@@ -7,9 +7,9 @@ export async function GET(request: NextRequest) {
 
     const { data, error } = await supabase
       .from('user_profile')
-      .select('user_id, email, full_name')
+      .select('user_id, email, user_name')
       .not('email', 'is', null)
-      .order('full_name');
+      .order('user_name');
 
     if (error) {
       console.error('Error fetching users:', error);

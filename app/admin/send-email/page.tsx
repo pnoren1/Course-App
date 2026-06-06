@@ -17,9 +17,9 @@ interface Group {
 }
 
 interface User {
-  id: string;
+  user_id: string;
   email: string;
-  full_name: string;
+  user_name: string;
 }
 
 export default function SendEmailPage() {
@@ -123,9 +123,13 @@ export default function SendEmailPage() {
       if (res.ok) {
         const data = await res.json();
         setUsers(data);
+      } else {
+        console.error('Error fetching users:', res.status, await res.text());
+        setError('שגיאה בטעינת המשתמשים');
       }
     } catch (err) {
       console.error('Error fetching users:', err);
+      setError('שגיאה בטעינת המשתמשים');
     } finally {
       setLoading(false);
     }
@@ -364,8 +368,8 @@ export default function SendEmailPage() {
                 >
                   <option value="">-- בחר משתמש --</option>
                   {users.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.full_name} ({user.email})
+                    <option key={user.user_id} value={user.user_id}>
+                      {user.user_name} ({user.email})
                     </option>
                   ))}
                 </select>
