@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import AdminLayout from "@/app/components/AdminLayout";
+import { useUserRole } from "@/lib/hooks/useUserRole";
 
 interface FeedbackItem {
   id: string;
@@ -28,10 +30,20 @@ export default function FeedbackPage() {
   const [filterRating, setFilterRating] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const router = useRouter();
+  const { role, isLoading: roleLoading } = useUserRole();
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (!roleLoading && role !== 'admin') {
+      router.replace('/admin');
+    }
+  }, [role, roleLoading, router]);
+
+  useEffect(() => {
+    if (!roleLoading && role === 'admin') {
+      loadData();
+    }
+  }, [role, roleLoading]);
 
   const loadData = async () => {
     setLoading(true);
