@@ -3,6 +3,7 @@
 import { UserInfo } from "@/app/components/UserRoleBadge";
 import MiniSubmissionStatus from "./MiniSubmissionStatus";
 import FeedbackButton from "@/app/components/FeedbackButton";
+import ContactButton from "@/app/components/ContactButton";
 import Link from "next/link";
 
 type Props = {
@@ -111,7 +112,10 @@ export default function CourseHeader({ onSignOut, userRoleData, onToggleSubmissi
               </a>
             </div>
 
-            <FeedbackButton variant="header" />
+            <div className="flex items-center gap-2">
+              <ContactButton variant="header" />
+              <FeedbackButton variant="header" />
+            </div>
 
             <div className="flex items-center gap-6">
               {/* Mini Submission Status - visible for all users */}
