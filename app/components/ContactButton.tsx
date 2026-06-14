@@ -83,7 +83,7 @@ export default function ContactButton({ variant = "header", className = "" }: Pr
                   </svg>
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 mb-2">הפנייה נשלחה!</h3>
-                <p className="text-slate-600">נחזור אליך בהקדם 💙</p>
+                {/* <p className="text-slate-600">נחזור אליך בהקדם 💙</p> */}
               </div>
             ) : (
               <>
