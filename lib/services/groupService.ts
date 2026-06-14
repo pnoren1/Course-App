@@ -4,10 +4,12 @@ import { Group, GroupInsert, GroupUpdate } from '../types/database.types';
 export interface CreateGroupData {
   name: string;
   organizationId: string;
+  courseDeadline?: string | null;
 }
 
 export interface UpdateGroupData {
   name?: string;
+  courseDeadline?: string | null;
   // organizationId is not allowed to be changed
 }
 
@@ -28,7 +30,8 @@ export class GroupService {
       const admin = this.getSupabaseAdmin();
       const insertData: GroupInsert = {
         name: data.name,
-        organization_id: data.organizationId
+        organization_id: data.organizationId,
+        course_deadline: data.courseDeadline ?? null
       };
 
       const { data: result, error } = await admin
@@ -58,6 +61,7 @@ export class GroupService {
       const admin = this.getSupabaseAdmin();
       const updateData: GroupUpdate = {
         name: data.name,
+        course_deadline: data.courseDeadline,
         updated_at: new Date().toISOString()
       };
 

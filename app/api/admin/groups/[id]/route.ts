@@ -150,7 +150,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name } = body;
+    const { name, courseDeadline } = body;
 
     // Validation
     if (!name || !name.trim()) {
@@ -162,7 +162,8 @@ export async function PUT(
 
     // Update the group (organizationId cannot be changed as per requirements)
     const updatedGroup = await groupService.updateGroup(id, {
-      name: name.trim()
+      name: name.trim(),
+      courseDeadline: courseDeadline !== undefined ? courseDeadline : undefined
     });
 
     return NextResponse.json({

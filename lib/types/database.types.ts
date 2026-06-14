@@ -361,6 +361,7 @@ export interface Database {
           id: string;
           name: string;
           organization_id: string;
+          course_deadline: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -368,6 +369,7 @@ export interface Database {
           id?: string;
           name: string;
           organization_id: string;
+          course_deadline?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -375,6 +377,7 @@ export interface Database {
           id?: string;
           name?: string;
           organization_id?: string;
+          course_deadline?: string | null;
           created_at?: string;
           updated_at?: string;
         };

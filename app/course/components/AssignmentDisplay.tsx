@@ -12,8 +12,9 @@ export default function AssignmentDisplay({
   assignment, 
   userSubmission, 
   onSubmissionComplete,
-  userId
-}: AssignmentDisplayProps & { userId: string }) {
+  userId,
+  isDeadlinePassed = false
+}: AssignmentDisplayProps & { userId: string; isDeadlinePassed?: boolean }) {
   const [submission, setSubmission] = useState<AssignmentSubmission | undefined>(userSubmission);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -310,13 +311,25 @@ export default function AssignmentDisplay({
               </button>
             )}
           </div>
-          <FileUpload
-            assignment={assignment}
-            submissionId={submission?.id}
-            onUploadComplete={handleUploadComplete}
-            onUploadError={handleUploadError}
-            userId={userId}
-          />
+          {isDeadlinePassed ? (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 flex items-center gap-3">
+              <svg className="w-5 h-5 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-sm text-red-700 font-medium">
+                תאריך הגשת המטלות עבר — לא ניתן להגיש עוד.
+              </p>
+            </div>
+          ) : (
+            <FileUpload
+              assignment={assignment}
+              submissionId={submission?.id}
+              onUploadComplete={handleUploadComplete}
+              onUploadError={handleUploadError}
+              userId={userId}
+            />
+          )}
         </div>
 
         {/* Submission History */}

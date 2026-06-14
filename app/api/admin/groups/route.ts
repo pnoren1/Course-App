@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, organizationId } = body;
+    const { name, organizationId, courseDeadline } = body;
 
     // Validation
     if (!name || !name.trim()) {
@@ -155,7 +155,8 @@ export async function POST(request: NextRequest) {
     // Create the group
     const group = await groupService.createGroup({
       name: name.trim(),
-      organizationId
+      organizationId,
+      courseDeadline: courseDeadline || null
     });
 
     return NextResponse.json({

@@ -12,6 +12,7 @@ import WelcomePopup from "./components/WelcomePopup";
 import CourseHeader from "./components/CourseHeader";
 import UnitSection from "./components/UnitSection";
 import SubmissionStatusIndicator from "./components/SubmissionStatusIndicator";
+import DeadlineBanner from "./components/DeadlineBanner";
 import type { Lesson, Unit } from "./types";
 import { useUserRole } from "@/lib/hooks/useUserRole";
 import type { VideoView } from "@/lib/types/videoView";
@@ -32,6 +33,7 @@ function CourseContent({ userRoleData }: { userRoleData: any }) {
   const [videoViews, setVideoViews] = useState<VideoView[]>([]);
   const [videoViewsLoading, setVideoViewsLoading] = useState(false);
   const [videoViewsError, setVideoViewsError] = useState<string | null>(null);
+  const [courseDeadline, setCourseDeadline] = useState<string | null>(null);
 
   // Get user from userRoleData instead of separate API call
   useEffect(() => {
@@ -115,6 +117,26 @@ function CourseContent({ userRoleData }: { userRoleData: any }) {
     };
 
     fetchVideoViews();
+  }, [user?.id]);
+
+  // Fetch course deadline for the user's group
+  useEffect(() => {
+    const fetchDeadline = async () => {
+      if (!user?.id) return;
+
+      try {
+        const { authenticatedFetch } = await import('@/lib/utils/api-helpers');
+        const response = await authenticatedFetch('/api/course/group-deadline');
+        if (!response.ok) return;
+        const data = await response.json();
+        setCourseDeadline(data.deadline ?? null);
+      } catch (error) {
+        console.error('Error fetching group deadline:', error);
+        // Non-blocking — if we can't fetch deadline, allow submissions
+      }
+    };
+
+    fetchDeadline();
   }, [user?.id]);
 
   // Function to refresh user submissions
@@ -374,8 +396,22 @@ function CourseContent({ userRoleData }: { userRoleData: any }) {
 
             {!loading && !error && (
               <div className="space-y-6">
+                {/* Deadline banner — shown when the group has a deadline set */}
+                {courseDeadline && (
+                  <DeadlineBanner deadline={courseDeadline} />
+                )}
                 {units.map((unit) => {
                   const unitOpen = openUnit === unit.id;
+                  // Deadline is inclusive: block only when today is strictly after the deadline day
+                  const isDeadlinePassed = courseDeadline
+                    ? (() => {
+                        const now = new Date();
+                        const dl = new Date(courseDeadline);
+                        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                        const deadlineStart = new Date(dl.getFullYear(), dl.getMonth(), dl.getDate());
+                        return todayStart > deadlineStart;
+                      })()
+                    : false;
                   return (
                     <UnitSection
                       key={unit.id}
@@ -394,6 +430,7 @@ function CourseContent({ userRoleData }: { userRoleData: any }) {
                       userSubmissions={userSubmissions}
                       onRefreshSubmissions={refreshUserSubmissions}
                       watchedLessons={videoViews}
+                      isDeadlinePassed={isDeadlinePassed}
                     />
                   );
                 })}

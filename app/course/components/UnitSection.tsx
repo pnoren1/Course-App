@@ -34,6 +34,7 @@ type Props = {
   userSubmissions?: Map<number, any>;
   onRefreshSubmissions?: () => Promise<void>;
   watchedLessons?: VideoView[];
+  isDeadlinePassed?: boolean;
 };
 
 export default function UnitSection({ 
@@ -46,7 +47,8 @@ export default function UnitSection({
   userId,
   userSubmissions: propUserSubmissions,
   onRefreshSubmissions,
-  watchedLessons = []
+  watchedLessons = [],
+  isDeadlinePassed = false
 }: Props) {
   
   const [userSubmissions, setUserSubmissions] = useState<Map<number, AssignmentSubmission>>(propUserSubmissions || new Map());
@@ -264,6 +266,7 @@ export default function UnitSection({
                       userSubmission={userSubmissions.get(assignment.id)}
                       onSubmissionComplete={handleSubmissionComplete}
                       userId={userId || ''}
+                      isDeadlinePassed={isDeadlinePassed}
                     />
                   ))}
                 </div>
