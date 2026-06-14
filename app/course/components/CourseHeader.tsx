@@ -58,6 +58,18 @@ export default function CourseHeader({ onSignOut, userRoleData, onToggleSubmissi
             </div>
 
             <div className="flex flex-col items-end gap-3 pt-2">
+              {/* Admin Panel Link - moved here to avoid crowding the bottom bar */}
+              {(role === 'admin' || role === 'org_admin') && (
+                <Link
+                  href="/admin"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 hover:text-red-900 rounded-lg font-medium text-xs transition-all duration-200"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                  <span>ניהול</span>
+                </Link>
+              )}
               {/* User Info Section with integrated sign out - Using vertical layout to prevent line wrapping */}
               <UserInfo 
                 userName={userName || userRoleData.userName || undefined} 
@@ -77,19 +89,6 @@ export default function CourseHeader({ onSignOut, userRoleData, onToggleSubmissi
         <div className="bg-gradient-to-r from-slate-50 to-slate-25 border-t border-slate-200 px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              {/* Admin Panel Link - moved to left side */}
-              {(role === 'admin' || role === 'org_admin') && (
-                <Link
-                  href="/admin"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 hover:text-red-900 rounded-xl font-medium text-sm transition-all duration-200"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                  <span>ניהול</span>
-                </Link>
-              )}
-              
               <Link
                 href="/course/about"
                 className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 hover:text-indigo-900 rounded-xl font-medium text-sm transition-all duration-200"

@@ -7,17 +7,19 @@ export default function AcknowledgmentForm({ onSubmit, isSubmitting }: Acknowled
   const [formData, setFormData] = useState<AcknowledgmentData>({
     termsAgreed: false,
     messageRead: false,
+    internetRequirementsRead: false,
   });
 
   const [errors, setErrors] = useState<{
     termsAgreed?: string;
     messageRead?: string;
+    internetRequirementsRead?: string;
   }>({});
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate form - both checkboxes must be checked (Requirements 1.3, 1.4)
+    // Validate form - all checkboxes must be checked
     const newErrors: typeof errors = {};
     
     if (!formData.termsAgreed) {
@@ -26,6 +28,10 @@ export default function AcknowledgmentForm({ onSubmit, isSubmitting }: Acknowled
     
     if (!formData.messageRead) {
       newErrors.messageRead = 'חובה לאשר שקראת את ההודעה';
+    }
+
+    if (!formData.internetRequirementsRead) {
+      newErrors.internetRequirementsRead = 'חובה לאשר שקראת את דרישות האינטרנט';
     }
 
     setErrors(newErrors);
@@ -128,13 +134,49 @@ export default function AcknowledgmentForm({ onSubmit, isSubmitting }: Acknowled
               </div>
             )}
           </div>
+
+          {/* Internet Requirements Checkbox */}
+          <div className="space-y-1">
+            <label className="flex items-start gap-3 cursor-pointer group p-1 rounded hover:bg-white transition-colors">
+              <input
+                type="checkbox"
+                checked={formData.internetRequirementsRead}
+                onChange={() => handleCheckboxChange('internetRequirementsRead')}
+                className="mt-0.5 h-4 w-4 text-blue-600 focus:ring-blue-500 focus:ring-2 border-gray-300 rounded"
+                disabled={isSubmitting}
+                aria-describedby={errors.internetRequirementsRead ? 'internet-error' : 'internet-description'}
+                aria-invalid={errors.internetRequirementsRead ? 'true' : 'false'}
+                required
+              />
+              <span className="text-sm text-gray-900 leading-relaxed flex-1">
+                <span id="internet-description" className="block">
+                  קראתי והבנתי את דרישות האינטרנט לצפייה בשיעורים
+                </span>
+              </span>
+            </label>
+            {errors.internetRequirementsRead && (
+              <div
+                id="internet-error"
+                className="text-red-600 text-sm mr-6 bg-red-50 border border-red-200 rounded p-2"
+                role="alert"
+                aria-live="polite"
+              >
+                <span className="flex items-center">
+                  <svg className="w-4 h-4 ml-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.internetRequirementsRead}
+                </span>
+              </div>
+            )}
+          </div>
         </fieldset>
 
         {/* Submit Button */}
         <div className="pt-3 border-t border-gray-200">
           <button
             type="submit"
-            disabled={isSubmitting || !formData.termsAgreed || !formData.messageRead}
+            disabled={isSubmitting || !formData.termsAgreed || !formData.messageRead || !formData.internetRequirementsRead}
             className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm"
             aria-label="המשך לקורס - לחצו רק לאחר סימון שתי התיבות"
             aria-describedby="submit-help"
@@ -169,7 +211,7 @@ export default function AcknowledgmentForm({ onSubmit, isSubmitting }: Acknowled
             )}
           </button>
           <p id="submit-help" className="text-xs text-gray-500 text-center mt-2">
-            יש לסמן את שתי התיבות כדי להמשיך
+            יש לסמן את שלושת התיבות כדי להמשיך
           </p>
         </div>
       </form>

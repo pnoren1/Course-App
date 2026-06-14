@@ -133,6 +133,41 @@ export default function LessonPanel({ lesson, isOpen, userId, onVideoWatched }: 
 
             {/* Audio Help Link */}
             <AudioHelpLink />
+
+            {/* Internet Requirements Note */}
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mt-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="inline-flex items-center justify-center w-8 h-8 bg-amber-100 rounded-lg flex-shrink-0 mt-0.5">
+                    <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-amber-900 mb-1">
+                      דרישות אינטרנט לצפייה בשיעורים
+                    </h4>
+                    <p className="text-xs text-amber-800 leading-relaxed">
+                      חיבור יציב במהירות של 5 Mbps לפחות, ומומלץ 10 Mbps ומעלה לקבלת חוויית צפייה מיטבית. חיבור סלולרי או קליטה חלשה עלולים לגרום לעצירות ולטעינה איטית של הסרטונים.
+                    </p>
+                  </div>
+                </div>
+                <a
+                  href="https://www.speedtest.net/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors flex-shrink-0"
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  בדוק מהירות
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+              </div>
+            </div>
           </div>
         )}
 

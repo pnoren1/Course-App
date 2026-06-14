@@ -15,6 +15,10 @@ export default function WelcomePopup({ userId, userName, courseId, onAcknowledge
 
   const [showCloseMessage, setShowCloseMessage] = useState(false);
 
+  // Check if we're in preview mode (admin only, via ?preview-popup=1)
+  const isPreviewMode = typeof window !== 'undefined' && 
+    new URLSearchParams(window.location.search).get('preview-popup') === '1';
+
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
 
@@ -71,6 +75,12 @@ export default function WelcomePopup({ userId, userName, courseId, onAcknowledge
 
   // Check acknowledgment status on component mount
   useEffect(() => {
+    // Preview mode: show popup immediately without DB check
+    if (isPreviewMode) {
+      setState({ isVisible: true, isLoading: false, hasAcknowledged: false });
+      return;
+    }
+
     const checkAcknowledgmentStatus = async () => {
       try {
         setState(prev => ({ ...prev, isLoading: true }));
@@ -98,12 +108,19 @@ export default function WelcomePopup({ userId, userName, courseId, onAcknowledge
     if (userId && courseId) {
       checkAcknowledgmentStatus();
     }
-  }, [userId, courseId]);
+  }, [userId, courseId, isPreviewMode]);
 
   // Handle form submission
   const handleAcknowledgmentSubmit = async (data: AcknowledgmentData) => {
-    if (!data.termsAgreed || !data.messageRead) {
-      return; // Form validation should prevent this, but safety check
+    if (!data.termsAgreed || !data.messageRead || !data.internetRequirementsRead) {
+      return;
+    }
+
+    // Preview mode: just close without saving
+    if (isPreviewMode) {
+      setState(prev => ({ ...prev, hasAcknowledged: true, isVisible: false, isLoading: false }));
+      onAcknowledged();
+      return;
     }
 
     try {
@@ -260,6 +277,28 @@ export default function WelcomePopup({ userId, userName, courseId, onAcknowledge
                 </h2>
               </div>
               <div className="text-sm text-gray-700">את הנחיות הקורס יש לקרוא בעיון, הקישור אליהן נמצא בדף הקורס, בחלקו העליון</div>
+            </div>
+          </section>
+
+          {/* Internet Requirements */}
+          <section className="mb-4 sm:mb-5" aria-labelledby="internet-heading">
+            <div className="bg-amber-50 rounded-lg p-3 sm:p-4 border border-amber-200">
+              <div className="flex items-center mb-3">
+                <div className="w-6 h-6 bg-amber-500 rounded-md flex items-center justify-center ml-2">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
+                  </svg>
+                </div>
+                <h2
+                  id="internet-heading"
+                  className="text-base sm:text-lg font-semibold text-amber-900"
+                >
+                  דרישות אינטרנט לצפייה בשיעורים
+                </h2>
+              </div>
+              <div className="text-sm text-amber-900 leading-relaxed">
+                דרישות אינטרנט מומלצות לצפייה בשיעורים: חיבור יציב במהירות של 5 Mbps לפחות, ומומלץ 10 Mbps ומעלה לקבלת חוויית צפייה מיטבית. חיבור סלולרי או קליטה חלשה עלולים לגרום לעצירות ולטעינה איטית של הסרטונים.
+              </div>
             </div>
           </section>
 

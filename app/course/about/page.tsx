@@ -263,7 +263,45 @@ function AboutContent({ userRoleData }: { userRoleData: any }) {
             </div>
           </section>
 
-          {/* Section 4 - שאלות נפוצות */}
+          {/* Section 4 - דרישות אינטרנט */}
+          <section className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+            <div className="flex items-start gap-4 mb-4">
+              <div className="inline-flex items-center justify-center w-10 h-10 bg-amber-50 rounded-xl border border-amber-200">
+                <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h2 className="text-xl font-semibold text-slate-900 mb-4">דרישות אינטרנט לצפייה בשיעורים</h2>
+                <div className="text-slate-700 leading-relaxed space-y-4">
+                  <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
+                    <p className="text-sm text-amber-900 leading-relaxed">
+                      דרישות אינטרנט מומלצות לצפייה בשיעורים: חיבור יציב במהירות של 5 Mbps לפחות, ומומלץ 10 Mbps ומעלה לקבלת חוויית צפייה מיטבית. חיבור סלולרי או קליטה חלשה עלולים לגרום לעצירות ולטעינה איטית של הסרטונים.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <a
+                      href="https://www.speedtest.net/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
+                      </svg>
+                      בדוק מהירות אינטרנט
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                    <span className="text-xs text-slate-500">speedtest.net</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Section 5 - שאלות נפוצות */}
           <section className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
             <div className="flex items-start gap-4 mb-4">
               <div className="inline-flex items-center justify-center w-10 h-10 bg-purple-50 rounded-xl border border-purple-200">

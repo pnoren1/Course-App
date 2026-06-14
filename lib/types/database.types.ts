@@ -945,6 +945,7 @@ export interface PopupContent {
 export interface AcknowledgmentData {
   termsAgreed: boolean;
   messageRead: boolean;
+  internetRequirementsRead: boolean;
 }
 
 export interface WelcomePopupProps {
