@@ -5,6 +5,7 @@ import { rlsSupabase } from '@/lib/supabase';
 import { authenticatedFetchJson } from '@/lib/utils/api-helpers';
 import { Organization } from '@/lib/types/database.types';
 import { organizationService, OrganizationWithStats } from '@/lib/services/organizationService';
+import { formatDualDate, isDeadlineDayPassed } from '@/lib/utils/date-utils';
 
 interface GroupWithUserCount {
   id: string;
@@ -781,23 +782,24 @@ export default function OrganizationGroupsManagement({ className = '' }: Organiz
                             </div>
                             {/* Deadline badge */}
                             {group.course_deadline && (() => {
-                              const now = new Date();
-                              const dl = new Date(group.course_deadline);
-                              const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                              const deadlineStart = new Date(dl.getFullYear(), dl.getMonth(), dl.getDate());
-                              const isPassed = todayStart > deadlineStart;
-                              const formatted = dl.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                              const isPassed = isDeadlineDayPassed(group.course_deadline);
+                              const { gregorian, hebrew } = formatDualDate(group.course_deadline);
                               return (
-                                <div className={`mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium border ${
+                                <div className={`mt-1.5 inline-flex flex-col gap-0.5 px-2 py-1 rounded text-xs font-medium border ${
                                   isPassed
                                     ? 'bg-red-50 text-red-700 border-red-200'
                                     : 'bg-amber-50 text-amber-700 border-amber-200'
                                 }`}>
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                  </svg>
-                                  {isPassed ? `תאריך יעד עבר: ${formatted}` : `תאריך יעד: ${formatted}`}
+                                  <div className="flex items-center gap-1.5">
+                                    <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    <span>{isPassed ? `תאריך יעד עבר: ${gregorian}` : `תאריך יעד: ${gregorian}`}</span>
+                                  </div>
+                                  <div className={`pr-4.5 text-xs font-normal ${isPassed ? 'text-red-500' : 'text-amber-600'}`}>
+                                    {hebrew}
+                                  </div>
                                 </div>
                               );
                             })()}

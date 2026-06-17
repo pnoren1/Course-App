@@ -1,48 +1,19 @@
 "use client";
 
+import {
+  formatDualDate,
+  isDeadlineDayPassed,
+  getDeadlineDaysRemaining,
+} from '@/lib/utils/date-utils';
+
 interface DeadlineBannerProps {
   deadline: string; // ISO string
 }
 
-function formatHebrewDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('he-IL', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-}
-
-/**
- * Returns true only if today is strictly after the deadline day.
- * The deadline day itself is included — submissions are allowed throughout it.
- */
-function isDeadlineDayPassed(deadlineStr: string): boolean {
-  const now = new Date();
-  const deadline = new Date(deadlineStr);
-  // Compare calendar dates only (ignore time-of-day)
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const deadlineStart = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate());
-  return todayStart > deadlineStart;
-}
-
-/**
- * Days remaining until (and including) the deadline day.
- * Returns 0 on the deadline day itself, negative after.
- */
-function getDaysRemaining(deadlineStr: string): number {
-  const now = new Date();
-  const deadline = new Date(deadlineStr);
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const deadlineStart = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate());
-  const diffMs = deadlineStart.getTime() - todayStart.getTime();
-  return Math.round(diffMs / (1000 * 60 * 60 * 24));
-}
-
 export default function DeadlineBanner({ deadline }: DeadlineBannerProps) {
   const isPassed = isDeadlineDayPassed(deadline);
-  const daysRemaining = getDaysRemaining(deadline);
-  const formattedDate = formatHebrewDate(deadline);
+  const daysRemaining = getDeadlineDaysRemaining(deadline);
+  const { gregorian, hebrew } = formatDualDate(deadline);
 
   if (isPassed) {
     return (
@@ -56,9 +27,9 @@ export default function DeadlineBanner({ deadline }: DeadlineBannerProps) {
           </div>
           <div>
             <p className="text-base font-semibold text-red-800">
-              תאריך ההגשה עבר — {formattedDate}
+              תאריך ההגשה עבר — {hebrew} <span className="font-normal text-red-600 text-sm">({gregorian})</span>
             </p>
-            <p className="mt-0.5 text-sm text-red-700">
+            <p className="mt-1 text-sm text-red-700">
               לא ניתן להגיש מטלות לאחר תאריך היעד.
               אם יש שאלות, יש לפנות למנהל.
             </p>
@@ -72,12 +43,11 @@ export default function DeadlineBanner({ deadline }: DeadlineBannerProps) {
   const urgentThreshold = 7; // days
   const isUrgent = daysRemaining <= urgentThreshold;
 
-  const colorClasses = isUrgent
-    ? 'border-orange-300 bg-orange-50'
-    : 'border-blue-200 bg-blue-50';
+  const colorClasses = isUrgent ? 'border-orange-300 bg-orange-50' : 'border-blue-200 bg-blue-50';
   const iconBg = isUrgent ? 'bg-orange-100' : 'bg-blue-100';
   const iconColor = isUrgent ? 'text-orange-600' : 'text-blue-600';
   const titleColor = isUrgent ? 'text-orange-800' : 'text-blue-800';
+  const subColor = isUrgent ? 'text-orange-600' : 'text-blue-600';
   const textColor = isUrgent ? 'text-orange-700' : 'text-blue-700';
   const badgeBg = isUrgent
     ? 'bg-orange-100 text-orange-700 border-orange-200'
@@ -92,10 +62,10 @@ export default function DeadlineBanner({ deadline }: DeadlineBannerProps) {
               d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
         </div>
-        <div className="flex-1">
+          <div className="flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <p className={`text-base font-semibold ${titleColor}`}>
-              תאריך יעד לסיום הקורס: {formattedDate}
+              תאריך יעד לסיום הקורס: {hebrew} <span className={`font-normal text-sm ${subColor}`}>({gregorian})</span>
             </p>
             <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${badgeBg}`}>
               {daysRemaining === 0
@@ -105,10 +75,10 @@ export default function DeadlineBanner({ deadline }: DeadlineBannerProps) {
                   : `נותרו ${daysRemaining} ימים`}
             </span>
           </div>
-          <p className={`mt-0.5 text-sm ${textColor}`}>
+          <p className={`mt-1 text-sm ${textColor}`}>
             {isUrgent
-              ? 'מהרו! יש לסיים את הגשת המטלות לפני תאריך זה.'
-              : 'יש לסיים את הגשת כל המטלות לפני תאריך זה.'}
+              ? 'יש לסיים את הגשת המטלות לפני תאריך זה. לאחריו לא ניתן יהיה להגיש.'
+              : 'יש לסיים את הגשת כל המטלות לפני תאריך זה. לאחריו לא ניתן יהיה להגיש.'}
           </p>
         </div>
       </div>
