@@ -51,7 +51,7 @@ export default function CourseHeader({ onSignOut, userRoleData, onToggleSubmissi
                     פעיל
                   </span>
                   <span className="text-sm text-slate-500">
-                    עודכן לאחרונה: ינואר 2026
+                    עודכן לאחרונה: 10/2026
                   </span>
                 </div>
               </div>
