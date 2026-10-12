@@ -9,7 +9,7 @@ interface GroupIpRestrictionManagerProps {
   groupId: string;
   groupName: string;
   ipRestrictionEnabled: boolean;
-  onRestrictionToggled: () => void;
+  onRestrictionToggled: (newValue: boolean) => void;
 }
 
 export default function GroupIpRestrictionManager({
@@ -28,6 +28,8 @@ export default function GroupIpRestrictionManager({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [toggling, setToggling] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  // Optimistic local state — mirrors ipRestrictionEnabled but updates immediately on click
+  const [localEnabled, setLocalEnabled] = useState(ipRestrictionEnabled);
 
   const fetchPatterns = useCallback(async () => {
     setLoadingPatterns(true);
@@ -56,6 +58,9 @@ export default function GroupIpRestrictionManager({
   };
 
   const handleToggleRestriction = async () => {
+    const newValue = !localEnabled;
+    // Optimistic update — show change immediately
+    setLocalEnabled(newValue);
     setToggling(true);
     setActionError(null);
     try {
@@ -63,13 +68,15 @@ export default function GroupIpRestrictionManager({
         `/api/admin/groups/${groupId}`,
         {
           method: 'PATCH',
-          body: JSON.stringify({ ip_restriction_enabled: !ipRestrictionEnabled }),
+          body: JSON.stringify({ ip_restriction_enabled: newValue }),
         }
       );
       if (error) {
+        // Revert on failure
+        setLocalEnabled(!newValue);
         setActionError(error);
       } else {
-        onRestrictionToggled();
+        onRestrictionToggled(newValue);
       }
     } finally {
       setToggling(false);
@@ -152,7 +159,7 @@ export default function GroupIpRestrictionManager({
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
         <span>הגבלת גישה לפי IP</span>
-        {ipRestrictionEnabled && (
+        {localEnabled && (
           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-orange-100 text-orange-700 border border-orange-200 rounded text-xs font-medium">
             <span className="w-1.5 h-1.5 rounded-full bg-orange-500 inline-block" />
             מופעלת
@@ -167,7 +174,7 @@ export default function GroupIpRestrictionManager({
             <div>
               <p className="text-sm font-medium text-slate-800">הגבלת גישה לפי כתובת IP</p>
               <p className="text-xs text-slate-500 mt-0.5">
-                {ipRestrictionEnabled
+                {localEnabled
                   ? 'הגישה לקבוצה זו מוגבלת לכתובות IP המורשות בלבד'
                   : 'הגישה לקבוצה זו פתוחה מכל כתובת IP'}
               </p>
@@ -176,17 +183,17 @@ export default function GroupIpRestrictionManager({
               type="button"
               onClick={handleToggleRestriction}
               disabled={toggling}
-              aria-pressed={ipRestrictionEnabled}
+              aria-pressed={localEnabled}
               className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed ${
-                ipRestrictionEnabled ? 'bg-orange-500' : 'bg-slate-300'
+                localEnabled ? 'bg-orange-500' : 'bg-slate-300'
               }`}
             >
               <span className="sr-only">
-                {ipRestrictionEnabled ? 'כבה הגבלת IP' : 'הפעל הגבלת IP'}
+                {localEnabled ? 'כבה הגבלת IP' : 'הפעל הגבלת IP'}
               </span>
               <span
                 className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow ring-0 transition-transform duration-200 ease-in-out ${
-                  ipRestrictionEnabled ? '-translate-x-5' : 'translate-x-0'
+                  localEnabled ? '-translate-x-5' : 'translate-x-0'
                 }`}
               />
             </button>
@@ -200,7 +207,7 @@ export default function GroupIpRestrictionManager({
           )}
 
           {/* Patterns list — visible only when restriction is enabled */}
-          {ipRestrictionEnabled && (
+          {localEnabled && (
             <div className="space-y-2">
               <p className="text-xs font-medium text-slate-700">כתובות IP מורשות:</p>
 

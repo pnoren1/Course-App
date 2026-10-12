@@ -465,7 +465,44 @@ export default function CoursePage() {
 
 function CoursePageWithAuth() {
   const userRoleData = useUserRole(); // קריאה אחת לכל העמוד
-  
+  const router = useRouter();
+  const [ipChecked, setIpChecked] = useState(false);
+
+  useEffect(() => {
+    // Check IP access as soon as we have an auth token
+    const checkIp = async () => {
+      try {
+        const { getAuthHeaders } = await import('@/lib/utils/api-helpers');
+        const headers = await getAuthHeaders();
+        const res = await fetch('/api/user/check-ip-access', { headers });
+        const data = await res.json();
+        if (!data.allowed) {
+          const ip = encodeURIComponent(data.ip ?? '');
+          router.replace(`/ip-blocked?ip=${ip}`);
+          return;
+        }
+      } catch {
+        // fail open — if check fails don't block the user
+      }
+      setIpChecked(true);
+    };
+    checkIp();
+  }, [router]);
+
+  if (!ipChecked) {
+    return (
+      <div className="bg-slate-50 flex items-center justify-center py-16">
+        <div className="flex items-center gap-3 text-slate-600">
+          <svg className="animate-spin w-6 h-6" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          </svg>
+          <span className="text-sm font-medium">טוען...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <AuthGuard userRoleData={userRoleData}>
       <CourseContent userRoleData={userRoleData} />

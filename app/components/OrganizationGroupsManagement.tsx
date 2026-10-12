@@ -838,7 +838,13 @@ export default function OrganizationGroupsManagement({ className = '' }: Organiz
                     groupId={group.id}
                     groupName={group.name}
                     ipRestrictionEnabled={group.ip_restriction_enabled ?? false}
-                    onRestrictionToggled={fetchGroups}
+                    onRestrictionToggled={(newValue) =>
+                      setGroups((prev) =>
+                        prev.map((g) =>
+                          g.id === group.id ? { ...g, ip_restriction_enabled: newValue } : g
+                        )
+                      )
+                    }
                   />
                 </div>
                 ))}
