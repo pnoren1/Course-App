@@ -1,0 +1,7 @@
+{
+  "task_id": "task-ip-restriction",
+  "task_description": "Add per-group IP restriction to the course portal LMS. Groups can optionally restrict access to a configured list of IPv4 addresses / CIDR ranges. Enforcement is in Next.js middleware. Blocked users see a Hebrew error page. Admins manage the allowlist in the groups management UI.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null
+}

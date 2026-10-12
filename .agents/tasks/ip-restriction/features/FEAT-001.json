@@ -1,0 +1,34 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Database schema + TypeScript types + IP utility library. Adds the ip_restriction_enabled column to groups, creates the group_ip_allowlist table with RLS, and implements the pure-TS CIDR matching utilities that all other features depend on.",
+  "status": "completed",
+  "steps": [
+    "Create supabase/migrations/add_ip_restriction_to_groups.sql. SQL must: (1) ALTER TABLE public.groups ADD COLUMN IF NOT EXISTS ip_restriction_enabled boolean NOT NULL DEFAULT false; (2) CREATE TABLE IF NOT EXISTS public.group_ip_allowlist with columns id uuid PK, group_id uuid FK→groups(id) ON DELETE CASCADE, ip_pattern text NOT NULL, description text, created_at timestamptz NOT NULL DEFAULT now(); (3) CREATE UNIQUE INDEX on (group_id, ip_pattern); (4) CREATE INDEX idx_group_ip_allowlist_group_id on group_id; (5) Enable RLS; (6) Policy 'admins_manage_ip_allowlist' FOR ALL using EXISTS(user_profile where user_id=auth.uid() and role='admin'); (7) Policy 'users_read_own_group_allowlist' FOR SELECT using EXISTS(user_profile where user_id=auth.uid() and group_id=group_ip_allowlist.group_id). Follow the style in supabase/migrations/add_course_deadline_to_groups.sql.",
+    "Update lib/types/database.types.ts: (a) In groups table — add ip_restriction_enabled: boolean to Row (required), ip_restriction_enabled?: boolean to Insert (optional, defaults false) and Update (optional). (b) Add group_ip_allowlist table entry with Row/Insert/Update/Relationships following the pattern of other tables in the file. (c) Add type aliases at the bottom: GroupIpAllowlist, GroupIpAllowlistInsert following the existing alias pattern (e.g. Group, GroupInsert).",
+    "Create lib/utils/ip-utils.ts with four exports: (1) extractClientIp(request: Request): string | null — reads x-forwarded-for first entry, then x-real-ip; (2) ipMatchesPattern(ip: string, pattern: string): boolean — pure IPv4 CIDR matching using bitwise ops, exact match for patterns without '/', fail-returns-false for any malformed input; (3) isIpAllowed(ip: string, patterns: string[]): boolean — any(ipMatchesPattern); (4) isValidIpPattern(pattern: string): boolean — regex + octet range validation for UI input. Include JSDoc comments. No npm imports."
+  ],
+  "acceptance_criteria": [
+    "supabase/migrations/add_ip_restriction_to_groups.sql exists and is valid SQL with all the described DDL and RLS policies",
+    "lib/types/database.types.ts compiles without errors and groups.Row includes ip_restriction_enabled: boolean",
+    "lib/types/database.types.ts includes group_ip_allowlist table with correct shape and the GroupIpAllowlist / GroupIpAllowlistInsert type aliases",
+    "lib/utils/ip-utils.ts exports all four functions and has no external imports",
+    "ipMatchesPattern('192.168.1.5', '192.168.1.5') === true",
+    "ipMatchesPattern('192.168.1.6', '192.168.1.5') === false",
+    "ipMatchesPattern('10.0.0.5', '10.0.0.0/24') === true",
+    "ipMatchesPattern('10.0.1.1', '10.0.0.0/24') === false",
+    "ipMatchesPattern('0.0.0.0', '0.0.0.0/0') === true (matches everything)",
+    "isValidIpPattern('192.168.1.1') === true",
+    "isValidIpPattern('10.0.0.0/24') === true",
+    "isValidIpPattern('999.0.0.1') === false",
+    "isValidIpPattern('not-an-ip') === false",
+    "npm run build passes",
+    "npm test passes"
+  ],
+  "verification": [
+    "npm run build — must complete with zero TypeScript errors",
+    "npm test — all tests pass (add unit tests for ipMatchesPattern and isValidIpPattern in lib/utils/ip-utils.test.ts covering the cases in acceptance criteria)"
+  ],
+  "blocked_reason": null,
+  "findings": "1. @fast-check/vitest adapter is not installed; property-based tests import fc directly from 'fast-check' (the installed package). 2. lib/types/database.types.ts has 25 pre-existing ESLint errors (no-explicit-any, no-empty-object-type) that predate this feature — none introduced by FEAT-001 changes. 3. npm run lint on the whole project reports 349 pre-existing problems; lint is clean for all three new/modified files except pre-existing issues in database.types.ts. 4. GroupIpAllowlistUpdate alias was also added (not required by spec but consistent with the alias pattern for every other table)."
+}

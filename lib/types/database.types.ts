@@ -362,6 +362,7 @@ export interface Database {
           name: string;
           organization_id: string;
           course_deadline: string | null;
+          ip_restriction_enabled: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -370,6 +371,7 @@ export interface Database {
           name: string;
           organization_id: string;
           course_deadline?: string | null;
+          ip_restriction_enabled?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -378,6 +380,7 @@ export interface Database {
           name?: string;
           organization_id?: string;
           course_deadline?: string | null;
+          ip_restriction_enabled?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -386,6 +389,37 @@ export interface Database {
             foreignKeyName: "groups_organization_id_fkey";
             columns: ["organization_id"];
             referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      group_ip_allowlist: {
+        Row: {
+          id: string;
+          group_id: string;
+          ip_pattern: string;
+          description: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          group_id: string;
+          ip_pattern: string;
+          description?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          group_id?: string;
+          ip_pattern?: string;
+          description?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "group_ip_allowlist_group_id_fkey";
+            columns: ["group_id"];
+            referencedRelation: "groups";
             referencedColumns: ["id"];
           }
         ];
@@ -901,6 +935,10 @@ export type OrganizationUpdate = Database['public']['Tables']['organizations']['
 export type Group = Database['public']['Tables']['groups']['Row'];
 export type GroupInsert = Database['public']['Tables']['groups']['Insert'];
 export type GroupUpdate = Database['public']['Tables']['groups']['Update'];
+
+export type GroupIpAllowlist = Database['public']['Tables']['group_ip_allowlist']['Row'];
+export type GroupIpAllowlistInsert = Database['public']['Tables']['group_ip_allowlist']['Insert'];
+export type GroupIpAllowlistUpdate = Database['public']['Tables']['group_ip_allowlist']['Update'];
 
 export type UserProfile = Database['public']['Tables']['user_profile']['Row'];
 export type UserProfileInsert = Database['public']['Tables']['user_profile']['Insert'];
