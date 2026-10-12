@@ -12,6 +12,11 @@ interface GroupIpRestrictionManagerProps {
   onRestrictionToggled: (newValue: boolean) => void;
 }
 
+interface GroupOption {
+  id: string;
+  name: string;
+}
+
 export default function GroupIpRestrictionManager({
   groupId,
   groupName,
@@ -31,6 +36,13 @@ export default function GroupIpRestrictionManager({
   // Optimistic local state — mirrors ipRestrictionEnabled but updates immediately on click
   const [localEnabled, setLocalEnabled] = useState(ipRestrictionEnabled);
 
+  // Copy-from-group state
+  const [showCopyDropdown, setShowCopyDropdown] = useState(false);
+  const [groups, setGroups] = useState<GroupOption[]>([]);
+  const [loadingGroups, setLoadingGroups] = useState(false);
+  const [copying, setCopying] = useState(false);
+  const [copySuccess, setCopySuccess] = useState<string | null>(null);
+
   const fetchPatterns = useCallback(async () => {
     setLoadingPatterns(true);
     setActionError(null);
@@ -47,6 +59,84 @@ export default function GroupIpRestrictionManager({
       setLoadingPatterns(false);
     }
   }, [groupId]);
+
+  const handleOpenCopyDropdown = async () => {
+    setShowCopyDropdown(true);
+    setCopySuccess(null);
+    setActionError(null);
+    if (groups.length > 0) return; // already loaded
+    setLoadingGroups(true);
+    try {
+      const { data, error } = await authenticatedFetchJson('/api/admin/groups');
+      if (error) {
+        setActionError(error);
+      } else {
+        const allGroups: GroupOption[] = (data?.groups ?? [])
+          .filter((g: GroupOption) => g.id !== groupId)
+          .map((g: GroupOption) => ({ id: g.id, name: g.name }));
+        setGroups(allGroups);
+      }
+    } finally {
+      setLoadingGroups(false);
+    }
+  };
+
+  const handleCopyFromGroup = async (sourceGroupId: string) => {
+    setShowCopyDropdown(false);
+    setCopying(true);
+    setActionError(null);
+    setCopySuccess(null);
+    try {
+      // Fetch patterns from the source group
+      const { data, error } = await authenticatedFetchJson(
+        `/api/admin/groups/${sourceGroupId}/ip-restrictions`
+      );
+      if (error) {
+        setActionError(error);
+        return;
+      }
+      const sourcePatterns: GroupIpAllowlist[] = data?.patterns ?? [];
+      if (sourcePatterns.length === 0) {
+        setActionError('לקבוצה הנבחרת אין כתובות IP מוגדרות');
+        return;
+      }
+
+      // Get existing patterns to avoid duplicates
+      const existingSet = new Set(patterns.map((p) => p.ip_pattern));
+      const toAdd = sourcePatterns.filter((p) => !existingSet.has(p.ip_pattern));
+
+      if (toAdd.length === 0) {
+        setCopySuccess('כל הכתובות מהקבוצה הנבחרת כבר קיימות ברשימה');
+        return;
+      }
+
+      // Add each pattern sequentially
+      let added = 0;
+      for (const p of toAdd) {
+        const { error: addError } = await authenticatedFetchJson(
+          `/api/admin/groups/${groupId}/ip-restrictions`,
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              ip_pattern: p.ip_pattern,
+              description: p.description ?? undefined,
+            }),
+          }
+        );
+        if (!addError) added++;
+      }
+
+      await fetchPatterns();
+      const skipped = sourcePatterns.length - toAdd.length;
+      setCopySuccess(
+        skipped > 0
+          ? `הועתקו ${added} כתובות (${skipped} כבר היו קיימות)`
+          : `הועתקו ${added} כתובות בהצלחה`
+      );
+    } finally {
+      setCopying(false);
+    }
+  };
 
   const handleToggleExpanded = async () => {
     if (!expanded) {
@@ -151,7 +241,7 @@ export default function GroupIpRestrictionManager({
         aria-label={`הגדרות הגבלת IP לקבוצה ${groupName}`}
       >
         <svg
-          className={`w-3.5 h-3.5 flex-shrink-0 transition-transform ${expanded ? 'rotate-90' : ''}`}
+          className={`w-3.5 h-3.5 flex-shrink-0 transition-transform ${expanded ? 'rotate-90' : 'rotate-180'}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -209,7 +299,91 @@ export default function GroupIpRestrictionManager({
           {/* Patterns list — visible only when restriction is enabled */}
           {localEnabled && (
             <div className="space-y-2">
-              <p className="text-xs font-medium text-slate-700">כתובות IP מורשות:</p>
+              {/* Header row: title + copy button */}
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-medium text-slate-700">כתובות IP מורשות:</p>
+
+                {/* Copy-from-group button + dropdown */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={handleOpenCopyDropdown}
+                    disabled={copying}
+                    className="flex items-center gap-1 px-2 py-1 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 border border-blue-200 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="העתק כתובות IP מקבוצה אחרת"
+                  >
+                    {copying ? (
+                      <>
+                        <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z" />
+                        </svg>
+                        מעתיק...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        העתק מקבוצה
+                      </>
+                    )}
+                  </button>
+
+                  {showCopyDropdown && (
+                    <>
+                      {/* Backdrop to close dropdown */}
+                      <div
+                        className="fixed inset-0 z-10"
+                        onClick={() => setShowCopyDropdown(false)}
+                        aria-hidden="true"
+                      />
+                      <div className="absolute left-0 top-full mt-1 z-20 w-56 bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                        <div className="px-3 py-2 bg-slate-50 border-b border-slate-200">
+                          <p className="text-xs font-medium text-slate-600">בחר קבוצת מקור</p>
+                        </div>
+                        {loadingGroups ? (
+                          <div className="px-3 py-4 text-xs text-slate-500 text-center">
+                            <svg className="w-4 h-4 animate-spin mx-auto mb-1" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z" />
+                            </svg>
+                            טוען קבוצות...
+                          </div>
+                        ) : groups.length === 0 ? (
+                          <div className="px-3 py-3 text-xs text-slate-500 text-center">
+                            אין קבוצות אחרות
+                          </div>
+                        ) : (
+                          <ul className="max-h-48 overflow-y-auto">
+                            {groups.map((g) => (
+                              <li key={g.id}>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyFromGroup(g.id)}
+                                  className="w-full text-right px-3 py-2 text-xs text-slate-700 hover:bg-blue-50 hover:text-blue-800 transition-colors"
+                                >
+                                  {g.name}
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Copy result feedback */}
+              {copySuccess && (
+                <div className="flex items-center gap-1.5 p-2 bg-green-50 border border-green-200 rounded text-xs text-green-700">
+                  <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  {copySuccess}
+                </div>
+              )}
 
               {loadingPatterns ? (
                 <div className="space-y-1">
