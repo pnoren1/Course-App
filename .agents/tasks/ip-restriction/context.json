@@ -1,0 +1,31 @@
+{
+  "project_type": "Next.js 16.1.1 App Router + Supabase backend, TypeScript, Tailwind CSS v4, Hebrew RTL UI",
+  "language": "TypeScript",
+  "build_system": "npm + Next.js 16.1.1; path alias @/* maps to project root; no monorepo, single package.json at project root",
+  "test_framework": "Vitest 4.0.17 with @testing-library/react, jsdom, fast-check for property-based tests",
+  "build_command": "npm run build",
+  "test_command": "npm test",
+  "verification_instructions": "1. Run `npm run build` — must complete with no TypeScript errors. 2. Run `npm test` — all tests must pass. 3. Run `npm run lint` — no ESLint errors.",
+  "snapshot_or_generated_files": null,
+  "environment_constraints": "Middleware (middleware.ts at project root) runs in the Next.js Edge Runtime. Cannot import lib/supabase.ts or lib/supabase-server.ts because those use Node.js built-ins (supabaseAdmin uses SUPABASE_SECRET_KEY via process.env and creates a Node.js-based client). Supabase admin DB access from middleware must use the Supabase REST API via fetch() with headers: { Authorization: 'Bearer SUPABASE_SECRET_KEY', apikey: ANON_KEY }. The REST base URL is `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1`.",
+  "contribution_requirements": "No AGENTS.md or CONTRIBUTING.md found. Follow patterns from existing code: API routes use getAuthenticatedUser from lib/supabase-server.ts; admin DB operations use supabaseAdmin from lib/supabase.ts; UI calls use authenticatedFetchJson from lib/utils/api-helpers.ts.",
+  "key_patterns": "API routes: auth via getAuthenticatedUser(request) → check supabaseAdmin availability → fetch user_profile → check role. Service layer in lib/services/ uses getSupabaseAdmin(). Components are client components ('use client') using authenticatedFetchJson for API calls. Migration SQL files in supabase/migrations/ follow ALTER TABLE or CREATE TABLE IF NOT EXISTS pattern. Hebrew error messages in all API responses. RTL layout via body direction:rtl in globals.css.",
+  "relevant_files": [
+    "lib/supabase-server.ts",
+    "lib/supabase.ts",
+    "lib/types/database.types.ts",
+    "lib/services/groupService.ts",
+    "lib/utils/api-helpers.ts",
+    "lib/middleware/rate-limit.ts",
+    "app/api/admin/groups/route.ts",
+    "app/api/admin/groups/[id]/route.ts",
+    "app/components/OrganizationGroupsManagement.tsx",
+    "app/admin/groups/page.tsx",
+    "app/login/page.tsx",
+    "app/globals.css",
+    "supabase/migrations/add_course_deadline_to_groups.sql",
+    "next.config.ts",
+    "package.json"
+  ],
+  "directory_structure": "app/ contains pages and API routes (App Router). lib/ contains supabase.ts (client + admin), supabase-server.ts (server-side token extraction), types/database.types.ts (manual TypeScript DB types), services/ (business logic), utils/ (api-helpers.ts, ip-utils.ts to be created), middleware/ (rate-limit.ts). supabase/migrations/ has SQL migration files. middleware.ts goes at project root c:\\Users\\user1\\Desktop\\pninao\\course-app\\middleware.ts."
+}

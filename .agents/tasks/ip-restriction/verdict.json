@@ -1,0 +1,10 @@
+{
+  "verdict": "APPROVED",
+  "findings": [
+    "Toggle thumb direction in RTL: GroupIpRestrictionManager uses -translate-x-5 for the enabled state, which moves the thumb leftward in RTL layout — the visual position of 'off' in LTR toggles. Change to translate-x-5 for the enabled state or wrap the toggle in dir='ltr'.",
+    "Exact-match in middleware bypasses octet validation: the inline ipMatchesPattern uses ip.trim() === pattern.trim() for non-CIDR patterns (string compare), diverging from the library copy which would still trim but is consistent. In practice insert-time validation prevents malformed patterns from reaching this code, so severity is low.",
+    "Allowlist fetch has no row limit: the middleware REST call to group_ip_allowlist carries no &limit= parameter. Add &limit=500 to cap unbounded payloads on misconfigured groups.",
+    "No middleware integration tests: cookie extraction, path skipping, token validation, and redirect logic are untested. The ip-utils.test.ts covers helpers only. Consider mocked NextRequest tests for the main middleware decision branches."
+  ],
+  "reviewed_at": "2026-10-12T22:43:33.000Z"
+}
