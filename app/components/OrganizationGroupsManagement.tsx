@@ -6,6 +6,7 @@ import { authenticatedFetchJson } from '@/lib/utils/api-helpers';
 import { Organization } from '@/lib/types/database.types';
 import { organizationService, OrganizationWithStats } from '@/lib/services/organizationService';
 import { formatDualDate, isDeadlineDayPassed } from '@/lib/utils/date-utils';
+import GroupIpRestrictionManager from '@/app/components/GroupIpRestrictionManager';
 
 interface GroupWithUserCount {
   id: string;
@@ -14,6 +15,7 @@ interface GroupWithUserCount {
   userCount?: number;
   organizationName?: string;
   course_deadline?: string | null;
+  ip_restriction_enabled: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -702,8 +704,9 @@ export default function OrganizationGroupsManagement({ className = '' }: Organiz
             ) : (
               <div className="space-y-3">
                 {filteredGroups.map(group => (
-                  <div key={group.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-                    <div className="flex items-center gap-3">
+                  <div key={group.id} className="p-4 bg-slate-50 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
                       <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
                         <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -831,6 +834,13 @@ export default function OrganizationGroupsManagement({ className = '' }: Organiz
                       </div>
                     )}
                   </div>
+                  <GroupIpRestrictionManager
+                    groupId={group.id}
+                    groupName={group.name}
+                    ipRestrictionEnabled={group.ip_restriction_enabled ?? false}
+                    onRestrictionToggled={fetchGroups}
+                  />
+                </div>
                 ))}
               </div>
             )

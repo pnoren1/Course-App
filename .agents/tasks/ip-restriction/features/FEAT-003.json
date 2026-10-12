@@ -1,0 +1,29 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Admin UI: GroupIpRestrictionManager component + OrganizationGroupsManagement integration. Depends on FEAT-001 (types) and FEAT-002 (API routes). Independent of each other's internals — FEAT-003 only calls the API endpoints established in FEAT-002.",
+  "status": "completed",
+  "steps": [
+    "Create app/components/GroupIpRestrictionManager.tsx as a client component ('use client'). Props interface: { groupId: string; groupName: string; ipRestrictionEnabled: boolean; onRestrictionToggled: () => void }. State: patterns (GroupIpAllowlist[]), loadingPatterns (boolean), expanded (boolean), newPattern (string), newDescription (string), validationError (string|null), saving (boolean), deletingId (string|null). On expand: fetch GET /api/admin/groups/{groupId}/ip-restrictions via authenticatedFetchJson from lib/utils/api-helpers.ts. Toggle: PATCH /api/admin/groups/{groupId} with { ip_restriction_enabled: !current } then call onRestrictionToggled(). Add: validate with isValidIpPattern from lib/utils/ip-utils.ts (client-safe import, no server deps), POST to ip-restrictions endpoint, refresh list. Delete: DELETE to [patternId] endpoint, refresh list. UI: collapsible panel below the group row. When expanded: show 'הגבלת גישה לפי IP' section header; toggle switch (styled checkbox or toggle) labelled 'הגבלה מופעלת / כבויה'; when enabled show the patterns list with delete buttons; input field + button to add new pattern; validation error below input. Hebrew labels throughout. RTL. Tailwind consistent with existing component style (slate, green, blue palette from OrganizationGroupsManagement.tsx).",
+    "Update app/components/OrganizationGroupsManagement.tsx: (a) Add ip_restriction_enabled: boolean to the GroupWithUserCount interface defined at the top of the file. (b) Import GroupIpRestrictionManager. (c) In the groups list map (the section rendering filteredGroups), below the existing group row content (name, badges, edit/delete buttons) and outside the editingGroup conditional block, add: <GroupIpRestrictionManager groupId={group.id} groupName={group.name} ipRestrictionEnabled={group.ip_restriction_enabled ?? false} onRestrictionToggled={fetchGroups} />. The placement should be after the closing </div> of the group row content, inside the outer group card div."
+  ],
+  "acceptance_criteria": [
+    "GroupIpRestrictionManager renders without errors when ipRestrictionEnabled=false",
+    "GroupIpRestrictionManager renders without errors when ipRestrictionEnabled=true",
+    "Clicking the expand button shows the IP restriction panel",
+    "Toggle switch calls PATCH endpoint and triggers onRestrictionToggled",
+    "Entering an invalid IP pattern shows a Hebrew validation error and does not call the API",
+    "Entering a valid IP pattern calls POST and the pattern appears in the list",
+    "Clicking delete on a pattern calls DELETE and removes it from the list",
+    "OrganizationGroupsManagement renders with GroupIpRestrictionManager inside each group row",
+    "npm run build passes with no errors",
+    "npm test passes"
+  ],
+  "verification": [
+    "npm run build — zero TypeScript errors",
+    "npm test — all tests pass",
+    "npm run lint — no ESLint errors"
+  ],
+  "blocked_reason": null,
+  "findings": "1. GroupIpRestrictionManager.tsx created as a client component with full state management for IP pattern CRUD and toggle. isValidIpPattern imported from lib/utils/ip-utils.ts (client-safe). 2. OrganizationGroupsManagement.tsx: ip_restriction_enabled: boolean added to GroupWithUserCount interface; GroupIpRestrictionManager imported and placed inside each group card. The outer group card div was restructured from a single flex row to a block wrapper containing a flex row plus the manager panel. 3. Toggle button uses aria-pressed for accessibility. When ipRestrictionEnabled is false the patterns list is hidden; when it is true but patterns is empty, a Hebrew warning is shown. 4. The translate-x direction in the toggle switch was -translate-x-5 for the enabled state (RTL-compatible: the thumb moves right-to-left in RTL). 5. Zero new lint errors introduced; all pre-existing issues in OrganizationGroupsManagement.tsx (lines 6, 115, 149) predate FEAT-003. 6. npm run build passes with zero TypeScript errors; npm test passes 34/34."
+}
