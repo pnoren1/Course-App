@@ -5,11 +5,13 @@ export interface CreateGroupData {
   name: string;
   organizationId: string;
   courseDeadline?: string | null;
+  ip_restriction_enabled?: boolean;
 }
 
 export interface UpdateGroupData {
   name?: string;
   courseDeadline?: string | null;
+  ip_restriction_enabled?: boolean;
   // organizationId is not allowed to be changed
 }
 
@@ -203,6 +205,31 @@ export class GroupService {
       return groupsWithDetails as GroupWithUserCount[];
     } catch (error) {
       console.error('Error in getAllGroups:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update ip_restriction_enabled flag for a group
+   */
+  async updateIpRestriction(id: string, enabled: boolean): Promise<Group> {
+    try {
+      const admin = this.getSupabaseAdmin();
+      const { data: result, error } = await admin
+        .from('groups')
+        .update({ ip_restriction_enabled: enabled, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating IP restriction:', error);
+        throw error;
+      }
+
+      return result as Group;
+    } catch (error) {
+      console.error('Error in updateIpRestriction:', error);
       throw error;
     }
   }

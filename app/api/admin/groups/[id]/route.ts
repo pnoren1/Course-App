@@ -200,6 +200,93 @@ export async function PUT(
 }
 
 /**
+ * PATCH /api/admin/groups/[id]
+ * Update ip_restriction_enabled flag for a specific group
+ */
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    const { user, error: authError } = await getAuthenticatedUser(request);
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'אין הרשאה לגשת למשאב זה' },
+        { status: 401 }
+      );
+    }
+
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { error: 'שגיאת שרת פנימית' },
+        { status: 500 }
+      );
+    }
+
+    const userProfile = await getUserProfile(user.id);
+
+    // Check permissions
+    if (userProfile.role !== 'admin' && userProfile.role !== 'org_admin') {
+      return NextResponse.json(
+        { error: 'אין לך הרשאה לעדכן קבוצות' },
+        { status: 403 }
+      );
+    }
+
+    // Fetch existing group
+    const existingGroup = await groupService.getGroupById(id);
+
+    if (!existingGroup) {
+      return NextResponse.json(
+        { error: 'קבוצה לא נמצאה' },
+        { status: 404 }
+      );
+    }
+
+    // For org_admin, ensure they can only update groups from their organization
+    if (userProfile.role === 'org_admin' && userProfile.organization_id !== existingGroup.organization_id) {
+      return NextResponse.json(
+        { error: 'אין לך הרשאה לעדכן קבוצה זו' },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json();
+    const { ip_restriction_enabled } = body;
+
+    // Validate
+    if (typeof ip_restriction_enabled !== 'boolean') {
+      return NextResponse.json(
+        { error: 'הערך של ip_restriction_enabled חייב להיות boolean' },
+        { status: 400 }
+      );
+    }
+
+    const updatedGroup = await groupService.updateIpRestriction(id, ip_restriction_enabled);
+
+    return NextResponse.json({ success: true, group: updatedGroup });
+
+  } catch (error) {
+    console.error('Error in PATCH /api/admin/groups/[id]:', error);
+
+    if (error instanceof Error && error.message === 'לא נמצא פרופיל משתמש') {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: `שגיאה בעדכון קבוצה: ${error instanceof Error ? error.message : 'שגיאה לא ידועה'}` },
+      { status: 500 }
+    );
+  }
+}
+
+/**
  * DELETE /api/admin/groups/[id]
  * Delete a specific group
  * Requirements: 1.4, 4.1, 4.2, 4.3

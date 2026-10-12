@@ -1,0 +1,34 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Backend: API routes + service layer + Next.js middleware + ip-blocked page. Depends on FEAT-001 (types and utilities). Adds PATCH to groups [id] route, new ip-restrictions sub-routes, middleware enforcement, and the error page.",
+  "status": "completed",
+  "steps": [
+    "Add updateIpRestriction(id: string, enabled: boolean): Promise<Group> to GroupService class in lib/services/groupService.ts. Method: calls getSupabaseAdmin(), updates groups set ip_restriction_enabled=enabled and updated_at=now() where id=id, select single, throw on error. Also update CreateGroupData, UpdateGroupData, GroupWithUserCount interfaces to include ip_restriction_enabled?: boolean.",
+    "Add PATCH handler to app/api/admin/groups/[id]/route.ts. Pattern: auth via getAuthenticatedUser → supabaseAdmin availability check → getUserProfile helper → role check (admin or org_admin) → fetch existingGroup via groupService.getGroupById → org_admin ownership check → parse body { ip_restriction_enabled: boolean } → validate it is a boolean → call groupService.updateIpRestriction(id, ip_restriction_enabled) → return { success: true, group }. Follow the exact same boilerplate as the existing PUT handler in this file.",
+    "Create app/api/admin/groups/[id]/ip-restrictions/route.ts. GET handler: same auth+role pattern as other admin routes; returns { patterns } from supabaseAdmin.from('group_ip_allowlist').select('*').eq('group_id', id).order('created_at', {ascending:true}). POST handler: parses { ip_pattern, description? }, validates with isValidIpPattern from lib/utils/ip-utils.ts, inserts via supabaseAdmin, catches 23505 duplicate error with Hebrew message 'כתובת IP זו כבר קיימת ברשימה', returns { pattern }.",
+    "Create app/api/admin/groups/[id]/ip-restrictions/[patternId]/route.ts. DELETE handler: auth+role pattern; verify the pattern's group_id matches the route's [id] param (IDOR prevention) via supabaseAdmin.from('group_ip_allowlist').select('group_id').eq('id', patternId).single(); then delete. Returns { success: true, message: 'הכתובת הוסרה בהצלחה' }.",
+    "Create middleware.ts at the project root (c:\\Users\\user1\\Desktop\\pninao\\course-app\\middleware.ts). IMPORTANT: This runs in the Edge Runtime — do NOT import from lib/supabase.ts, lib/supabase-server.ts, or any file that imports from them. Implement inline: (a) extractClientIp helper (copy from lib/utils/ip-utils.ts — do not import, Edge Runtime file isolation is safest), (b) ipMatchesPattern and isIpAllowed helpers (same — copy the implementations), (c) Cookie-based JWT extraction: replicate the logic from lib/supabase-server.ts createServerSupabaseClient — extract projectRef from NEXT_PUBLIC_SUPABASE_URL, then search cookies for sb-{projectRef}-auth-token parsing the access_token from JSON value, (d) Main function: get user from supabase.auth.getUser(token) using a createClient with anon key; fetch user_profile and group data via the Supabase REST API using fetch() with headers { Authorization: 'Bearer ' + process.env.SUPABASE_SECRET_KEY, apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, 'Content-Type': 'application/json' } against ${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/...; (e) Skip paths: /ip-blocked, /login, /api/auth, /_next, /favicon; (f) Fail open on any error; (g) Redirect to /ip-blocked?ip={clientIp} when blocked. Export config matcher = ['/((?!_next/static|_next/image|favicon.ico).*)'].",
+    "Create app/ip-blocked/page.tsx as a Server Component (no 'use client'). Props: searchParams with ip field. UI: RTL Hebrew, white card centered on slate-50 background matching the login page aesthetic. Show title 'הגישה חסומה', explanation 'הגישה למערכת מכתובת IP זו אינה מורשית עבור הקבוצה שלך', the user's IP address in a highlighted box, message 'אנא פנה למנהל המערכת לקבלת גישה', and a back link to /login. Use Tailwind classes consistent with the existing app (slate, emerald, white-card pattern from app/login/page.tsx)."
+  ],
+  "acceptance_criteria": [
+    "PATCH /api/admin/groups/{id} with body { ip_restriction_enabled: true } returns 200 and updated group",
+    "GET /api/admin/groups/{id}/ip-restrictions returns { patterns: [] } for a group with no patterns",
+    "POST /api/admin/groups/{id}/ip-restrictions with valid ip_pattern returns 201 and the created pattern",
+    "POST with invalid ip_pattern returns 400 with Hebrew error message",
+    "POST with duplicate ip_pattern returns 409 with Hebrew error message",
+    "DELETE /api/admin/groups/{id}/ip-restrictions/{patternId} returns { success: true }",
+    "DELETE with patternId belonging to a different group returns 403 (IDOR prevention)",
+    "middleware.ts exists at project root and exports config with matcher",
+    "Requests to /ip-blocked and /login are never redirected by middleware",
+    "app/ip-blocked/page.tsx renders Hebrew content with RTL direction",
+    "npm run build passes with no errors"
+  ],
+  "verification": [
+    "npm run build — zero TypeScript errors",
+    "npm test — all tests pass",
+    "npm run lint — no ESLint errors"
+  ],
+  "blocked_reason": null,
+  "findings": "1. GroupWithUserCount.ip_restriction_enabled?: boolean was removed — Group already has ip_restriction_enabled: boolean as a required field, making the optional override a TypeScript conflict. The field is inherited from Group. 2. CreateGroupData and UpdateGroupData correctly received ip_restriction_enabled?: boolean. 3. middleware.ts uses the Next.js 16 file convention with a deprecation warning ('middleware' → 'proxy') but still works correctly in the Edge Runtime. 4. All IP helper functions are inlined in middleware.ts (not imported) for Edge Runtime safety. 5. Fail-open policy applied on all error paths in middleware. 6. 349 pre-existing lint errors exist project-wide (confirmed by FEAT-001); zero new lint errors introduced by FEAT-002 files. 7. npm run build passes with zero TypeScript errors; npm test passes 34/34."
+}
